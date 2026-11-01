@@ -167,7 +167,13 @@ export type OrderEmailArgs = {
   pricingLabel?: string | null;
   /** 2+ items paid/ordered together (one cart): listed one per line, totals cover the cart. */
   items?: OrderEmailItem[];
+  /** Buyer email line under the title; defaults to a gentle "here's the latest" (UNPAID_EMAIL_NOTE for unpaid orders). */
+  note?: string;
 };
+
+/** Status label + line for a buyer's order that is saved but not paid yet: a gentle next step, never a dues notice. */
+export const UNPAID_EMAIL_LABEL = "Your order is almost done";
+export const UNPAID_EMAIL_NOTE = "Your order is saved. The payment is the last step to confirm it for your slot, and you can finish it from Your orders. Stuck anywhere? WhatsApp or call us on 9152207607, a real person replies.";
 
 export type OrderEmailItem = {
   species: string;
@@ -252,12 +258,12 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
       args.isPreorder ? `${fishName} pre-order` : `${fishName} order update`,
       args.isPreorder
         ? "Your pre-order has been placed. The final price is set on your delivery day — you will only be charged up to the max estimate shown."
-        : "Your order status has changed. You can track every step in the app with live updates."
+        : args.note || "Here's the latest on your order. You can see it any time in Your orders. Questions? WhatsApp or call us on 9152207607."
     )}
     ${slotBox(args)}${orderSummaryTable(rows)}
     ${notes ? calloutBox(notes, "warning") : ""}
     <div style="text-align:center;margin-top:18px;">
-      ${ctaButton("Track Order →", "https://www.relifish.com/track")}
+      ${ctaButton("See your orders →", "https://www.relifish.com/orders")}
     </div>
   `, orderIdShort ? `Hi Relifish, I need help with order #${orderIdShort.toUpperCase()}` : undefined);
 }
@@ -483,8 +489,8 @@ export function razorpayReceiptEmail(args: RazorpayReceiptArgs): string {
       <div style="display:inline-block;background:#059669;color:#fff;padding:7px 18px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;">✓ Payment Confirmed</div>
     </div>
     <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Payment Receipt</div>
-    <h1 style="font-size:20px;line-height:1.25;margin:0 0 4px;color:#0f172a;">Your order is confirmed</h1>
-    <p style="font-size:14px;line-height:1.55;color:#475467;margin:0 0 18px;">Here's your receipt. Track your order in the app for live updates.</p>
+    <h1 style="font-size:20px;line-height:1.25;margin:0 0 4px;color:#0f172a;">Payment received, thank you</h1>
+    <p style="font-size:14px;line-height:1.55;color:#475467;margin:0 0 18px;">Here's your receipt. Your order is confirmed next, and we'll let you know as soon as it is. You can see it any time in Your orders.</p>
 
     ${orderMeta}
     ${sellerBlock}
@@ -500,7 +506,7 @@ export function razorpayReceiptEmail(args: RazorpayReceiptArgs): string {
     ${fulfilmentBlock}
 
     <div style="text-align:center;margin-top:20px;">
-      ${ctaButton("Track Order →", `https://www.relifish.com/track/${primary_order_id}`)}
+      ${ctaButton("See your order →", `https://www.relifish.com/track/${primary_order_id}`)}
     </div>
 
     <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:18px;line-height:1.8;">

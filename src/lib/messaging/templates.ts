@@ -90,6 +90,72 @@ export const TEMPLATES: TemplateDef[] = [
     examples: ["Rahul", "#A1B2C3D4", "the seller ran out of pomfret today", "₹1,380, started today, reaches your account in 5–7 working days"], buttons: [{ type: "URL", text: "Find the same fish" }, { type: "QUICK_REPLY", text: "Talk to us" }] },
 ];
 export const TEMPLATE = Object.fromEntries(TEMPLATES.map((t) => [t.name, t])) as Record<string, TemplateDef>;
+
+/**
+ * NOT YET SUBMITTED / NOT APPROVED: gentle-tone v3 drafts (docs/MESSAGES-TONE-AUDIT.md, 1 Nov 2026).
+ * Kept out of TEMPLATES so wa-setup never submits them and no sender uses them. Rules: a gentle status
+ * and the next step, no seller names, no "local", no tracking wording, no prices in promos, one emoji max.
+ * Several drop the seller variable, so a sender's variables change when one of these is wired in.
+ */
+export const DRAFT_TEMPLATES: TemplateDef[] = [
+  { name: "rf3_welcome", category: "MARKETING", header: "IMAGE",
+    body: "Hi {{1}}, welcome to Relifish! 🐟 Fresh fish from verified sellers near {{2}}, cleaned and cut your way and brought to your door.\nThe next delivery slot is {{3}}, and today's catch is in the store whenever you'd like a look.\nNot sure what to pick? Just reply here, a real person replies.",
+    examples: ["Priya", "you", "today, 2–4 PM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "See today's fish" }, { type: "QUICK_REPLY", text: "Help me choose" }] },
+  { name: "rf3_welcome_search", category: "MARKETING", header: "IMAGE",
+    body: "Hi {{1}}, good to have you on Relifish! 🐟 Verified sellers near {{2}} have the morning's catch up in the store, and you see the size and cut before you order.\nThe next slot is {{3}}.\nLooking for something you don't see? Just reply here and we'll check for you.",
+    examples: ["Rahul", "Manpada", "today, 12–2 PM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "See today's fish" }, { type: "QUICK_REPLY", text: "Ask about a fish" }] },
+  { name: "rf3_cart_today", category: "MARKETING", header: "IMAGE",
+    body: "Hi {{1}}, your {{2}} is still in your cart 🛒\nIf you'd like it, it can reach you {{3}}, cleaned and cut your way.\nAny special cut or question? Just reply here, or call us on 9152207607.",
+    examples: ["Rahul", "Silver Pomfret", "today, 4–6 PM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "See my cart" }, { type: "QUICK_REPLY", text: "I have a question" }] },
+  { name: "rf3_cart_preorder", category: "MARKETING", header: "IMAGE",
+    body: "Hi {{1}}, your {{2}} is in your cart 🛒\nIf you pre-order tonight, it can reach you {{3}}, cleaned and cut your way.\nQuestions? Just reply here, or call us on 9152207607.",
+    examples: ["Supriya", "Fresh Halwa", "Sunday morning, 9–11 AM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "See my cart" }, { type: "QUICK_REPLY", text: "I have a question" }] },
+  { name: "rf3_promo_cart", category: "MARKETING", header: "IMAGE",
+    body: "Happy {{1}}, {{2}}! Your {{3}} is still in your cart 🛒\nToday's catch is in, and the next slot is {{4}}.\nWhenever you're ready, it's one tap away. Questions? Just reply here.",
+    examples: ["Wednesday", "Rahul", "Silver Pomfret", "today, 12–2 PM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "See my cart" }, { type: "QUICK_REPLY", text: "I have a question" }] },
+  { name: "rf3_promo_unpaid", category: "MARKETING", header: "IMAGE",
+    body: "Happy {{1}}, {{2}}! Your {{3}} order is saved with us 🛒\nIt's almost done: the payment is the last step, and if your old slot has passed you can pick a new one. The next slot is {{4}}.\nStuck anywhere? Just reply here, or call us on 9152207607, and we'll sort it out.",
+    examples: ["Friday", "Kavita", "Surmai", "Sunday 9–11 AM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "Finish my order" }, { type: "QUICK_REPLY", text: "Payment not working?" }] },
+  { name: "rf3_order_again", category: "MARKETING", header: "IMAGE",
+    body: "Hi {{1}}, hope the {{2}} was just the way you like it 😊\nWhenever you'd like it again, fresh stock is in and the next slot is {{3}}.\nWant something different this time? Just reply here, we'll help.",
+    examples: ["Sanjay", "Surmai", "Sunday 9–11 AM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "Order the same again" }, { type: "QUICK_REPLY", text: "Try something new" }] },
+  { name: "rf3_cart_swap", category: "MARKETING", header: "IMAGE",
+    body: "Hi {{1}}, the {{2}} in your cart isn't on today's menu, sorry about that.\nA fresh pick you might like instead: {{3}}, cleaned and cut, delivered {{4}} 🐟\nWant something else? Just reply here and we'll help you choose.",
+    examples: ["Priya", "Silver Pomfret", "Baby Surmai 900–1000 g", "today, 12–2 PM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "See today's menu" }, { type: "QUICK_REPLY", text: "Help me choose" }] },
+  { name: "rf3_weekend", category: "MARKETING", header: "IMAGE",
+    body: "Happy Saturday, {{1}}! 🐟 Sunday fish, sorted tonight without the market rush.\nVerified sellers near {{2}} have the catch up now: {{3}}. You can pre-order tonight for {{4}}.\nNeed help choosing? Just reply here.",
+    examples: ["Priya", "you", "Surmai, Pomfret, Rawas", "Sunday 9–11 AM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "Pick my weekend fish" }, { type: "QUICK_REPLY", text: "Help me choose" }] },
+  { name: "rf3_catch_preorder", category: "MARKETING", header: "IMAGE",
+    body: "Hi {{1}}, happy {{2}}! 🐟 Tomorrow morning's fresh catch is open for pre-order:\n{{3}}\nPre-orders placed by {{4}} reach you {{5}}, cleaned and cut your way.\nWant help choosing? Just reply here.",
+    examples: ["Priya", "Friday", "Surmai · Silver Pomfret · Bombil", "2 AM", "tomorrow, 9–11 AM"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "See tomorrow's catch" }, { type: "QUICK_REPLY", text: "Help me choose" }] },
+  { name: "rf3_catch_today", category: "MARKETING", header: "IMAGE",
+    body: "Hi {{1}}, happy {{2}}! Today's fresh catch is in 🐟\n{{3}}\nOrders placed by {{4}} are delivered {{5}}, cleaned and cut your way.\nTell us your favourite fish and we'll let you know when it lands. Just reply here.",
+    examples: ["Priya", "Wednesday", "Surmai · Silver Pomfret · Bombil", "4 PM", "today"], footer: "Reply STOP to stop offers", buttons: [{ type: "URL", text: "See today's fish" }, { type: "QUICK_REPLY", text: "Tell me my fish lands" }] },
+  { name: "rf3_unpaid", category: "UTILITY", header: "IMAGE",
+    body: "Hi {{1}}, your order {{2}} for {{3}} is saved and almost done.\nThe payment is the last step to confirm it for your {{4}} slot. If the page doesn't open inside Instagram or Facebook, open the link in Chrome or Safari.\nStuck anywhere? Just reply here, or call us on 9152207607, and we'll sort it out with you.",
+    examples: ["Kavita", "#35189836", "Surmai", "Sunday 9–11 AM"], buttons: [{ type: "URL", text: "Finish my order" }, { type: "QUICK_REPLY", text: "Payment not working?" }] },
+  { name: "rf3_paid", category: "UTILITY",
+    body: "Payment received for order {{1}}, thank you {{2}}! ✅\nIt's usually confirmed within 2 hours, and we'll message you as soon as it is.\nAny special request for the cut? Just reply here.",
+    examples: ["#EEB0F7AC", "Manoj"], buttons: [{ type: "URL", text: "See my order" }, { type: "QUICK_REPLY", text: "Add a cut request" }] },
+  { name: "rf3_paid_evening", category: "UTILITY",
+    body: "Payment received for order {{1}}, thank you {{2}}! ✅ You're all set for {{3}}.\nPre-orders are confirmed first thing in the morning, by 9:30 AM, and we'll message you as soon as yours is.\nQuestions? Just reply here.",
+    examples: ["#588E8380", "Sanjay", "Sunday morning"], buttons: [{ type: "URL", text: "See my order" }, { type: "QUICK_REPLY", text: "Add a cut request" }] },
+  { name: "rf3_paid_fast", category: "UTILITY",
+    body: "That was quick, {{1}}! ✅ Payment received for order {{2}}.\nIt will be confirmed {{3}}, and we'll message you when it's on the way.\nNeed anything? Just reply here.",
+    examples: ["Arvind", "#D39028F2", "within 2 hours"], buttons: [{ type: "URL", text: "See my order" }, { type: "QUICK_REPLY", text: "Add a cut request" }] },
+  { name: "rf3_confirmed", category: "UTILITY", header: "IMAGE",
+    body: "Confirmed! ✅ Your order {{1}} is accepted.\nYour fish reaches you {{2}}, cleaned and cut your way.\nWe'll message you when it's on the way. Questions? Just reply here.",
+    examples: ["#EEB0F7AC", "today, 12–2 PM"], buttons: [{ type: "URL", text: "See my order" }, { type: "QUICK_REPLY", text: "Chat with us" }] },
+  { name: "rf3_out", category: "UTILITY",
+    body: "Your fish is on the way 🛵 Order {{1}} should reach you by {{2}}.\nPlease keep your phone close for the delivery person. Anything urgent? Call us on 9152207607.",
+    examples: ["#EEB0F7AC", "2 PM"], buttons: [{ type: "URL", text: "See my order" }, { type: "QUICK_REPLY", text: "Chat with us" }] },
+  { name: "rf3_delivered", category: "UTILITY", header: "IMAGE",
+    body: "Delivered! Hope the {{1}} turns out just the way you like it, {{2}} 😊\nHow was it, the fish, the cut, the delivery? Two taps to tell us, it helps families near you.\nSomething not right? Just reply here and we'll make it right.",
+    examples: ["Bombil", "Manoj"], buttons: [{ type: "URL", text: "Rate my fish" }, { type: "QUICK_REPLY", text: "Something's not right" }] },
+  { name: "rf3_cancelled", category: "UTILITY",
+    body: "Sorry, {{1}}, your order {{2}} couldn't go ahead: {{3}}.\nRefund: {{4}}. We'll keep you posted until it's done.\nWant another fish or a different slot? Just reply here, or call us on 9152207607, and we'll help 🙏",
+    examples: ["Rahul", "#A1B2C3D4", "the fish ran out today", "₹1,380, started today, reaches your account in 5–7 working days"], buttons: [{ type: "URL", text: "See today's menu" }, { type: "QUICK_REPLY", text: "Talk to us" }] },
+];
 /** How many {{n}} body variables a template takes (0 for an unknown name). */
 export const varCount = (name: string) => TEMPLATE[name]?.examples.length ?? 0;
 

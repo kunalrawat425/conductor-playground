@@ -11,6 +11,8 @@ import {
   orderEmailSeller,
   type OrderEmailArgs,
   type OrderEmailItem,
+  UNPAID_EMAIL_LABEL,
+  UNPAID_EMAIL_NOTE,
 } from "../../../lib/email-templates";
 import { getListingOptionById, type ListingPricingSource } from "../../../lib/listing-pricing";
 import { preorderPlacedLabel, type PlacementKind } from "../../../lib/order-timing";
@@ -361,8 +363,8 @@ export const POST: APIRoute = async ({ request, url }) => {
           // A slot can be on a later delivery day than the next one (preorder_days_ahead).
           ? preorderPlacedLabel(slotCheck.slot ? slotDateIST(slotCheck.slot.start) : (resolved.find((x) => x.line.kind === "preorder")?.line as PreorderLinePayload | undefined)?.delivery_date)
           : scheduled_for
-          ? "Pickup scheduled — complete payment to confirm 🗓️"
-          : "Order placed — complete payment to confirm";
+          ? "Pickup scheduled, almost done 🗓️"
+          : UNPAID_EMAIL_LABEL;
         afterResponse(buyerEmailPromise.then((bEmail) =>
           sendCartOrderEmail(resendApiKey, {
             order: first.order,
@@ -465,6 +467,7 @@ async function sendCartOrderEmail(
     bundleCount: bc,
     pricingLabel: pricingLabel || null,
     items: args.items,
+    note: args.isPreorder ? undefined : UNPAID_EMAIL_NOTE, // placed here = saved, not paid yet
   };
   const speciesForEmail = capitalizeFishName(species || "Fish");
   const sellerSubject = args.isPreorder ? `New pre-order: ${speciesForEmail}` : `New order: ${speciesForEmail}`;

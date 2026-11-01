@@ -185,7 +185,7 @@ const shortId = String(id || "").slice(0, 8).toUpperCase();
     return [1, 2, 3, 4, 5].map(i => i <= rating ? "★" : "☆").join(" ");
   }
   function statusLabel(s) {
-    const pendingLabel = "Complete payment";
+    const pendingLabel = "Almost done";
     return ({
       pending: pendingLabel,
       pending_payment: pendingLabel,
@@ -193,7 +193,7 @@ const shortId = String(id || "").slice(0, 8).toUpperCase();
       scheduled: "Scheduled pickup",
       confirmed: "Confirmed ✓",
       paid: "Paid — waiting for confirmation",
-      payment_required: "Additional payment needed",
+      payment_required: "Final price is in",
       ready_for_pickup: "Ready for pickup",
       out_for_delivery: "Out for delivery",
       picked_up: "Picked up",
@@ -485,7 +485,7 @@ const shortId = String(id || "").slice(0, 8).toUpperCase();
           <div style="background:#F5F3FF;border:1.5px solid #C4B5FD;border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:12px;">
             <div style="font:700 13px Inter;color:#7C3AED;margin-bottom:6px;">🌙 Pre-order${deliverOn ? ` for ${escape(dateLabelIST(deliverOn))}` : ""}</div>
             ${rangeHtml}
-            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;margin-top:6px;">${unpaid ? "Pay now to place your pre-order. " : ""}The final price is set when your fish comes in.${amountDue ? ` ${unpaid ? "Amount" : "You paid"}: <strong>${amountDue}</strong>.` : ""}</div>
+            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;margin-top:6px;">${unpaid ? "Your pre-order is placed once the payment goes through. " : ""}The final price is set when your fish comes in.${amountDue ? ` ${unpaid ? "Amount" : "You paid"}: <strong>${amountDue}</strong>.` : ""}</div>
             <div style="font:400 11px Inter;color:#8B5CF6;margin-top:6px;line-height:1.5;">Final price <strong>lower</strong> than you paid → the difference is refunded automatically (5–7 working days). <strong>Higher</strong> → you approve the difference.</div>
           </div>`;
         preorderEl.style.display = "block";
@@ -782,9 +782,9 @@ const shortId = String(id || "").slice(0, 8).toUpperCase();
     const fmt = (n: number) => n.toLocaleString("en-IN");
     root.innerHTML = `
       <div style="background:var(--v2-bg);border:1.5px solid var(--v2-brand);border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
-        <div style="font:800 14px Inter;color:var(--v2-ink);margin-bottom:4px;">💳 Complete payment</div>
+        <div style="font:800 14px Inter;color:var(--v2-ink);margin-bottom:4px;">💳 One last step: the payment</div>
         <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">
-          Pay securely via Razorpay (UPI, cards, netbanking). Your order confirms instantly.
+          Pay securely via Razorpay (UPI, cards, netbanking), and we'll let you know as soon as your order is confirmed. Stuck? WhatsApp or call us on 9152207607.
         </div>
         <div style="font:900 22px Inter;color:var(--v2-brand);margin-bottom:16px;">₹${fmt(balance)}</div>
         <button type="button" id="v2-rzp-pay-btn" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full">

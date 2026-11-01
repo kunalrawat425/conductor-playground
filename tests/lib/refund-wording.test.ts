@@ -14,7 +14,7 @@ describe("refund wording: 'refunded' only once Razorpay accepted it (30 Oct inci
     expect(failed.buyerPreview).not.toMatch(/started|refunded/);
     const ok = copyFor("cancelled_by_seller", "saundale", "AB12CD34", 285, "Not available", { refundSent: true });
     expect(ok.buyerLine).toContain("Refund: ₹285 refunded.");
-    expect(ok.buyerPreview).toBe("Sorry! ₹285 refunded.");
+    expect(ok.buyerPreview).toBe("Sorry! ₹285 refunded. We can help you pick another fish or slot.");
   });
 });
 
