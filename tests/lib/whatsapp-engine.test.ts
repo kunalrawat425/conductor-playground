@@ -223,6 +223,15 @@ describe("dispatch: one channel, once (founder 30 Oct)", () => {
     expect(sent.template.components.some((c: any) => c.sub_type === "quick_reply")).toBe(false);
     expect((globalThis.fetch as any).mock.calls).toHaveLength(1);
   });
+  it("WHATSAPP_OFF=true (Wati paused) → an opted-in buyer gets SMS, no WhatsApp call", async () => {
+    wa(); sms(); vi.stubEnv("WHATSAPP_OFF", "true");
+    (globalThis.fetch as any).mockResolvedValue(ok({ type: "success", message: "req1" }));
+    const sb = fakeSb();
+    const r = await dispatch(sb, msg);
+    expect([r.status, r.channel]).toEqual(["sent", "sms"]);
+    expect((globalThis.fetch as any).mock.calls).toHaveLength(1);
+    expect((globalThis.fetch as any).mock.calls[0][0]).toBe("https://api.msg91.com/api/v5/flow/");
+  });
   it("not opted in → SMS only (MSG91 flow, vars cut to 30, fixed link so no link variable)", async () => {
     sms();
     (globalThis.fetch as any).mockResolvedValue(ok({ type: "success", message: "req123" }));
