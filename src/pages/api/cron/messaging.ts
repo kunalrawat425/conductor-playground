@@ -198,7 +198,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
       const d = kind === "cart" ? cartMessage(Date.now(), withCart, seller, offer) : kind === "signup" ? signupMessage(Date.now(), st, seller, offer) : null;
       const p = kind === "promo" ? decide(Date.now(), st, sellers, []) : null;
       if (d) msg = { template: d.template, body: d.body, headerImage: d.photo, link_path: d.path, seller_id: seller.id, sms: d.sms };
-      else if (p && !("skip" in p)) msg = { template: p.template, body: p.body, headerImage: p.photo, link_path: p.path, seller_id: seller.id };
+      else if (p && !("skip" in p)) msg = { template: p.template, body: p.body, headerImage: p.photo, link_path: p.path, seller_id: seller.id, sms: promoSms(p, st, Date.now()) };
       else if (kind === "promo") return json({ error: `no promo fits right now: ${(p as any)?.skip}` }, 404);
     } else {
       // Order kinds: the test buyer's latest order (its real values).
