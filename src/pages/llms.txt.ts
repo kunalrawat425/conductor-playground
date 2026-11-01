@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabase";
 import { cleanSellerName, sellerHref, stripContactInfo } from "../lib/seller-display";
 import { getSpeciesDisplay, SPECIES } from "../lib/species";
 import { hubIndexable } from "../lib/fish-hub";
+import { AREAS, areaNameForPoint, sellersForArea } from "../lib/areas";
+import { BLOG_POSTS } from "../lib/blog-posts";
 
 export const prerender = false;
 
@@ -13,11 +15,11 @@ const SITE = "https://www.relifish.com";
  * lists inactive sellers, dead URLs or claims we cannot back up (see SOURCE-OF-TRUTH.md).
  */
 export const GET: APIRoute = async () => {
-  let sellers: { id: string; name: string; location_name: string | null }[] = [];
+  let sellers: { id: string; name: string; location: string | null; location_name: string | null; lat: number | null; lng: number | null }[] = [];
   let fishRows: { seller_id: string; species: string; pricing_options: unknown }[] = [];
   try {
     const [s, f] = await Promise.all([
-      supabase.from("sellers").select("id, name, location_name").eq("is_active", true).or("is_test.is.null,is_test.eq.false").order("name"),
+      supabase.from("sellers").select("id, name, location, location_name, lat, lng").eq("is_active", true).or("is_test.is.null,is_test.eq.false").order("name"),
       supabase.from("fish_listings").select("seller_id, species, pricing_options").is("deleted_at", null),
     ]);
     if (s.error || f.error) throw s.error || f.error;
@@ -41,6 +43,10 @@ export const GET: APIRoute = async () => {
   const hubs = [...perSpecies].filter(([sp, n]) => hubIndexable(sp, n) && SPECIES[sp]).map(([sp]) => sp);
   const species = [...perSpecies.keys()].filter((sp) => SPECIES[sp]).map(getSpeciesDisplay);
 
+  // Areas with a live seller (the others are noindex "not yet" pages), and each seller's area as the site shows it (fish hubs, /area pages).
+  const areas = Object.entries(AREAS).filter(([, a]) => sellersForArea(a, sellers).length > 0);
+  const place = (s: (typeof sellers)[number]) => areaNameForPoint(s.lat, s.lng) || stripContactInfo(s.location_name);
+
   const body = `# Relifish
 # ${SITE}
 
@@ -49,14 +55,19 @@ export const GET: APIRoute = async () => {
 ## Key pages
 
 - [Browse sellers](${SITE}/shop): live seller menus with today's fish and prices
+- [Fish price today](${SITE}/fish-price-today): today's fish rates per kg (or per pack) from every live seller listing, with each seller's price
+${areas.map(([key, a]) => `- [Fish delivery in ${a.name}](${SITE}/area/${key}): sellers that deliver in ${a.name}, their delivery fees and the localities they cover`).join("\n")}
 ${hubs.map((sp) => `- [${getSpeciesDisplay(sp)}](${SITE}/fish/${sp}): every seller listing it, with today's price and availability`).join("\n")}
-- [How ordering works](${SITE}/blog/first-relifish-order-guide-thane): same-day vs pre-order, payment, refunds, pickup and delivery
 - [Sell on Relifish](${SITE}/for-sellers): for fish sellers
 - [About Relifish](${SITE}/about)
 
+## Guides
+
+${BLOG_POSTS.map((p) => `- [${p.title}](${SITE}${p.path}): ${p.description}`).join("\n")}
+
 ## Active sellers
 
-${sellers.map((s) => `- [${cleanSellerName(s.name)}](${SITE}${sellerHref(s.name, s.id)})${stripContactInfo(s.location_name) ? ` · ${stripContactInfo(s.location_name)}` : ""}`).join("\n") || "- None listed right now"}
+${sellers.map((s) => `- [${cleanSellerName(s.name)}](${SITE}${sellerHref(s.name, s.id)})${place(s) ? ` · ${place(s)}` : ""}`).join("\n") || "- None listed right now"}
 
 ## Facts
 

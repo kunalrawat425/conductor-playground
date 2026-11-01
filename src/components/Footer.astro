@@ -2,7 +2,8 @@
 import { LOGO_URL, OPERATED_BY, whatsappLink } from "../lib/brand";
 import { SOCIAL_ICONS } from "../lib/social-icons";
 /** Relifish Reusable Footer Component. logoSrc: the home page passes its white/gold wordmark. */
-const { logoSrc = LOGO_URL } = Astro.props as { logoSrc?: string };
+// priceLink: the fish-price-today link (LandingLayout pages; the homepage footer is unchanged).
+const { logoSrc = LOGO_URL, priceLink = false } = Astro.props as { logoSrc?: string; priceLink?: boolean };
 ---
 <footer>
   <div class="ft">
@@ -47,6 +48,7 @@ const { logoSrc = LOGO_URL } = Astro.props as { logoSrc?: string };
         <a href="/fish/rawas">Rawas</a>
         <a href="/fish/bangda">Bangda</a>
         <a href="/fish/bombil">Bombil</a>
+        {priceLink && <a href="/fish-price-today">Fish price today</a>}
       </div>
       <div class="ft-col">
         <h4>Company</h4>
