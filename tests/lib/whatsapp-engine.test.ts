@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isLiveFor, templatePayload, validWebhookSignature, waNumber, watiParams, watiTemplate } from "../../src/lib/server/whatsapp";
-import { TEMPLATES, templateProblems, fishName, firstName, PROMO_IMAGE, SIGNUP_IMAGE, varCount } from "../../src/lib/messaging/templates";
+import { TEMPLATES, DRAFT_TEMPLATES, TEMPLATE, templateProblems, fishName, firstName, PROMO_IMAGE, SIGNUP_IMAGE, varCount } from "../../src/lib/messaging/templates";
 import { againOrder, orderMessage, orderPhoto, type OrderWaEvent } from "../../src/lib/server/notify-order-whatsapp";
 import { DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy";
 
@@ -88,6 +88,16 @@ describe("templates", () => {
   it("mirror the 19 approved rf2 templates + rf2_cart_swap (category, header, variable count) and pass Meta + brand checks", () => {
     expect(Object.fromEntries(TEMPLATES.map((t) => [t.name, [t.category, t.header === "IMAGE", t.body.match(/\{\{\d+\}\}/g)?.length ?? 0]]))).toEqual(APPROVED);
     for (const t of TEMPLATES) expect(templateProblems(t), t.name).toEqual([]);
+  });
+  it("rf3 gentle-tone drafts pass Meta + brand checks, stay out of the sendable set, and keep the tone rules", () => {
+    for (const t of DRAFT_TEMPLATES) {
+      expect(t.name, t.name).toMatch(/^rf3_/);
+      expect(TEMPLATE[t.name], t.name).toBeUndefined();
+      expect(templateProblems(t), t.name).toEqual([]);
+      const text = `${t.body} ${t.buttons.map((b) => b.text).join(" ")}`;
+      expect(text, t.name).not.toMatch(/\blocal\b|\btrack|not paid|pay now|\{\{\d+\}\}'s menu/i);
+      expect(t.body.match(/\p{Extended_Pictographic}/gu)?.length ?? 0, t.name).toBeLessThanOrEqual(1);
+    }
   });
   it("every template name in src is an approved rf2 template; no v1 rf_* names are left", () => {
     const names = new Set<string>();

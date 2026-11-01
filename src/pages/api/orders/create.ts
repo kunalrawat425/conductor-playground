@@ -8,6 +8,8 @@ import {
   capitalizeFishName,
   orderEmailBuyer,
   type OrderEmailArgs,
+  UNPAID_EMAIL_LABEL,
+  UNPAID_EMAIL_NOTE,
 } from "../../../lib/email-templates";
 import { getListingOptionById, type ListingPricingSource } from "../../../lib/listing-pricing";
 import type { PlacementKind } from "../../../lib/order-timing";
@@ -440,9 +442,10 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (resendApiKey && order) {
       const statusLabel = isPreorderBranch
         ? preorderPlacedLabel(slotCols.delivery_slot_start ? slotDateIST(slotCols.delivery_slot_start) : preorderDeliveryDate)
-        : "Order placed — complete payment to confirm";
+        : UNPAID_EMAIL_LABEL;
       const emailArgs = {
         statusLabel,
+        note: isPreorderBranch ? undefined : UNPAID_EMAIL_NOTE,
         species: species || "Fish",
         quantity,
         quantity_unit,

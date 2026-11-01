@@ -61,12 +61,15 @@ function copyLines(event: OrderEvent, species: string, orderIdShort: string, amo
   // "₹X refunded" only once Razorpay accepted it (30 Oct: a failed refund was announced as done).
   const refund = amount != null ? ` Refund: ${refundLine(amount, refundSent)}.` : "";
   const why = reason ? ` Reason: ${reason}.` : "";
+  // Buyer lines: a gentle status, then the next step and a real person to talk to (founder, 1 Nov).
+  // buyerSubject here is overridden by email-subjects in copyFor.
+  const help = "WhatsApp or call us on 9152207607";
   switch (event) {
     case "payment_confirmed":
       return {
         buyerSubject: `Payment received — ${fish} · #${orderIdShort}`,
-        buyerHeading: "Payment received",
-        buyerLine: `We received your payment${amt} for ${fish} (order #${orderIdShort}). Your order will be confirmed shortly.`,
+        buyerHeading: "Payment received, thank you",
+        buyerLine: `We received your payment${amt} for your ${fish} (order #${orderIdShort}). We'll let you know as soon as it's confirmed. Any special request for the cut? ${help}.`,
         sellerSubject: `New paid order — please confirm · ${fish} · #${orderIdShort}`,
         sellerHeading: "New paid order — confirm it",
         sellerLine: `The buyer paid${amt} for ${fish} (order #${orderIdShort}). Open your dashboard to confirm or decline it.`,
@@ -74,8 +77,8 @@ function copyLines(event: OrderEvent, species: string, orderIdShort: string, amo
     case "cancelled_by_buyer":
       return {
         buyerSubject: `You cancelled your order — ${fish} · #${orderIdShort}`,
-        buyerHeading: "You cancelled your order",
-        buyerLine: `Your ${fish} order #${orderIdShort} is cancelled.${why}${refund}`,
+        buyerHeading: "Your order is cancelled",
+        buyerLine: `Your ${fish} order #${orderIdShort} is cancelled, as you asked.${why}${refund} Whenever you'd like fish again, the menu is open. Questions? ${help}.`,
         sellerSubject: `Order CANCELLED by the buyer — ${fish} · #${orderIdShort}`,
         sellerHeading: "Order cancelled by the buyer",
         sellerLine: `The buyer cancelled their ${fish} order #${orderIdShort}${amt}.${why} Do not prepare this order.`,
@@ -83,8 +86,8 @@ function copyLines(event: OrderEvent, species: string, orderIdShort: string, amo
     case "cancelled_by_seller":
       return {
         buyerSubject: `Order cancelled — ${fish} · #${orderIdShort}`,
-        buyerHeading: "Order cancelled",
-        buyerLine: `Your ${fish} order #${orderIdShort} couldn't be fulfilled and is cancelled.${why}${refund}`,
+        buyerHeading: "Sorry, your order couldn't go ahead",
+        buyerLine: `Sorry, your ${fish} order #${orderIdShort} couldn't go ahead.${why}${refund} Want another fish or a different slot? ${help}, we'll help you right away.`,
         sellerSubject: `You cancelled order #${orderIdShort} — ${fish}`,
         sellerHeading: "Order cancelled",
         sellerLine: `You cancelled ${fish} order #${orderIdShort}.${why} The buyer has been notified and refunded.`,
@@ -92,8 +95,8 @@ function copyLines(event: OrderEvent, species: string, orderIdShort: string, amo
     case "expired_unpaid":
       return {
         buyerSubject: `Order cancelled — payment not completed · ${fish}`,
-        buyerHeading: "Order cancelled",
-        buyerLine: `Your ${fish} order #${orderIdShort} was cancelled because payment was not completed in time. Nothing has been charged. You can order again any time.`,
+        buyerHeading: "Your order didn't go through",
+        buyerLine: `Your ${fish} order #${orderIdShort} didn't go through, so it's now closed and no payment was taken. Got stuck anywhere? ${help}, we'll sort it out. Whenever you'd like, the menu is open for your next order.`,
         sellerSubject: `Order expired unpaid — ${fish} · #${orderIdShort}`,
         sellerHeading: "Order expired unpaid",
         sellerLine: `The buyer never completed payment for ${fish} order #${orderIdShort}, so it was cancelled automatically. Do not prepare this order. Stock has been released.`,
@@ -102,7 +105,7 @@ function copyLines(event: OrderEvent, species: string, orderIdShort: string, amo
       return {
         buyerSubject: `Refund processed — ${fish} · #${orderIdShort}`,
         buyerHeading: "Refund processed",
-        buyerLine: `A refund${amt} was processed for your ${fish} order #${orderIdShort}. It should reach your account in 5–7 working days.`,
+        buyerLine: `A refund${amt} was processed for your ${fish} order #${orderIdShort}. It should reach your account in 5–7 working days. Questions? ${help}.`,
         sellerSubject: `Refund processed — ${fish} · #${orderIdShort}`,
         sellerHeading: "Refund processed",
         sellerLine: `A refund${amt} was processed for ${fish} order #${orderIdShort}.`,
@@ -118,7 +121,7 @@ function shell(heading: string, line: string, orderId: string, cta: string, item
   <h1 style="font-size:22px;margin:0 0 12px;color:#0F172A;">${heading}</h1>
   <p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 20px;">${line}</p>${items}
   <a href="${url}" style="display:inline-block;background:#0066cc;color:#fff;padding:12px 26px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">${cta}</a>
-  <p style="font-size:12px;color:#94A3B8;margin:24px 0 0;line-height:1.5;">Relifish · Mumbai<br/>Need help? <a href="${help}" target="_blank" style="color:#0066cc;">Message us on WhatsApp</a> · ${SUPPORT_EMAIL}</p>
+  <p style="font-size:12px;color:#94A3B8;margin:24px 0 0;line-height:1.5;">Relifish · Mumbai<br/>Need help? <a href="${help}" target="_blank" style="color:#0066cc;">WhatsApp</a> or call us on 9152207607, a real person replies · ${SUPPORT_EMAIL}</p>
 </div>`;
 }
 

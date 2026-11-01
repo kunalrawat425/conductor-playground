@@ -29,21 +29,21 @@ export function buyerOrderPushNotification(
     }
     const refund = cancel.refunded ? " Your payment is being refunded in full." : "";
     if (cancel.by === "seller") {
-      return { title: "Order cancelled", body: `Your ${fish}order couldn't be fulfilled and is cancelled.${reason}${refund}`.trim() };
+      return { title: "Order cancelled", body: `Sorry, your ${fish}order couldn't go ahead.${reason}${refund} Want another fish or slot? WhatsApp us on 9152207607.`.trim() };
     }
     if (cancel.by === "buyer") {
       return { title: "You cancelled your order", body: `Your ${fish}order is cancelled.${reason}${refund}`.trim() };
     }
   }
+  // Gentle next-step wording (founder, 1 Nov): never a dues notice or "pay now"; help is a real person.
+  const almostDone = {
+    title: "Your order is almost done",
+    body: `Your ${species ? `${species} ` : ""}order is saved. The payment is the last step to confirm it for your slot. Stuck? WhatsApp us on 9152207607.`,
+  };
   const messages: Record<string, { title: string; body: string }> = {
     // Razorpay is the only payment method: the buyer pays in a modal, there is
     // no screenshot to upload (BUG-23 told every buyer to upload one).
-    placed: {
-      title: "Order placed",
-      body: species
-        ? `Tap to pay securely and confirm your ${species} order.`
-        : "Tap to pay securely and confirm your order.",
-    },
+    placed: almostDone,
     confirmed: {
       title: "Order Confirmed!",
       body: species
@@ -60,37 +60,29 @@ export function buyerOrderPushNotification(
       // Was "Order Update" — indistinguishable from the unknown-status fallback,
       // so a decline arrived on the lock screen looking like routine noise.
       title: "Order declined",
-      body: species ? `Sorry, your ${species} order was declined` : "Your order was declined",
+      body: `Sorry, your ${species ? `${species} ` : ""}order couldn't go ahead. Want another fish or slot? WhatsApp us on 9152207607.`,
     },
     // Emitted by the expire-pending-orders cron. Must make clear that nothing
     // was charged, otherwise a silent "cancelled" reads like money vanished.
     expired_unpaid: {
-      title: "Order cancelled",
-      body: species
-        ? `Your ${species} order was cancelled — payment wasn't completed. You haven't been charged.`
-        : "Your order was cancelled — payment wasn't completed. You haven't been charged.",
+      title: "Your order didn't go through",
+      body: `No payment was taken for your ${species ? `${species} ` : ""}order. Got stuck? WhatsApp us on 9152207607, we'll sort it out.`,
     },
     cancelled: {
-      title: "Order Cancelled",
-      body: species
-        ? `Your ${species} order was cancelled. Full refund processing.`
-        : "Your order was cancelled. Full refund processing.",
+      title: "Order cancelled",
+      body: `Your ${species ? `${species} ` : ""}order was cancelled. Any payment is refunded in full. Questions? WhatsApp us on 9152207607.`,
     },
     paid: {
-      title: "Payment received",
-      body: species
-        ? `We got your payment for ${species}. Waiting for confirmation.`
-        : "We got your payment. Waiting for confirmation.",
+      title: "Payment received, thank you",
+      body: `We got your payment for your ${species ? `${species} ` : ""}order. We'll let you know as soon as it's confirmed.`,
     },
     completed: {
-      title: "Order completed",
-      body: species ? `Your ${species} order is complete. Thanks!` : "Your order is complete. Thanks!",
+      title: "Delivered!",
+      body: `Hope you enjoy your ${species || "fish"}. Tap to tell us how it was.`,
     },
     refunded: {
       title: "Refund update",
-      body: species
-        ? `A refund was processed for your ${species} order`
-        : "A refund was processed for your order",
+      body: `A refund was processed for your ${species ? `${species} ` : ""}order. It reaches your account in 5–7 working days.`,
     },
     pre_order: {
       title: "Pre-order update",
@@ -100,15 +92,10 @@ export function buyerOrderPushNotification(
       title: "Order received",
       body: species ? `Your ${species} order is waiting for confirmation` : "Your order is waiting for confirmation",
     },
-    pending_payment: {
-      title: "Payment pending",
-      body: species
-        ? `Your ${species} order is waiting for payment. Tap to complete it.`
-        : "Your order is waiting for payment. Tap to complete it.",
-    },
+    pending_payment: almostDone,
     payment_required: {
-      title: "Payment needed",
-      body: species ? `Complete payment for your ${species} order` : "Complete payment for your order",
+      title: "Your order's final price is in",
+      body: `The final price of your ${species ? `${species} ` : ""}order came out a little higher. Tap to see it. Questions? WhatsApp us on 9152207607.`,
     },
     ready_for_pickup: {
       title: "Ready for pickup",

@@ -118,16 +118,7 @@ export const POST: APIRoute = async ({ request }) => {
                     <p style="font-size:14px;color:#333;line-height:1.6;margin:0;">
                       1. We check and onboard fish sellers near ${escapeHtml(area)}<br/>
                       2. You get notified the moment they go live<br/>
-                      3. You order first — with exclusive launch discounts
-                    </p>
-                  </div>
-                  <div style="background:#fff3e0;border-radius:12px;padding:16px;margin:0 0 16px;">
-                    <p style="font-size:14px;font-weight:700;color:#e65100;margin:0 0 6px;">🏷️ Your early bird perks:</p>
-                    <p style="font-size:13px;color:#333;line-height:1.5;margin:0;">
-                      ✅ Launch discounts from sellers<br/>
-                      ✅ Introductory prices<br/>
-                      ✅ First access before anyone else<br/>
-                      ✅ Early pre-order for tomorrow's catch
+                      3. You get first access to order, including early pre-orders for the next morning's catch
                     </p>
                   </div>
                   <p style="font-size:14px;color:#666;line-height:1.5;margin:0 0 16px;">
@@ -135,10 +126,10 @@ export const POST: APIRoute = async ({ request }) => {
                   </p>
                   <a href="https://www.relifish.com" style="display:inline-block;background:#0066cc;color:white;padding:12px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">Browse Relifish</a>
                   <p style="font-size:14px;color:#333;line-height:1.5;margin:16px 0 0;">
-                    💬 Want an update sooner? <a href="${whatsappLink(`Hi Relifish, please tell me when you deliver to ${String(area).slice(0, 80)}`)}" target="_blank" style="color:#0066cc;font-weight:700;">Message us on WhatsApp</a>
+                    Want an update sooner? <a href="${whatsappLink(`Hi Relifish, please tell me when you deliver to ${String(area).slice(0, 80)}`)}" target="_blank" style="color:#0066cc;font-weight:700;">Message us on WhatsApp</a>
                   </p>
                   <p style="font-size:12px;color:#999;margin:20px 0 0;line-height:1.5;">
-                    Questions? WhatsApp +91 91522 07607 or email ${SUPPORT_EMAIL}<br/>
+                    Questions? WhatsApp or call us on 9152207607, a real person replies. Or email ${SUPPORT_EMAIL}<br/>
                     — Team Relifish, Mumbai
                   </p>
                 </div>

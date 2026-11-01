@@ -648,7 +648,7 @@ import { whatsappLink } from "../lib/brand";
 
     function statusLabel(s: string) {
       const map: Record<string, string> = {
-        pending: "Pay now", pending_payment: "Pay now", payment_required: "Pay balance",
+        pending: "Almost done", pending_payment: "Almost done", payment_required: "Final price is in",
         pre_order: "Pre-order", scheduled: "Scheduled",
         confirmed: "Confirmed", paid: "Paid",
         ready_for_pickup: "Ready for pickup", out_for_delivery: "Out for delivery",
@@ -694,7 +694,7 @@ import { whatsappLink } from "../lib/brand";
           const sp = o.listing?.species || "";
           // payment_required means a balance is still owed — same CTA as an unpaid order.
           const isPendingPayment = o.status === "pending" || o.status === "pending_payment" || o.status === "payment_required";
-          const cta = isPendingPayment ? "Complete payment →" : (ACTIVE.has(o.status) ? "Track →" : "View →");
+          const cta = isPendingPayment ? "Finish my order →" : "View →";
           return `<a href="/track/${o.id}" style="display:block;text-decoration:none;color:inherit;background:var(--v2-bg);border:1px solid ${isPendingPayment ? 'var(--v2-brand)' : 'var(--v2-border)'};border-radius:var(--v2-radius);padding:12px 14px;margin-bottom:8px;">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
               <div>
