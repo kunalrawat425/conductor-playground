@@ -15,8 +15,8 @@ const apply = flag === "--apply";
 const { WA_TOKEN = "", WA_WABA_ID = "", WA_PHONE_NUMBER_ID = "", WA_APP_ID = "" } = process.env;
 
 export const PROFILE = {
-  about: "Fish from local Thane sellers. Order today or pre-order.",
-  description: "Relifish is a marketplace for fish from local sellers in Thane. Order today in a 2-hour delivery slot, or pre-order for a later day. Cleaned and cut the way you like. Order at relifish.com/shop",
+  about: "Fish from verified Thane sellers. Order today or pre-order.",
+  description: "Relifish is a marketplace for fish from verified sellers in Thane. Order today in a 2-hour delivery slot, or pre-order for a later day. Cleaned and cut the way you like. Order at relifish.com/shop",
   address: "Thane West, Maharashtra",
   email: "relifishstore@gmail.com",
   websites: [`${SITE}/shop`, "https://www.instagram.com/relifish_/"],

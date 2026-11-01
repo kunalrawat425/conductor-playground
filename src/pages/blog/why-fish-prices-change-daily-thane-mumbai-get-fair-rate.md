@@ -1,7 +1,7 @@
 ---
 layout: ../../layouts/Layout.astro
 title: "Why Fish Prices Change Every Day in Thane & Mumbai"
-description: "Why pomfret, surmai and prawn prices move day to day: sea conditions, the size of the catch, the landing auction, season and demand. Plus how to compare today's prices from verified local sellers."
+description: "Why pomfret, surmai and prawn prices move day to day: sea conditions, the size of the catch, the landing auction, season and demand. Plus how to compare today's prices from verified sellers."
 pubDate: 2026-06-19
 updatedDate: 2026-10-09
 author: "Relifish Team"
@@ -23,7 +23,7 @@ When the sea is rough, fewer boats go out and less fish comes in. Less supply me
 
 ## 2. The landing auction
 
-Most sea fish in Mumbai is sold at landing centres, where wholesalers and local sellers bid for each lot. The price at auction depends on that day's catch and demand, and your local seller's price follows it.
+Most sea fish in Mumbai is sold at landing centres, where wholesalers and retail fish sellers bid for each lot. The price at auction depends on that day's catch and demand, and your nearby seller's price follows it.
 
 ## 3. Season
 
