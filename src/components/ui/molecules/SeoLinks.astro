@@ -1,6 +1,7 @@
 ---
-/** Trust links (ordering guide, about, contact, policies) at the end of buyer pages. App pages keep their bottom nav. */
+/** Trust links (today's prices, ordering guide, about, contact, policies) at the end of buyer pages. App pages keep their bottom nav. */
+const onPricePage = Astro.url.pathname.replace(/\/+$/, "") === "/fish-price-today";
 ---
 <nav aria-label="More on Relifish" style="padding:16px;border-top:1px solid var(--v2-border);font:400 13px/1.9 Inter;color:var(--v2-ink-3);">
-  <div><a href="/blog/first-relifish-order-guide-thane">How ordering works</a> · <a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/shipping-policy">Delivery policy</a> · <a href="/refund-policy">Refunds</a></div>
+  <div>{!onPricePage && <><a href="/fish-price-today">Today's fish prices</a> · </>}<a href="/blog/first-relifish-order-guide-thane">How ordering works</a> · <a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/shipping-policy">Delivery policy</a> · <a href="/refund-policy">Refunds</a></div>
 </nav>

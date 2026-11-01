@@ -20,7 +20,7 @@ export const SPECIES: Record<string, Species> = {
   bombil: { english: "Bombil (Bombay Duck)", marathi: "बोंबील", defaultUnit: "piece" },
   prawns: { english: "Prawns", marathi: "कोळंबी", defaultUnit: "piece" },
   crab: { english: "Crab", marathi: "खेकडा", defaultUnit: "piece" },
-  squid: { english: "Squid", marathi: "मांदेली", defaultUnit: "piece" },
+  squid: { english: "Squid", marathi: "माकूळ", defaultUnit: "piece" },
   lobster: { english: "Lobster", marathi: "शेवंड", defaultUnit: "piece" },
   oyster: { english: "Oyster", marathi: "कालव", defaultUnit: "piece" },
   clam: { english: "Clam", marathi: "शिंपल्या", defaultUnit: "piece" },

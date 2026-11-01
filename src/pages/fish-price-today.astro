@@ -1,5 +1,5 @@
 ---
-// /fish-price-today: today's fish rates per kg from live seller listings (Thane, South Mumbai, Navi Mumbai).
+// /fish-price-today: today's fish rates per kg from live seller listings.
 // Targets "fish price today mumbai/thane", "fish rate today". Numbers come only from live listings.
 export const prerender = false;
 
@@ -46,11 +46,25 @@ const range = (rows: HubRow[]) => {
 };
 const statusText = { InStock: "Today", PreOrder: "Pre-order", OutOfStock: "Not today" } as const;
 const url = canonicalFor("/fish-price-today");
-const summary = bySpecies.filter((s) => range(s.rows)).slice(0, 4).map((s) => `${s.local} ${range(s.rows)}`).join(", ");
+// Say "Mumbai" only when a listed seller is outside Thane (today every row may be Thane).
+const place = bySpecies.every((s) => s.rows.every((r) => r.area === "Thane")) ? "Thane" : "Thane & Mumbai";
+const title = place === "Thane"
+  ? `Fish Price Today in Thane (${shortDate}): Rates per kg | Relifish`
+  : `Fish Price Today in Thane & Mumbai (${shortDate}) per kg | Relifish`;
+// Meta ≤155 chars: fish names from today's live listings, as many as fit.
+const metaHead = `Today's fish rates per kg from verified sellers delivering in ${place}`;
+const metaTail = ". Compare sellers, then order.";
+let names: string[] = [];
+for (const s of bySpecies) {
+  const next = [...names, s.local.toLowerCase()];
+  if ((`${metaHead}: ${next.join(", ")} and more${metaTail}`).length > 155) break;
+  names = next;
+}
+const description = metaHead + (names.length ? `: ${names.join(", ")}${names.length < bySpecies.length ? " and more" : ""}` : "") + metaTail;
 ---
 <AppShell
-  title={`Fish Price Today in Thane, ${shortDate}: Live Rates per kg | Relifish`}
-  description={`Today's fish rates (${today}) from verified sellers in Thane, South Mumbai and Navi Mumbai${summary ? `: ${summary}` : ""}. Updated live from each seller's listing.`}
+  title={title}
+  description={description}
   canonical={url}
   noindex={unavailable || bySpecies.length === 0}
   header={{ variant: "page", backHref: "/shop", title: "Relifish" }}
@@ -60,7 +74,7 @@ const summary = bySpecies.filter((s) => range(s.rows)).slice(0, 4).map((s) => `$
     "@graph": [
       {
         "@type": "ItemList",
-        "name": `Fish price today in Thane & Mumbai (${today})`,
+        "name": `Fish price today in ${place} (${today})`,
         "itemListElement": bySpecies.map((s, i) => ({ "@type": "ListItem", "position": i + 1, "name": `${s.local} price today`, "url": `${SITE_URL}/fish/${s.species}` })),
       },
       {
@@ -75,7 +89,7 @@ const summary = bySpecies.filter((s) => range(s.rows)).slice(0, 4).map((s) => `$
 >
   <article style="padding:16px;display:flex;flex-direction:column;gap:16px;">
     <header>
-      <h1 style="font:800 22px/1.3 Inter;margin:0 0 6px;">Fish price today in Thane &amp; Mumbai ({today})</h1>
+      <h1 style="font:800 22px/1.3 Inter;margin:0 0 6px;">Fish price today in {place} ({today})</h1>
       <p style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);">
         {unavailable
           ? "We couldn't load today's rates. Please try again in a minute."
