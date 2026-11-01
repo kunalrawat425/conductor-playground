@@ -50,7 +50,7 @@ const url = canonicalFor("/fish-price-today");
 const place = bySpecies.every((s) => s.rows.every((r) => r.area === "Thane")) ? "Thane" : "Thane & Mumbai";
 const title = place === "Thane"
   ? `Fish Price Today in Thane (${shortDate}): Rates per kg | Relifish`
-  : `Fish Rate Today in Thane & Mumbai (${shortDate}), per kg | Relifish`;
+  : `Fish Price Today in Thane & Mumbai (${shortDate}) per kg | Relifish`;
 // Meta ≤155 chars: fish names from today's live listings, as many as fit.
 const metaHead = `Today's fish rates per kg from verified sellers delivering in ${place}`;
 const metaTail = ". Compare sellers, then order.";
