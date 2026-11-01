@@ -45,3 +45,19 @@ describe("razorpay-webhook signature", () => {
     expect(a.equals(b)).toBe(true);
   });
 });
+
+describe("manual dashboard refund on a cart payment (founder, 1 Nov)", () => {
+  it("is matched by amount to the one cancelled, unrefunded item; ambiguous or already refunded → none", async () => {
+    const { matchManualRefund } = await import("../../src/lib/server/refund-match");
+    const rows = [
+      { id: "a", status: "completed", refund_sent_at: null, total_price: 465, delivery_fee: 25 },
+      { id: "b", status: "completed", refund_sent_at: null, total_price: 330, delivery_fee: 0 },
+      { id: "c", status: "cancelled", refund_sent_at: null, total_price: 285, delivery_fee: 0 },
+    ];
+    expect(matchManualRefund(rows, 28500)?.id).toBe("c");
+    expect(matchManualRefund(rows, 33000)).toBeNull();                       // a delivered item: never
+    expect(matchManualRefund([...rows.slice(0, 2), { ...rows[2], refund_sent_at: "x" }], 28500)).toBeNull();
+    expect(matchManualRefund([...rows, { id: "d", status: "cancelled", refund_sent_at: null, total_price: 285, delivery_fee: 0 }], 28500)).toBeNull(); // ambiguous
+    expect(matchManualRefund([{ id: "e", status: "declined", refund_sent_at: null, total_price: 465, delivery_fee: 25 }], 49000)?.id).toBe("e"); // price + delivery
+  });
+});

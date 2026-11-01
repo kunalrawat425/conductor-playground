@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { matchManualRefund } from "../../../lib/server/refund-match";
 
 export const prerender = false;
 
@@ -117,15 +118,17 @@ export const POST: APIRoute = async ({ request, url }) => {
     // A cart paid in one go puts the same payment on several items; our refunds
     // carry notes.order_id saying which item each one is for.
     const { data: payRows, error } = await sb.from("orders")
-      .select("id, status, refund_sent_at")
+      .select("id, status, refund_sent_at, total_price, delivery_fee")
       .or(`razorpay_payment_id.eq.${razorpay_payment_id},balance_razorpay_payment_id.eq.${razorpay_payment_id}`);
     if (error) {
       console.error("[razorpay-webhook] refund lookup failed", { razorpay_payment_id, error: error.message });
       return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 });
     }
     const shared = (payRows?.length ?? 0) > 1;
+    // A refund made by hand in the Razorpay dashboard has no notes.order_id: match it by amount to
+    // the one cancelled, not-yet-refunded item on this payment (founder, 1 Nov). Ambiguous → none.
     const order = shared
-      ? (payRows || []).find((r: any) => r.id === refund?.notes?.order_id) ?? null
+      ? (payRows || []).find((r: any) => r.id === refund?.notes?.order_id) ?? matchManualRefund(payRows || [], refund_amt_paise)
       : payRows?.[0] ?? null;
     // The ledger's refund_id is per payment: one item's refund on a shared payment
     // must not mark the whole payment refunded (the other items' shares are still held).
