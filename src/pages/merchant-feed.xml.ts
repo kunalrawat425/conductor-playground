@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { supabase } from "../lib/supabase";
+import { SELLER_PUBLIC_COLUMNS, supabase } from "../lib/supabase";
 import { cleanSellerName, sellerHref } from "../lib/seller-display";
 import { SPECIES } from "../lib/species";
 import { SITE_URL } from "../lib/brand";
@@ -24,7 +24,8 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 
 export const GET: APIRoute = async () => {
   const [sRes, lRes] = await Promise.all([
-    supabase.from("sellers").select("id, name, lat, lng, location_name, is_test, has_delivery, delivery_fee_enabled, delivery_fee_type, delivery_fee_amount, delivery_fee_per_km, free_delivery_above, delivery_rad, opens_at, closes_at, accepts_preorder, open_days, preorder_days, preorder_cutoff_time, preorder_opens_at, delivery_days").eq("is_active", true),
+    // All public columns, incl. delivery-slot settings: listingAvailability needs them to match the seller's pages.
+    supabase.from("sellers").select(SELLER_PUBLIC_COLUMNS).eq("is_active", true),
     supabase.from("fish_listings").select("id, seller_id, species, fish_size, size_label, description, photo_url, is_available, is_order_paused, is_preorder_enabled, weight_avail, pricing_options").is("deleted_at", null),
   ]);
   if (sRes.error || lRes.error) {

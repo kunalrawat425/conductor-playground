@@ -7,10 +7,10 @@ export const prerender = false;
 import SeoLinks from "../../components/ui/molecules/SeoLinks.astro";
 import AppShell from "../../components/ui/AppShell.astro";
 import EmptyState from "../../components/ui/molecules/EmptyState.astro";
-import { supabase } from "../../lib/supabase";
+import { SELLER_PUBLIC_COLUMNS, supabase } from "../../lib/supabase";
 import { SPECIES, getSpeciesDisplay } from "../../lib/species";
 import { SITE_URL, canonicalFor } from "../../lib/brand";
-import { hubIndexable, hubPriceRange, hubPriceText, hubRows, type HubRow } from "../../lib/fish-hub";
+import { hubIndexable, hubPlace, hubPriceRange, hubPriceText, hubRangeRows, hubRowPriceText, hubRows, hubTitle, type HubRow } from "../../lib/fish-hub";
 import { SPECIES_GUIDES } from "../../lib/species-guides";
 
 const species = (Astro.params.species || "").toLowerCase();
@@ -22,14 +22,15 @@ let unavailable = false;
 if (known) {
   try {
     const [sellersRes, listingsRes] = await Promise.all([
-      supabase.from("sellers").select("id, name, location_name, lat, lng").eq("is_active", true).or("is_test.is.null,is_test.eq.false"),
+      // Seller hours too, so availability is the same rule as the feed and the seller's pages.
+      supabase.from("sellers").select(SELLER_PUBLIC_COLUMNS).eq("is_active", true).or("is_test.is.null,is_test.eq.false"),
       supabase
         .from("fish_listings")
-        .select("seller_id, species, is_available, is_preorder_enabled, is_order_paused, weight_avail, pricing_options").is("deleted_at", null)
+        .select("seller_id, species, size_label, is_available, is_preorder_enabled, is_order_paused, weight_avail, pricing_options").is("deleted_at", null)
         .eq("species", species),
     ]);
     if (sellersRes.error || listingsRes.error) throw sellersRes.error || listingsRes.error;
-    rows = hubRows(sellersRes.data ?? [], (listingsRes.data ?? []) as any, species);
+    rows = hubRows((sellersRes.data ?? []) as any, (listingsRes.data ?? []) as any, species);
   } catch {
     unavailable = true;
   }
@@ -56,24 +57,34 @@ const updatedAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata",
 const today = new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "long", year: "numeric" });
 // Today's price = sellers with this fish in stock today (live listing); Thane first, where buyers search.
 const live = rows.filter((r) => r.offer.availability === "InStock");
+const preorder = rows.filter((r) => r.offer.availability === "PreOrder");
 const thane = live.filter((r) => r.area === "Thane");
 const thaneRange = hubPriceRange(thane);
 const liveRange = hubPriceRange(live);
 const names = (rs: HubRow[]) => rs.map((r) => r.seller).join(", ");
-// Google title only (founder, 25 Oct): "Rawas ₹450/kg Today in Thane". Per-kg prices only; Thane first, else any live seller.
-const titleRange = thaneRange?.unit === "kg" ? thaneRange : liveRange?.unit === "kg" ? liveRange : null;
-const titlePrice = titleRange ? hubPriceText(titleRange) : null;
+// Sellers selling by the pack next to a ₹/kg range keep their own pack price; never folded into the range.
+const packRows = (rs: HubRow[]) => rs.filter((r) => !hubRangeRows(rs).includes(r));
+const packNote = (rs: HubRow[]) => packRows(rs).map((r) => `${r.seller} sells it by the pack at ${hubRowPriceText(r)}`).join("; ");
+// Where the listing sellers actually are (shop location), never a place without a live seller.
+const place = hubPlace(rows);
+const inPlace = place ? ` in ${place}` : "";
+const preorderText = preorder.map((r) => `${r.seller}, ${hubRowPriceText(r)}`).join("; ");
 const thanePriceAnswer = thaneRange
-  ? `On ${today}, ${local} in Thane is listed at ${hubPriceText(thaneRange)} on Relifish by ${names(thane)} (live listing, updated ${updatedAt} IST). Each seller sets the price, and it changes daily with the catch.`
+  ? `On ${today}, ${local} in Thane is listed at ${hubPriceText(thaneRange)} on Relifish by ${names(hubRangeRows(thane))}${packNote(thane) ? `; ${packNote(thane)}` : ""} (live listing, updated ${updatedAt} IST). Each seller sets the price, and it changes daily with the catch.`
   : liveRange
-    ? `No seller in Thane has ${local} in stock on Relifish right now (${today}). Other verified sellers list it at ${hubPriceText(liveRange)} today: ${names(live)}.`
-    : `No seller on Relifish has ${local} in stock right now (${today}), so there is no live price to show. The shop page lists what is available today.`;
+    ? `No seller in Thane has ${local} in stock on Relifish right now (${today}). Other verified sellers list it at ${hubPriceText(liveRange)} today: ${names(hubRangeRows(live))}.`
+    : `No seller on Relifish has ${local} in stock right now (${today}), so there is no live price to show.${preorder.length ? ` You can pre-order it: ${preorderText}.` : " The shop page lists what is available today."}`;
 // Other names buyers search for (English and local names), without repeating the page name.
 const localNames = [englishOnly, ...(guide?.alsoCalled ?? [])].filter((n, i, a) => n.toLowerCase() !== local.toLowerCase() && a.findIndex((m) => m.toLowerCase() === n.toLowerCase()) === i);
-const statusText = { InStock: "Available today", PreOrder: "Pre-order for tomorrow", OutOfStock: "Not today" } as const;
-const priceText = (r: HubRow) => (r.offer.lowPrice === r.offer.highPrice ? `₹${r.offer.lowPrice}` : `₹${r.offer.lowPrice}–₹${r.offer.highPrice}`);
-const kgText = (k: { low: number; high: number }) => hubPriceText({ ...k, unit: "kg" });
+const statusText = { InStock: "Available today", PreOrder: "Pre-order", OutOfStock: "Not in stock today" } as const;
+const orderText = { InStock: "Order", PreOrder: "Pre-order", OutOfStock: "View" } as const;
+const mainPrice = (r: HubRow) => hubPriceText(r.perKg ? { ...r.perKg, unit: "kg" } : { low: r.offer.lowPrice, high: r.offer.highPrice, unit: "pack" });
+// Primary CTA: the first seller with it today, else the first taking pre-orders, else the shop.
+const ctaRow = live[0] ?? preorder[0];
 const areasList = [...new Set(rows.map((r) => r.area).filter(Boolean))];
+// Title (hubTitle): "Surmai (Kingfish) ₹1098/kg Today in Thane | Relifish", ≤60.
+const alias = englishOnly.toLowerCase() !== local.toLowerCase() ? englishOnly : guide?.alsoCalled?.[0];
+const title = known ? hubTitle(local, alias, rows) : "Fish not found · Relifish";
 const faqs = known && rows.length ? [
   { q: `What is the ${local} price today in Thane?`, a: thanePriceAnswer },
   ...(englishOnly.toLowerCase() !== local.toLowerCase() ? [{ q: `What is ${local} called in English?`, a: `${local} is ${englishOnly} in English.${localNames.length > 1 ? ` It is also called ${localNames.filter((n) => n !== englishOnly).join(", ")}.` : ""}` }] : []),
@@ -81,12 +92,18 @@ const faqs = known && rows.length ? [
   ...(guide?.faqs ?? []),
   { q: `Where can I order ${local} online?`, a: `${rows.length === 1 ? "One verified seller lists" : `${rows.length} verified sellers list`} ${local} on Relifish${areasList.length ? `, in ${areasList.join(", ")}` : ""}. Order same-day while the seller is open, or pre-order for tomorrow; the seller delivers or keeps it ready for pickup.` },
 ] : [];
+// Meta ≤155, today's range (Thane first) only when a seller has it in stock.
+const metaRange = thaneRange ?? liveRange;
+const who = rows.length === 1 ? `From ${rows[0].seller}, a verified seller` : `Compare ${rows.length} verified sellers`;
 const description = rows.length
-  ? `${local} price today from ${rows.length} verified ${rows.length === 1 ? "seller" : "sellers"} in Thane & Mumbai, per kg. ${guide ? guide.summary + " " : ""}Order same-day or pre-order; the seller delivers.`
+  ? [
+      `${local} price${metaRange?.unit === "pack" ? "" : " per kg"} today${inPlace}${metaRange ? `: ${hubPriceText(metaRange)}` : ""}. ${who}, then order same-day or pre-order; the seller delivers.`,
+      `${local} price per kg today${inPlace}. ${who}, then order same-day or pre-order.`,
+    ].find((d) => d.length <= 155) ?? `${local} price per kg today${inPlace} from verified sellers.`
   : `${english} is not listed by any seller on Relifish right now.`;
 ---
 <AppShell
-  title={known ? titlePrice ? `${local}${englishOnly.toLowerCase() !== local.toLowerCase() ? ` (${englishOnly})` : ""} ${titlePrice} Today in Thane | Relifish` : `${local}${englishOnly.toLowerCase() !== local.toLowerCase() ? ` (${englishOnly})` : ""} Price Today in Thane & Mumbai | Relifish` : "Fish not found · Relifish"}
+  title={title}
   description={description}
   canonical={url}
   noindex={!indexable}
@@ -100,29 +117,38 @@ const description = rows.length
         "name": `${english} from verified sellers on Relifish`,
         "itemListElement": rows.map((r, i) => ({ "@type": "ListItem", "position": i + 1, "name": `${english} — ${r.seller}`, "url": SITE_URL + r.href })),
       },
-      ...(live.length ? [{
+      {
         "@type": "Product",
         "@id": `${url}#product`,
         "name": english,
         "description": description,
         "url": url,
         ...(["pomfret", "surmai", "rawas", "prawns", "bangda", "crab"].includes(species) ? { "image": `${SITE_URL}/fish/${species}.jpg?v=2` } : {}),
-        "brand": { "@type": "Brand", "name": "Relifish" },
-        // One Offer per seller with it in stock today, at the price the table shows (₹/kg when sold by weight).
-        "offers": live.map((r) => {
-          const price = r.perKg ? r.perKg.low : r.offer.lowPrice;
+        // Brand = the seller (as in the merchant feed); with several sellers each Offer names its own.
+        ...(new Set(rows.map((r) => r.seller)).size === 1 ? { "brand": { "@type": "Brand", "name": rows[0].seller } } : {}),
+        // One Offer per table row: same price, unit and availability the row shows (₹/kg by weight, else per pack).
+        "offers": rows.map((r) => {
+          const [low, high] = r.perKg ? [r.perKg.low, r.perKg.high] : [r.offer.lowPrice, r.offer.highPrice];
           return {
             "@type": "Offer",
-            "price": price,
+            "price": low,
             "priceCurrency": "INR",
-            "availability": "https://schema.org/InStock",
+            "availability": `https://schema.org/${r.offer.availability}`,
             "url": SITE_URL + r.href,
             "seller": { "@type": "Organization", "name": r.seller },
             "hasMerchantReturnPolicy": RETURN_POLICY,
-            ...(r.perKg ? { "priceSpecification": { "@type": "UnitPriceSpecification", "price": price, "priceCurrency": "INR", "referenceQuantity": { "@type": "QuantitativeValue", "value": 1, "unitCode": "KGM" } } } : {}),
+            "priceSpecification": {
+              "@type": "UnitPriceSpecification",
+              "price": low,
+              ...(high !== low ? { "minPrice": low, "maxPrice": high } : {}),
+              "priceCurrency": "INR",
+              ...(r.perKg
+                ? { "unitCode": "KGM", "unitText": "kg", "referenceQuantity": { "@type": "QuantitativeValue", "value": 1, "unitCode": "KGM" } }
+                : { "unitText": r.packWeight ? `pack (${r.packWeight})` : "pack" }),
+            },
           };
         }),
-      }] : []),
+      },
       ...(faqs.length ? [{
         "@type": "FAQPage",
         "mainEntity": faqs.map((f) => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } })),
@@ -142,7 +168,7 @@ const description = rows.length
   ) : (
     <article style="padding:16px;display:flex;flex-direction:column;gap:16px;">
       <header>
-        <h1 style="font:800 22px/1.3 Inter;margin:0 0 6px;">{local} price today in Thane &amp; Mumbai</h1>
+        <h1 style="font:800 22px/1.3 Inter;margin:0 0 6px;">{local} price today{inPlace}</h1>
         {localNames.length > 0 && <p style="font:400 13px/1.5 Inter;margin:0 0 6px;color:var(--v2-ink-3);">Also called {localNames.join(", ")}.</p>}
         <p style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);">
           {rows.length
@@ -155,18 +181,28 @@ const description = rows.length
 
       {!unavailable && (
         <section style="border:1px solid var(--v2-border);border-radius:12px;padding:12px;">
-          <h2 style="font:700 16px Inter;margin:0 0 6px;">Today's price in Thane · {today}</h2>
+          <h2 style="font:700 16px Inter;margin:0 0 6px;">Today's {local} price{thaneRange?.unit === "pack" ? "" : " per kg"} in Thane · {today}</h2>
           {thaneRange ? (
             <>
               <p style="font:800 20px/1.3 Inter;margin:0 0 4px;">{hubPriceText(thaneRange)}</p>
               <p style="font:400 13px/1.5 Inter;margin:0;color:var(--v2-ink-2);">
-                From {thane.map((r, i) => <>{i > 0 && ", "}<a href={r.shopHref} style="font-weight:700;color:var(--v2-brand);">{r.seller}</a></>)}, live listing updated {updatedAt} IST. Prices change daily with the catch.
+                From {hubRangeRows(thane).map((r, i) => <>{i > 0 && ", "}<a href={r.href} style="font-weight:700;color:var(--v2-brand);">{r.seller}</a></>)}, live listing updated {updatedAt} IST. Prices change daily with the catch.
               </p>
+              {packRows(thane).map((r) => (
+                <p style="font:400 13px/1.5 Inter;margin:4px 0 0;color:var(--v2-ink-2);">
+                  <a href={r.href} style="font-weight:700;color:var(--v2-brand);">{r.seller}</a> sells it by the pack: {hubRowPriceText(r)}.
+                </p>
+              ))}
             </>
           ) : (
             <p style="font:400 14px/1.6 Inter;margin:0;color:var(--v2-ink-2);">
-              No seller in Thane has {local} in stock on Relifish right now.{liveRange && ` Other verified sellers list it at ${hubPriceText(liveRange)} today (see below).`} <a href="/shop" style="font-weight:700;color:var(--v2-brand);">See what's available today →</a>
+              Not in stock in Thane on Relifish right now.{liveRange && ` Other verified sellers list it at ${hubPriceText(liveRange)} today (see below).`}{!liveRange && preorder.length > 0 && ` You can pre-order it: ${preorderText}.`}{!liveRange && !preorder.length && rows.length > 0 && " The last listed prices are below, for reference."} <a href="/shop" style="font-weight:700;color:var(--v2-brand);">See what's available today →</a>
             </p>
+          )}
+          {ctaRow && (
+            <a href={ctaRow.href} class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" style="margin-top:10px;">
+              {ctaRow.offer.availability === "InStock" ? `Order ${local} from ${ctaRow.seller}` : `Pre-order ${local} from ${ctaRow.seller}`}
+            </a>
           )}
         </section>
       )}
@@ -177,20 +213,27 @@ const description = rows.length
           <table style="width:100%;border-collapse:collapse;font:400 13px Inter;">
             <thead>
               <tr style="text-align:left;color:var(--v2-ink-3);">
-                <th style="padding:6px 4px;">Seller</th><th style="padding:6px 4px;">Today</th><th style="padding:6px 4px;">Price</th>
+                <th style="padding:6px 4px;">Seller</th><th style="padding:6px 4px;">Today</th><th style="padding:6px 4px;">Price</th><th style="padding:6px 4px;"></th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr style="border-top:1px solid var(--v2-border);">
+                <tr style="border-top:1px solid var(--v2-border);vertical-align:top;">
                   <td style="padding:8px 4px;"><a href={r.href} style="font-weight:700;color:var(--v2-brand);">{r.seller}</a>{r.area && <div style="color:var(--v2-ink-3);font-size:12px;">{r.area}</div>}</td>
                   <td style="padding:8px 4px;">{statusText[r.offer.availability]}</td>
-                  <td style="padding:8px 4px;white-space:nowrap;">{r.perKg ? kgText(r.perKg) : `${priceText(r)} / pack`}</td>
+                  <td style="padding:8px 4px;">
+                    {r.offer.availability === "OutOfStock" && <div style="color:var(--v2-ink-3);font-size:12px;">Last listed</div>}
+                    <span style="white-space:nowrap;">{mainPrice(r)}</span>
+                    {r.packWeight && <div style="color:var(--v2-ink-3);font-size:12px;">Pack: {r.packWeight}</div>}
+                  </td>
+                  <td style="padding:8px 4px;text-align:right;">
+                    <a href={r.href} class={`v2-btn ${r.offer.availability === "OutOfStock" ? "v2-btn-secondary" : "v2-btn-primary"} v2-btn-sm`}>{orderText[r.offer.availability]}</a>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p style="font:400 12px/1.5 Inter;color:var(--v2-ink-3);margin:8px 0 0;">Prices by weight are shown per kg (packs converted); fish sold by the piece shows the pack price. Open a seller to see each option. Pre-order prices are a range: you pay the top, and the difference is refunded once the seller sets the final price.</p>
+          <p style="font:400 12px/1.5 Inter;color:var(--v2-ink-3);margin:8px 0 0;">Prices by weight are shown per kg (packs converted); fish sold by the piece or pack shows the pack price and weight. When a seller has it out of stock, the last listed price is shown for reference. Open a seller to see each option. Pre-order prices are a range: you pay the top, and the difference is refunded once the seller sets the final price.</p>
         </section>
       )}
 
