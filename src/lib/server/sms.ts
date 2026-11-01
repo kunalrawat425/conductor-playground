@@ -36,7 +36,7 @@ export const SMS_TEXT: Record<SmsKey, string> = {
   CANCELLED: "Sorry {#var#}, your Relifish order {#var#} could not go ahead: {#var#}. Your refund of {#var#} will reach your account in 5-7 working days. Want another fish or slot? WhatsApp or call us on 9152207607. - Relifish",
   CANCELLED_NOPAY: "Sorry {#var#}, your Relifish order {#var#} could not go ahead: {#var#}. No payment was taken. Want another fish or slot? WhatsApp or call us on 9152207607. - Relifish",
   // Promotional (DLT category Promotional, sent from the numeric promo header MSG91_PROMO_SENDER, 10:00–21:00 only).
-  PROMO_NEW: "Hi {#var#}, fresh fish is in on Relifish: {#var#}. Order by {#var#} for delivery {#var#}, cleaned and cut. See the menu: https://www.relifish.com/shop - Relifish",
+  PROMO_NEW: "Hi {#var#}, verified fish sellers delivering near you: {#var#}. Next delivery {#var#}, cleaned and cut. See what's fresh: https://www.relifish.com/shop - Relifish",
   PROMO_CART: "Hi {#var#}, your {#var#} is still in your Relifish cart. The next delivery slot is {#var#}, cleaned and cut. Questions? Call 9152207607. Cart: https://www.relifish.com/shop - Relifish",
   PROMO_AGAIN: "Hi {#var#}, hope you enjoyed the {#var#}. Fresh stock is in, next slot {#var#}, cleaned and cut. Order again: https://www.relifish.com/shop - Relifish",
 };

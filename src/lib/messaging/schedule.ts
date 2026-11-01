@@ -133,16 +133,21 @@ export function offerAt(seller: SlotSeller, ms: number): Offer | null {
 
 /** Seller for this buyer: their cart's seller; else the nearest seller that delivers to them;
  *  else (no location) the nearest to Thane West. */
-export function pickSeller(b: BuyerState, sellers: MsgSeller[]): MsgSeller | null {
-  const latest = [...b.cart].sort((x, y) => Date.parse(y.updated_at) - Date.parse(x.updated_at))[0];
-  if (latest) return sellers.find((s) => s.id === latest.seller_id) ?? null;
+/** Sellers that deliver to the buyer (their pin, else Thane West), nearest first. */
+export function coveringSellers(b: BuyerState, sellers: MsgSeller[]): MsgSeller[] {
   const at = b.lat != null && b.lng != null ? { lat: Number(b.lat), lng: Number(b.lng) } : THANE_WEST;
-  const covering = sellers
+  return sellers
     .filter((s) => s.lat != null && s.lng != null)
     .map((s) => ({ s, d: haversineKm(at.lat, at.lng, Number(s.lat), Number(s.lng)) }))
     .filter(({ s, d }) => d <= (Number(s.delivery_rad) || 5))
-    .sort((a, b2) => a.d - b2.d);
-  return covering[0]?.s ?? null;
+    .sort((a, b2) => a.d - b2.d)
+    .map(({ s }) => s);
+}
+
+export function pickSeller(b: BuyerState, sellers: MsgSeller[]): MsgSeller | null {
+  const latest = [...b.cart].sort((x, y) => Date.parse(y.updated_at) - Date.parse(x.updated_at))[0];
+  if (latest) return sellers.find((s) => s.id === latest.seller_id) ?? null;
+  return coveringSellers(b, sellers)[0] ?? null;
 }
 
 const lastCartMs = (b: BuyerState) => Math.max(0, ...b.cart.map((l) => Date.parse(l.updated_at)));
@@ -286,12 +291,12 @@ export const PROMO_SMS_END = 21 * 60;
 export type PromoSmsKey = "PROMO_NEW" | "PROMO_CART" | "PROMO_AGAIN";
 
 /**
- * The SMS version of a promo decision: one DLT promotional template per stage, no prices, no seller
- * names. Same rules as the WhatsApp promo (decide(): stage, 1 a day, 72 h gap, 48 h after a reminder,
+ * The SMS version of a promo decision: one DLT promotional template per stage, no prices. The
+ * generic promo names the verified sellers delivering to them, nearest first (founder, 1 Nov); `all` = every live seller. Same rules as the WhatsApp promo (decide(): stage, 1 a day, 72 h gap, 48 h after a reminder,
  * DND / STOP / open order / just delivered / inactive) plus the 10:00–21:00 window. null = no SMS
  * (outside the window, the unpaid stage, or the cart-swap substitute, which needs a price).
  */
-export function promoSms(d: Decision, b: BuyerState, now: number): { key: PromoSmsKey; vars: string[] } | null {
+export function promoSms(d: Decision, b: BuyerState, now: number, all: MsgSeller[] = []): { key: PromoSmsKey; vars: string[] } | null {
   const m = istMin(now);
   if (m < PROMO_SMS_START || m >= PROMO_SMS_END) return null;
   const fish = d.items.join(" and ");
@@ -302,22 +307,10 @@ export function promoSms(d: Decision, b: BuyerState, now: number): { key: PromoS
     case "rf2_promo_unpaid": return null;
     case "rf2_order_again": return fish ? { key: "PROMO_AGAIN", vars: [b.name, fish, d.when] } : null;
     case "rf2_catch_prices": case "rf2_catch_preorder": {
-      // Names only (the WhatsApp menu line carries prices; promos never do): 3 different fish, one name per species
-      // ("Silver pomfret combo, Silver Pomfret, Khapri Pomfret" would read as one fish three times).
-      // A listing's fish = its species, and also the last word of its name without "combo / marinated / cut…"
-      // (some combos have no species: "Silver pomfret combo" and "Silver Pomfret" are both pomfret).
-      const core = (n: string) => n.toLowerCase().replace(/\b(combo|marinated|fresh|cut|pcs|pieces|whole|cleaned|small|medium|large|big|baby)\b/g, " ").trim().split(/\s+/).pop() || n.toLowerCase();
-      const seen = new Set<string>(), names: string[] = [];
-      for (const x of d.seller.live ?? []) {
-        const keys = [x.species ? String(x.species).toLowerCase() : "", core(x.name)].filter(Boolean);
-        if (keys.some((k) => seen.has(k))) continue;
-        keys.forEach((k) => seen.add(k)); names.push(x.name);
-      }
-      const live = names.slice(0, 3).join(", ");
-      const by = String(d.body[3] ?? "");
-      // Today: "Order by 4 PM for delivery today" (as the WhatsApp copy), not the next slot; pre-order: the slot.
-      const when = d.template === "rf2_catch_prices" ? String(d.body[4] ?? "today") : d.when;
-      return live && by ? { key: "PROMO_NEW", vars: [b.name, live, by, when] } : null;
+      // Founder (1 Nov): not a fish list. The verified sellers delivering to them, nearest first, and the next delivery.
+      const near = coveringSellers(b, all.length ? all : [d.seller]).map((x) => x.name);
+      const names = (near.length ? near : [d.seller.name]).join(", ");
+      return { key: "PROMO_NEW", vars: [b.name, names, d.when] };
     }
     default: return null;
   }

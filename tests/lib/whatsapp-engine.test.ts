@@ -516,7 +516,7 @@ describe("promotional SMS sending (founder, 1 Nov)", () => {
   const ok = (body: any) => new Response(JSON.stringify(body), { status: 200 });
   const base = () => { vi.stubEnv("SMS_LIVE", "true"); vi.stubEnv("MSG91_AUTH_KEY", "k"); vi.stubEnv("MSG91_FLOW_PROMO_NEW", "flowpromo"); vi.stubEnv("MSG91_SENDER_ID", "RLFISH"); };
   const msg = { dedupe_key: "promo:b1:2026-11-07", kind: "promo", slot_date: "2026-11-07", buyer_id: "b1", phone: "9870619974", whatsappOk: false,
-    template: "rf2_catch_prices", body: [], link_path: "/shop", sms: { key: "PROMO_NEW" as const, vars: ["Priya", "Surmai, Pomfret", "4 PM", "today, 4–6 PM"] }, smsOk: true, smsFallback: false };
+    template: "rf2_catch_prices", body: [], link_path: "/shop", sms: { key: "PROMO_NEW" as const, vars: ["Priya", "Fishtokri, The Nomadic Catch", "today, 4–6 PM"] }, smsOk: true, smsFallback: false };
   it("is off unless PROMO_SMS_LIVE=true and a promo header is set: nothing logged, nothing sent", async () => {
     base();
     const sb = fakeSb();
@@ -534,7 +534,7 @@ describe("promotional SMS sending (founder, 1 Nov)", () => {
     const r = await dispatch(sb, msg);
     expect([r.status, r.channel]).toEqual(["sent", "sms"]);
     const body = JSON.parse((globalThis.fetch as any).mock.calls[0][1].body);
-    expect(body).toMatchObject({ flow_id: "flowpromo", sender: "873543", var1: "Priya", var3: "4 PM", var4: "today, 4-6 PM" });
+    expect(body).toMatchObject({ flow_id: "flowpromo", sender: "873543", var1: "Priya", var2: "Fishtokri, The Nomadic Catch", var3: "today, 4-6 PM" });
     expect(smsPayload("f", "91x", ["a"]).sender).toBe("RLFISH");
   });
   it("a promo goes once: a second run is a duplicate", async () => {
