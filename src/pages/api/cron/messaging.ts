@@ -196,7 +196,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
       const sample = [...(seller.live || [])].filter((m) => m.photo).sort((a, b) => b.price - a.price)[0];
       const withCart = st.cart.some((l) => l.on_menu) || !sample ? st : { ...st, cart: [{ seller_id: seller.id, name: sample.name, species: sample.species, photo: sample.photo, price: sample.price, on_menu: true, updated_at: new Date().toISOString() }] };
       const d = kind === "cart" ? cartMessage(Date.now(), withCart, seller, offer) : kind === "signup" ? signupMessage(Date.now(), st, seller, offer) : null;
-      const p = kind === "promo" ? decide(Date.now(), st, sellers, [], true) : null; // test: due now, not at a slot
+      const p = kind === "promo" ? decide(Date.now(), st, sellers, [], true, true) : null; // test phone only: due now, and the per-buyer gaps (recent delivery, inactive) are skipped
       if (d) msg = { template: d.template, body: d.body, headerImage: d.photo, link_path: d.path, seller_id: seller.id, sms: d.sms };
       else if (p && !("skip" in p)) msg = { template: p.template, body: p.body, headerImage: p.photo, link_path: p.path, seller_id: seller.id, sms: promoSms(p, st, Date.now()) };
       else if (kind === "promo") return json({ error: `no promo fits right now: ${(p as any)?.skip}` }, 404);
