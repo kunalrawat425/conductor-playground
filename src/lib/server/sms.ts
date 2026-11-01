@@ -17,9 +17,9 @@ const env = (k: string) => ((import.meta as any).env?.[k] ?? process.env[k] ?? "
 
 export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT" | "DELIVERED" | "CANCELLED";
 
-/** The DLT template text for each key (registered on Smartping 1 Nov 2026: signup, cart, unpaid, confirmed, out, cancelled; paid and delivered aren't sent). */
+/** The DLT template text for each key (Smartping 1 Nov 2026: SIGNUP = relifish_account_ready, UNPAID, CONFIRMED, OUT, CANCELLED approved; CART was rejected three times as promotional, so cart reminders stay WhatsApp-only until a promotional route exists; PAID and DELIVERED aren't sent). */
 export const SMS_TEXT: Record<SmsKey, string> = {
-  SIGNUP: "Welcome to Relifish {#var#}! Fresh fish from {#var#}, cleaned, cut and delivered home. See today's fish: https://www.relifish.com/shop - Relifish",
+  SIGNUP: "Hi {#var#}, your Relifish account is ready. You can order fish from {#var#}, cleaned and cut, with home delivery. Menu: https://www.relifish.com/shop - Relifish",
   CART: "Hi {#var#}, your {#var#} from {#var#} is still in your Relifish cart. Next slot: {#var#}. Order here: https://www.relifish.com/shop - Relifish",
   UNPAID: "Hi {#var#}, your Relifish order for {#var#} is not paid yet. Pay to keep your slot {#var#}: https://www.relifish.com/track - Relifish",
   PAID: "Payment received for your Relifish order {#var#} from {#var#}. Delivery: {#var#}. Track: https://www.relifish.com/track - Relifish",
