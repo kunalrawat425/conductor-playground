@@ -85,7 +85,14 @@ const areasList = [...new Set(rows.map((r) => r.area).filter(Boolean))];
 // Title ≤60: "Surmai (Kingfish) Price per kg Today in Thane | Relifish"; shorter forms when it doesn't fit.
 const alias = englishOnly.toLowerCase() !== local.toLowerCase() ? englishOnly : guide?.alsoCalled?.[0];
 const fishWord = SHELLFISH.has(species) ? "" : " Fish";
+// Founder (25 Oct): live ₹/kg in the title, "Rawas ₹450/kg Today in Thane". Thane first, else any in-stock seller by weight.
+const titleRange = thaneRange?.unit === "kg" ? thaneRange : liveRange?.unit === "kg" ? liveRange : null;
+const titlePlace = thaneRange?.unit === "kg" ? "Thane" : hubPlace(live.filter((r) => r.perKg));
+const titlePrice = titleRange ? `${hubPriceText(titleRange)} Today${titlePlace ? ` in ${titlePlace}` : ""}` : null;
 const title = !known ? "Fish not found · Relifish" : [
+  ...(titlePrice && alias ? [`${local} (${alias}) ${titlePrice} | Relifish`] : []),
+  ...(titlePrice ? [`${local} ${titlePrice} | Relifish`] : []),
+  // No ₹/kg live (out of stock or sold by the pack only): the "price per kg" title.
   ...(alias ? [`${local} (${alias}) Price per kg Today${inPlace} | Relifish`] : []),
   `${local}${fishWord} Price per kg Today${inPlace} | Relifish`,
   `${local}${fishWord} Price per kg Today | Relifish`,
