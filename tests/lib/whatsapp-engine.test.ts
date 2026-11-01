@@ -241,7 +241,7 @@ describe("dispatch: one channel, once (founder 30 Oct)", () => {
     const [url, init] = (globalThis.fetch as any).mock.calls[0];
     expect(url).toBe("https://api.msg91.com/api/v5/flow/");
     const body = JSON.parse(init.body);
-    expect(body).toMatchObject({ flow_id: "flowcart", sender: "RLFISH", mobiles: "919870619974", var1: "Priya", var3: "Fishtokri", var4: "today, 4–6 PM" });
+    expect(body).toMatchObject({ flow_id: "flowcart", sender: "RLFISH", mobiles: "919870619974", var1: "Priya", var3: "Fishtokri", var4: "today, 4-6 PM" });
     expect(body.var5).toBeUndefined();
     expect(body.var2.length).toBeLessThanOrEqual(30);
     expect(sb.rows.map((x) => [x.channel, x.template, x.status, x.provider_id])).toEqual([["sms", "sms:CART", "sent", "req123"]]);
