@@ -17,7 +17,8 @@ const ADDRESS_STATUSES = ["confirmed", "ready_for_pickup", "out_for_delivery"];
 
 export function toSellerView<T extends Record<string, any>>(o: T | null | undefined, seller?: { lat?: number | null; lng?: number | null } | null) {
   if (!o) return o;
-  const { buyer_phone, buyer_addr, delivery_address, ...rest } = o;
+  // Internal-only fields never reach the seller: our refund notes (Razorpay account state, retries) and who verified a payment.
+  const { buyer_phone, buyer_addr, delivery_address, refund_note: _rn, payment_verified_by: _pv, ...rest } = o;
   const isDelivery = o.order_type === "delivery";
   const showAddress = isDelivery && ADDRESS_STATUSES.includes(o.status);
   const a: any = delivery_address;
