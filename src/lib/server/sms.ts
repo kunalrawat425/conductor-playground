@@ -20,14 +20,13 @@ export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT"
 /**
  * The DLT template text for each key (Smartping, 1 Nov 2026), in the WhatsApp voice: a status line, then help
  * ("WhatsApp or call us on 9152207607"). Never a dues notice, no seller names, no tracking wording (order links go
- * to /orders). SIGNUP = relifish_signup_care, CART = relifish_cart_added (DLT rejects cart texts as promotional;
- * without its flow id cart reminders aren't sent by SMS), UNPAID = relifish_unpaid_help, CONFIRMED =
+ * to /orders). SIGNUP = relifish_signup_care, CART = relifish_order_not_placed, UNPAID = relifish_unpaid_help, CONFIRMED =
  * relifish_confirmed_care, OUT = relifish_out_care, CANCELLED = relifish_cancel_refund_care, CANCELLED_NOPAY =
  * relifish_cancel_nopay_care. PAID and DELIVERED aren't sent.
  */
 export const SMS_TEXT: Record<SmsKey, string> = {
   SIGNUP: "Hi {#var#}, your Relifish account is ready. Fresh fish from {#var#}, cleaned and cut, delivered home. Not sure what to pick? WhatsApp or call us on 9152207607, a real person replies. Menu: https://www.relifish.com/shop - Relifish",
-  CART: "Hi {#var#}, you added {#var#} to your Relifish cart. Questions about the fish, the cut or delivery? WhatsApp or call us on 9152207607, a real person replies. - Relifish",
+  CART: "Hi {#var#}, your Relifish order for {#var#} is not placed yet. Stuck anywhere? WhatsApp or call us on 9152207607, we will sort it out. Menu: https://www.relifish.com/shop - Relifish",
   UNPAID: "Hi {#var#}, your Relifish order for {#var#} is almost done. The payment is pending for your delivery slot {#var#}. Stuck anywhere? WhatsApp or call us on 9152207607, we will sort it out. Your orders: https://www.relifish.com/orders - Relifish",
   PAID: "Payment received for your Relifish order {#var#} from {#var#}. Delivery: {#var#}. Track: https://www.relifish.com/track - Relifish",
   CONFIRMED: "Hi {#var#}, your Relifish order {#var#} is confirmed and will reach you {#var#}, cleaned and cut. We will text you when it is on the way. Questions? WhatsApp or call us on 9152207607. - Relifish",
