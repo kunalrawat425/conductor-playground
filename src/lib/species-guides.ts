@@ -166,7 +166,7 @@ export const SPECIES_GUIDES: Record<string, SpeciesGuide> = {
     bones: "Fillets have few pin bones; steaks have a central bone.",
     cuts: ["Fillets", "Steaks"],
     dishes: ["Pan-seared salmon", "Grilled salmon", "Salmon curry"],
-    availability: "Imported, so availability depends on the seller's supply rather than the local season.",
+    availability: "Imported, so availability depends on the seller's supply rather than the fishing season here.",
     buyingTip: "Ask the seller where it is from and whether it is fresh or frozen.",
   },
   shark: {

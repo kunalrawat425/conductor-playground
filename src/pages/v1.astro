@@ -6,14 +6,14 @@ import LocationPicker from "../components/LocationPicker.astro";
 import LoginModal from "../components/LoginModal.astro";
 ---
 
-<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Relifish"} - Fresh Fish, Delivered Fast`} description="Fresh fish from local Goa sellers — order now for pickup or pre-order tonight for tomorrow's morning catch. Prices per kg, no surprises." activeTab="home" needsMap={true} jsonLd={{
+<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Relifish"} - Fresh Fish, Delivered Fast`} description="Fresh fish from verified Goa sellers — order now for pickup or pre-order tonight for tomorrow's morning catch. Prices per kg, no surprises." activeTab="home" needsMap={true} jsonLd={{
   "@context": "https://schema.org",
   "@graph": [
     {
       "@type": "WebSite",
       "name": "Relifish",
       "url": "https://www.relifish.com",
-      "description": "Hyperlocal fresh fish marketplace connecting Goa's fish sellers with buyers",
+      "description": "Fresh fish marketplace connecting Goa's fish sellers with buyers",
       "potentialAction": {
         "@type": "SearchAction",
         "target": "https://www.relifish.com/?q={search_term_string}",
@@ -24,7 +24,7 @@ import LoginModal from "../components/LoginModal.astro";
       "@type": "LocalBusiness",
       "name": "Relifish",
       "url": "https://www.relifish.com",
-      "description": "Fresh fish marketplace — order from local Goa fish sellers for pickup or delivery",
+      "description": "Fresh fish marketplace — order from verified Goa fish sellers for pickup or delivery",
       "address": {
         "@type": "PostalAddress",
         "addressRegion": "Goa",
@@ -49,7 +49,7 @@ import LoginModal from "../components/LoginModal.astro";
       } catch (e) {}
     })();
   </script>
-  <h1 class="page-hero-heading">Today's catch from trusted local fish sellers</h1>
+  <h1 class="page-hero-heading">Today's catch from trusted fish sellers near you</h1>
   <p class="page-hero-sub">Pre-order tonight. Pick up tomorrow morning. Always fresh, never frozen.</p>
   <!-- Hero search bar -->
   <div class="hero-search">
@@ -132,7 +132,7 @@ import LoginModal from "../components/LoginModal.astro";
         <div class="ns-ben"><span class="ns-ben-emoji">🐟</span><div><strong>Same-day freshness</strong><span class="ns-ben-sub">Fish sourced today, not sitting on ice for days</span></div></div>
         <div class="ns-ben"><span class="ns-ben-emoji">💰</span><div><strong>Transparent pricing</strong><span class="ns-ben-sub">No hidden charges. See price per kg upfront.</span></div></div>
         <div class="ns-ben"><span class="ns-ben-emoji">🎣</span><div><strong>Pre-order option</strong><span class="ns-ben-sub">Book tomorrow's fish today. It's reserved for you.</span></div></div>
-        <div class="ns-ben"><span class="ns-ben-emoji">📍</span><div><strong>Nearby sellers only</strong><span class="ns-ben-sub">Closer sellers, fresher fish. Always local.</span></div></div>
+        <div class="ns-ben"><span class="ns-ben-emoji">📍</span><div><strong>Nearby sellers only</strong><span class="ns-ben-sub">Closer sellers, fresher fish.</span></div></div>
         <div class="ns-ben"><span class="ns-ben-emoji">📱</span><div><strong>All sellers, one app</strong><span class="ns-ben-sub">Compare prices across sellers. No multiple apps.</span></div></div>
         <div class="ns-ben"><span class="ns-ben-emoji">💲</span><div><strong>Reasonable rates</strong><span class="ns-ben-sub">Direct from seller. Compare prices easily.</span></div></div>
         <div class="ns-ben"><span class="ns-ben-emoji">🔔</span><div><strong>Smart notifications</strong><span class="ns-ben-sub">New seller nearby, fresh stock arrival, price drops</span></div></div>

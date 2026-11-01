@@ -10,7 +10,7 @@ tags: ["Thane", "Fish Market", "Fish Guide"]
 
 # Fish Market in Thane West: When to Go, What's Fresh, and Today's Rates
 
-**Thane West has local fish markets and neighbourhood fish sellers. Go early in the morning for the widest choice, check freshness yourself, and compare rates, because fish prices change every day.** If you'd rather not go, you can order from a Thane West seller online and have it delivered.
+**Thane West has fish markets and neighbourhood fish sellers. Go early in the morning for the widest choice, check freshness yourself, and compare rates, because fish prices change every day.** If you'd rather not go, you can order from a Thane West seller online and have it delivered.
 
 ---
 

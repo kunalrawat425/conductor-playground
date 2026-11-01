@@ -1,7 +1,7 @@
 ---
 layout: ../../layouts/Layout.astro
 title: "How to Order Fish on Relifish: Same-Day or Pre-Order, Step by Step"
-description: "How ordering fresh fish on Relifish works in Thane and Mumbai: find a verified local seller, order today or pre-order for tomorrow, pay online, choose your cut, and what happens if the seller can't fill it."
+description: "How ordering fresh fish on Relifish works in Thane and Mumbai: find a verified seller near you, order today or pre-order for tomorrow, pay online, choose your cut, and what happens if the seller can't fill it."
 pubDate: 2026-06-19
 updatedDate: 2026-10-09
 author: "Relifish Team"
@@ -11,7 +11,7 @@ image: "/blog-first-relifish-order-guide-thane-hero.png"
 
 # How to Order Fish on Relifish: Same-Day or Pre-Order, Step by Step
 
-**Relifish is a marketplace where you order fish online directly from verified local fish sellers.** Each seller lists the fish they have that day and sets their own prices. You order same-day while the seller is open, or pre-order tonight for tomorrow. The seller then delivers to you or keeps your order ready for pickup.
+**Relifish is a marketplace where you order fish online directly from verified fish sellers.** Each seller lists the fish they have that day and sets their own prices. You order same-day while the seller is open, or pre-order tonight for tomorrow. The seller then delivers to you or keeps your order ready for pickup.
 
 This guide covers the whole flow, from finding a seller to getting a refund if something goes wrong.
 

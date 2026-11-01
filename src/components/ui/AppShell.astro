@@ -32,7 +32,7 @@ interface Props {
 
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 const siteUrl = SITE_URL;
-const defaultDescription = "Order same-day fresh catch or pre-order tomorrow's catch directly from local Mumbai fish sellers — pomfret, surmai, bangda, prawns. Pickup or home delivery.";
+const defaultDescription = "Order same-day fresh catch or pre-order tomorrow's catch directly from verified Mumbai fish sellers — pomfret, surmai, bangda, prawns. Pickup or home delivery.";
 const {
   title = brandName,
   description = defaultDescription,
@@ -253,7 +253,7 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
       <img src={festive ? "/logo-gold.png" : "/logo-white.png"} alt="Relifish" width="230" height="55" />
       <span class="rf-splash-tag">{festive ? "Wishing you light, joy and good health" : "Fresh fish. Cleaned. Cut. At your door."}</span>
       <span class="rf-splash-rule"></span>
-      <span class="rf-splash-caps">{festive ? "Happy Diwali 🪔" : "From local Thane & Mumbai sellers"}</span>
+      <span class="rf-splash-caps">{festive ? "Happy Diwali 🪔" : "From verified Thane & Mumbai sellers"}</span>
       {festive
         ? <span class="rf-splash-icon"><span class="fd-diya"><span class="fd-flame"></span></span></span>
         : <svg class="rf-splash-icon rf-splash-fish" viewBox="0 0 64 32" aria-hidden="true"><path d="M4 16c8-11 26-13 40-4l12-8v24l-12-8C30 29 12 27 4 16z" fill="#fff" opacity=".9"/><circle cx="16" cy="14" r="2.4" fill="#0066FF"/></svg>}

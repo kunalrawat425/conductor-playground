@@ -41,7 +41,7 @@ If two of these fail, the fish will not give you the curry you remember.
 
 ## What helps
 
-**Buy from someone who knows where the fish came from.** A local seller who buys at the landing or the market each day can tell you what came in today and what didn't. Ask them.
+**Buy from someone who knows where the fish came from.** A seller near you who buys at the landing or the market each day can tell you what came in today and what didn't. Ask them.
 
 **Buy closer to when you cook.** Pre-ordering for the next morning means the seller buys for your order, rather than you picking from whatever is left.
 
@@ -73,7 +73,7 @@ See [today's fish prices](/fish-price-today) before you choose.
 
 ## How Relifish fits in
 
-Relifish is a marketplace where you order directly from verified local fish sellers. Each seller lists what they have that day. You can order same-day while they are open, or pre-order tonight for tomorrow, and choose whether you want the fish whole, cleaned or cut. The seller delivers or keeps it ready for pickup.
+Relifish is a marketplace where you order directly from verified fish sellers. Each seller lists what they have that day. You can order same-day while they are open, or pre-order tonight for tomorrow, and choose whether you want the fish whole, cleaned or cut. The seller delivers or keeps it ready for pickup.
 
 Sellers on Relifish currently serve parts of [Thane](/area/thane), [Tardeo](/area/tardeo) and [Kamothe](/area/kamothe). Compare sellers for [pomfret](/fish/pomfret), [surmai](/fish/surmai) or [bangda](/fish/bangda), or read [how ordering works](/blog/first-relifish-order-guide-thane).
 

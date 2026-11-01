@@ -28,7 +28,7 @@ function shell(content: string, helpText = "Hi Relifish, I have a question"): st
         <tr>
           <td style="background:linear-gradient(135deg,${BRAND_DARK},#111a2a);padding:24px 28px;text-align:center;">
             <img src="${LOGO_URL}" alt="Relifish" style="height:48px;width:auto;display:block;margin:0 auto;filter:brightness(0) invert(1);" />
-            <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.2px;text-transform:uppercase;margin-top:8px;">Fresh local seafood</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.2px;text-transform:uppercase;margin-top:8px;">Fresh fish from verified sellers</div>
           </td>
         </tr>
         <!-- BODY -->
