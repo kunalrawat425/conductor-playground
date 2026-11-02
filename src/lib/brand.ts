@@ -27,12 +27,8 @@ export function canonicalFor(pathname: string): string {
   return new URL(path, SITE_URL).href;
 }
 
-/** Who runs Relifish, shown in the footer and on /contact, /about and /terms (Merchant Center business identity). */
-export const BUSINESS_OPERATOR = "Kunal Rawat (founder)";
-// TODO founder: full public address before merge
+// No personal name on the site (founder, 2 Nov 2026). Full public address once the founder gives one.
 export const BUSINESS_ADDRESS = "";
-/** "Relifish is operated by Kunal Rawat (founder)", plus ", <address>" once BUSINESS_ADDRESS is set. */
-export const OPERATED_BY = `Relifish is operated by ${BUSINESS_OPERATOR}${BUSINESS_ADDRESS ? `, ${BUSINESS_ADDRESS}` : ""}`;
 
 /** Business WhatsApp (+91 91522 07607). All buyer, seller and lead support goes here. */
 export const SUPPORT_WHATSAPP = "919152207607";
