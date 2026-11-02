@@ -1,7 +1,8 @@
 ---
 import InAppBrowserBar from "../components/InAppBrowserBar.astro";
 import FunnelTrack from "../components/FunnelTrack.astro";
-import WatiChatButton from "../components/WatiChatButton.astro";
+// WhatsApp chat widget off (founder, 2 Nov 2026). To bring it back, uncomment this and the line in the body.
+// import WatiChatButton from "../components/WatiChatButton.astro";
 import { LOGO_URL, SITE_URL, canonicalFor } from "../lib/brand";
 import UtmCapture from "../components/UtmCapture.astro";
 import { jsonLdString } from "../lib/html";
@@ -246,6 +247,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <Footer priceLink />
 <FunnelTrack />
 
-  {import.meta.env.PUBLIC_ENABLE_TRACKING === "true" && <WatiChatButton marginBottom="20" />}
+  {/* WhatsApp widget off (founder, 2 Nov): {import.meta.env.PUBLIC_ENABLE_TRACKING === "true" && <WatiChatButton marginBottom="20" />} */}
 </body>
 </html>

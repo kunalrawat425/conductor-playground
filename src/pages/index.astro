@@ -2,7 +2,8 @@
 import InAppBrowserBar from "../components/InAppBrowserBar.astro";
 import { getHomeReviews } from "../lib/server/seller-reviews";
 import UtmCapture from "../components/UtmCapture.astro";
-import WatiChatButton from "../components/WatiChatButton.astro";
+// WhatsApp chat widget off (founder, 2 Nov 2026). To bring it back, uncomment this and the line in the body.
+// import WatiChatButton from "../components/WatiChatButton.astro";
 import { LOGO_URL, whatsappLink } from "../lib/brand";
 import { jsonLdString } from "../lib/html";
 import { SOCIAL_ICONS } from "../lib/social-icons";
@@ -1887,6 +1888,6 @@ import { whatsappLink } from "../lib/brand";
 -->
 
 {enableTracking && <script type="module" src="/_vercel/insights/script.js"></script>}
-{enableTracking && <WatiChatButton marginBottom="20" />}
+{/* WhatsApp widget off (founder, 2 Nov): {enableTracking && <WatiChatButton marginBottom="20" />} */}
 </body>
 </html>
