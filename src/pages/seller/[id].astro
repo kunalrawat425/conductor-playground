@@ -1045,6 +1045,7 @@ const tags = [
       return rows ? `<div class="v2-item-bundles"><div class="v2-bundle-k">Bundles · save more</div>${rows}</div>` : "";
     }
 
+    let lastCartHtml = ""; // last cart bubble markup painted (see render)
     function render() {
       // In pre-order mode, only show items with is_preorder_enabled=true
       const shown = isPreorderMode
@@ -1318,7 +1319,7 @@ const tags = [
       const pop = justAdded; justAdded = false;
 
       // Removed items are told once in a toast (announceValidation), never kept in the bar.
-      if (totalQty === 0) { cartMount.innerHTML = ""; document.body.classList.remove("v2-has-cart"); return; }
+      if (totalQty === 0) { cartMount.innerHTML = ""; lastCartHtml = ""; document.body.classList.remove("v2-has-cart"); return; }
       document.body.classList.add("v2-has-cart");
 
       const belowMin = minOrder && sellerQty > 0 && sellerSubtotal < minOrder;
@@ -1335,7 +1336,7 @@ const tags = [
 
       const thumbs = [...new Set(sellerItems.map((i) => photoOf(listingOf(i.listing_id))).filter(Boolean))].slice(0, 2);
       const countText = `${sellerPackCount} item${sellerPackCount !== 1 ? "s" : ""} · ${fmtInr(sellerSubtotal)}`;
-      cartMount.innerHTML = `<div class="v2-cart-float">
+      const html = `<div class="v2-cart-float">
         ${chip ? `<div class="v2-cart-chip" style="color:${chipColor};">${escape(chip)}</div>` : ""}
         <button id="v2-checkout-btn" type="button" class="v2-cart-bubble${pop ? " v2-cart-pop" : ""}" aria-label="View cart: ${escape(countText)}">
           <span class="v2-cart-th" aria-hidden="true">${thumbs.length ? thumbs.map((src) => `<img src="${escape(src)}" alt="" width="38" height="38" />`).join("") : `<span class="v2-cart-th-e">🛒</span>`}</span>
@@ -1343,9 +1344,13 @@ const tags = [
           <span class="v2-cart-ch" aria-hidden="true">›</span>
         </button>
       </div>`;
-      document.getElementById("v2-checkout-btn")?.addEventListener("click", tapViewCart);
+      // Only repaint when something changed: the cart syncs in the background right after "+", and
+      // swapping the button mid-tap swallowed the tap (buyers had to tap View cart twice, 2 Nov).
+      if (html !== lastCartHtml) { cartMount.innerHTML = html; lastCartHtml = html; }
       warmFulfillment(sellerId);
     }
+    // One listener on the mount, so a repaint can never leave the button without one.
+    cartMount?.addEventListener("click", (e) => { if (e.target.closest?.("#v2-checkout-btn")) tapViewCart(); });
 
     // Instant feedback on tap, and one checkout at a time (a second tap used to start another).
     let viewCartBusy = false;
