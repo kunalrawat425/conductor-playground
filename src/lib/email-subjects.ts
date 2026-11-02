@@ -41,7 +41,7 @@ export function buyerEmailCopy(kind: BuyerEmailKind, c: BuyerEmailCtx): { subjec
     case "buyer_cancelled":
       return { subject: "Your Relifish order is cancelled", preview: c.amount ? "Refund details inside." : "No payment was taken." };
     case "expired_unpaid":
-      return { subject: "Your Relifish order didn't go through", preview: "No payment was taken. Got stuck? WhatsApp or call us on 9152207607." };
+      return { subject: "Your Relifish order didn't go through", preview: "No payment was taken. Got stuck? Call us on +91 91522 07607." };
     case "refunded":
       return { subject: "Your Relifish refund is on its way", preview: `${c.amount ? rs(c.amount) : "Your money"} refunded to your original payment method.` };
   }

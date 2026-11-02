@@ -1,7 +1,7 @@
 ---
 import type { EmptyStateProps } from "../../../types/components";
 import Button from "../atoms/Button.astro";
-import { whatsappLink } from "../../../lib/brand";
+import { SUPPORT_PHONE_TEL } from "../../../lib/brand";
 interface Props extends EmptyStateProps {}
 
 const presets: Record<string, { icon: string; title: string; desc: string; cta?: string; ghost?: string }> = {
@@ -59,7 +59,7 @@ const {
   ctaHref,
   ghostCtaText: ghostProp,
   ghostCtaHref,
-  whatsappText,
+  callUs,
 } = Astro.props;
 
 const preset = presets[variant];
@@ -83,8 +83,8 @@ const icon = preset?.icon || "📭";
   {ghostText && (
     <a href={ghostCtaHref || "#"} class="v2-empty-ghost">{ghostText} →</a>
   )}
-  {whatsappText && (
-    <a href={whatsappLink(whatsappText)} target="_blank" rel="noopener" class="v2-empty-ghost">💬 Ask us on WhatsApp →</a>
+  {callUs && (
+    <a href={SUPPORT_PHONE_TEL} class="v2-empty-ghost">📞 Call us →</a>
   )}
 </div>
 

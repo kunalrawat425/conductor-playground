@@ -29,7 +29,7 @@ export function buyerOrderPushNotification(
     }
     const refund = cancel.refunded ? " Your payment is being refunded in full." : "";
     if (cancel.by === "seller") {
-      return { title: "Order cancelled", body: `Sorry, your ${fish}order couldn't go ahead.${reason}${refund} Want another fish or slot? WhatsApp us on 9152207607.`.trim() };
+      return { title: "Order cancelled", body: `Sorry, your ${fish}order couldn't go ahead.${reason}${refund} Want another fish or slot? Call us on +91 91522 07607.`.trim() };
     }
     if (cancel.by === "buyer") {
       return { title: "You cancelled your order", body: `Your ${fish}order is cancelled.${reason}${refund}`.trim() };
@@ -38,7 +38,7 @@ export function buyerOrderPushNotification(
   // Gentle next-step wording (founder, 1 Nov): never a dues notice or "pay now"; help is a real person.
   const almostDone = {
     title: "Your order is almost done",
-    body: `Your ${species ? `${species} ` : ""}order is saved. The payment is the last step to confirm it for your slot. Stuck? WhatsApp us on 9152207607.`,
+    body: `Your ${species ? `${species} ` : ""}order is saved. The payment is the last step to confirm it for your slot. Stuck? Call us on +91 91522 07607.`,
   };
   const messages: Record<string, { title: string; body: string }> = {
     // Razorpay is the only payment method: the buyer pays in a modal, there is
@@ -60,17 +60,17 @@ export function buyerOrderPushNotification(
       // Was "Order Update" — indistinguishable from the unknown-status fallback,
       // so a decline arrived on the lock screen looking like routine noise.
       title: "Order declined",
-      body: `Sorry, your ${species ? `${species} ` : ""}order couldn't go ahead. Want another fish or slot? WhatsApp us on 9152207607.`,
+      body: `Sorry, your ${species ? `${species} ` : ""}order couldn't go ahead. Want another fish or slot? Call us on +91 91522 07607.`,
     },
     // Emitted by the expire-pending-orders cron. Must make clear that nothing
     // was charged, otherwise a silent "cancelled" reads like money vanished.
     expired_unpaid: {
       title: "Your order didn't go through",
-      body: `No payment was taken for your ${species ? `${species} ` : ""}order. Got stuck? WhatsApp us on 9152207607, we'll sort it out.`,
+      body: `No payment was taken for your ${species ? `${species} ` : ""}order. Got stuck? Call us on +91 91522 07607, we'll sort it out.`,
     },
     cancelled: {
       title: "Order cancelled",
-      body: `Your ${species ? `${species} ` : ""}order was cancelled. Any payment is refunded in full. Questions? WhatsApp us on 9152207607.`,
+      body: `Your ${species ? `${species} ` : ""}order was cancelled. Any payment is refunded in full. Questions? Call us on +91 91522 07607.`,
     },
     paid: {
       title: "Payment received, thank you",
@@ -95,7 +95,7 @@ export function buyerOrderPushNotification(
     pending_payment: almostDone,
     payment_required: {
       title: "Your order's final price is in",
-      body: `The final price of your ${species ? `${species} ` : ""}order came out a little higher. Tap to see it. Questions? WhatsApp us on 9152207607.`,
+      body: `The final price of your ${species ? `${species} ` : ""}order came out a little higher. Tap to see it. Questions? Call us on +91 91522 07607.`,
     },
     ready_for_pickup: {
       title: "Ready for pickup",

@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { normalizeIndianMobile } from "../../../lib/indian-phone";
 import { clientKey, overLimit } from "../../../lib/server/rate-limit";
 import { escapeHtml } from "../../../lib/html";
-import { LOGO_URL, SUPPORT_EMAIL, whatsappLink } from "../../../lib/brand";
+import { LOGO_URL, SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from "../../../lib/brand";
 
 export const prerender = false;
 
@@ -126,10 +126,10 @@ export const POST: APIRoute = async ({ request }) => {
                   </p>
                   <a href="https://www.relifish.com" style="display:inline-block;background:#0066cc;color:white;padding:12px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">Browse Relifish</a>
                   <p style="font-size:14px;color:#333;line-height:1.5;margin:16px 0 0;">
-                    Want an update sooner? <a href="${whatsappLink(`Hi Relifish, please tell me when you deliver to ${String(area).slice(0, 80)}`)}" target="_blank" style="color:#0066cc;font-weight:700;">Message us on WhatsApp</a>
+                    Want an update sooner? <a href="${SUPPORT_PHONE_TEL}" style="color:#0066cc;font-weight:700;">Call us on ${SUPPORT_PHONE_DISPLAY}</a>
                   </p>
                   <p style="font-size:12px;color:#999;margin:20px 0 0;line-height:1.5;">
-                    Questions? WhatsApp or call us on 9152207607, a real person replies. Or email ${SUPPORT_EMAIL}<br/>
+                    Questions? Call us on ${SUPPORT_PHONE_DISPLAY}, a real person answers. Or email ${SUPPORT_EMAIL}<br/>
                     — Team Relifish, Mumbai
                   </p>
                 </div>

@@ -8,9 +8,8 @@
 import BottomSheet from "./ui/organisms/BottomSheet.astro";
 import Input from "./ui/atoms/Input.astro";
 import Textarea from "./ui/atoms/Textarea.astro";
-import { whatsappLink } from "../lib/brand";
+import { SUPPORT_PHONE_TEL } from "../lib/brand";
 
-const helpLink = whatsappLink("Hi Relifish, I'm a seller and need help activating my account");
 const fulfilCard = "display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;";
 ---
 <!-- Last known "not approved" (cached below): hide the page before it paints instead of flashing it. -->
@@ -97,7 +96,7 @@ const fulfilCard = "display:flex;align-items:center;gap:10px;padding:14px;backgr
     <div id="ap-error" role="alert" style="display:none;font:600 13px Inter;color:var(--v2-red);background:var(--v2-red-l, #FEE2E2);border-radius:var(--v2-radius-sm);padding:10px 12px;margin-top:16px;"></div>
     <button type="submit" id="ap-submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" style="margin-top:16px;">Send for approval</button>
     <div style="text-align:center;margin-top:16px;">
-      <a href={helpLink} target="_blank" rel="noopener" class="v2-empty-ghost">💬 Ask us on WhatsApp →</a>
+      <a href={SUPPORT_PHONE_TEL} class="v2-empty-ghost">📞 Call us →</a>
       <a href="#" class="v2-empty-ghost" data-sign-out>Sign out →</a>
     </div>
   </form>
@@ -107,7 +106,7 @@ const fulfilCard = "display:flex;align-items:center;gap:10px;padding:14px;backgr
     <h3 class="v2-empty-title">Thanks! We've received your shop details.</h3>
     <p class="v2-empty-desc">Our team will review them and get back to you once your shop is approved. Your listings and shop profile will open after approval.</p>
     <a href="#" id="ap-edit" class="v2-empty-ghost">Edit details →</a>
-    <a href={helpLink} target="_blank" rel="noopener" class="v2-empty-ghost">💬 Ask us on WhatsApp →</a>
+    <a href={SUPPORT_PHONE_TEL} class="v2-empty-ghost">📞 Call us →</a>
     <a href="#" class="v2-empty-ghost" data-sign-out>Sign out →</a>
   </div>
 </BottomSheet>

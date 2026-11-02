@@ -378,8 +378,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0F172A;color:#fff;min-
   <!-- Footer -->
   <div class="footer">
     <p>Relifish — Mumbai's Fish Marketplace</p>
-    <p style="margin-top:4px"><a href="https://relifish.store">relifish.store</a> &middot; WhatsApp: <a href="https://api.whatsapp.com/send?phone=919152207607&amp;text=Hi%20Relifish%2C%20I%20want%20to%20sell%20fish%20on%20Relifish" target="_blank" rel="noopener">9152207607</a></p>
-    <p style="margin-top:8px;font-size:10px;color:#334155">Questions? WhatsApp us anytime. We reply in minutes.</p>
+    <p style="margin-top:4px"><a href="https://relifish.store">relifish.store</a> &middot; Call: <a href="tel:+919152207607">+91 91522 07607</a></p>
+    <p style="margin-top:8px;font-size:10px;color:#334155">Questions? Call us on +91 91522 07607.</p>
   </div>
 
 </div>
@@ -434,14 +434,12 @@ document.getElementById('seller-form').addEventListener('submit', async function
     } else {
       btn.disabled = false;
       btn.textContent = 'Join Relifish — Free Setup →';
-      alert(data.error || 'Something went wrong. Try WhatsApp: 9152207607');
+      alert(data.error || 'Something went wrong. Please call us on +91 91522 07607.');
     }
   } catch(_) {
-    // Fallback: open WhatsApp with pre-filled message
-    const msg = encodeURIComponent(`Hi! I want to join Relifish.\nName: ${name}\nShop: ${shop || 'N/A'}\nArea: ${area}\nFish: ${fish.join(', ') || 'Various'}\nPhone: ${phone}`);
-    window.open(`https://api.whatsapp.com/send?phone=919152207607%26text=${msg}`, '_blank');
-    document.getElementById('seller-form').style.display = 'none';
-    document.getElementById('sf-success').style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Join Relifish — Free Setup →';
+    alert('Something went wrong. Please call us on +91 91522 07607.');
   }
 });
 </script>
