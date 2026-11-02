@@ -1,6 +1,8 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
-import { echoLogRow, sendText, validWebhookSignature, waNumber, webhookSummary } from "../../../lib/server/whatsapp";
+import { echoLogRow, inboundLogRow, sendText, validWebhookSignature, waNumber, webhookSummary } from "../../../lib/server/whatsapp";
+import { sendTransactionalEmail } from "../../../lib/server/send-email";
+import { SUPPORT_EMAIL } from "../../../lib/brand";
 import { optOutPhone, STOP_WORDS } from "../../../lib/server/wa-optout";
 
 export const prerender = false;
@@ -17,7 +19,8 @@ export const GET: APIRoute = async ({ url }) => {
  * POST: delivery/read statuses and inbound messages. Signature-checked (X-Hub-Signature-256
  * with the app secret). Statuses update message_log (idempotent: only move forward).
  * "Stop updates" (button or text) sets buyers.whatsapp_opt_out_at and confirms once.
- * Everything else inbound is left for the founder in the WhatsApp app (no auto-replies).
+ * Every other inbound message is saved in message_log (kind "inbound") and emailed to us: the number
+ * is on our Cloud API app, so these reach neither Wati nor the phone app (founder, 2 Nov). No auto-replies.
  * Coexistence fields (history, smb_app_state_sync, smb_message_echoes, account_update) are
  * logged as one line; echoes (the founder's sends from the phone app) also go into message_log.
  */
@@ -45,7 +48,13 @@ export const POST: APIRoute = async ({ request }) => {
     }
     for (const m of v.messages || []) {
       const text = m?.button?.payload || m?.button?.text || m?.interactive?.button_reply?.title || m?.text?.body || "";
-      if (!(m?.button?.payload === "STOP" || STOP_WORDS.test(text))) continue;
+      if (!(m?.button?.payload === "STOP" || STOP_WORDS.test(text))) {
+        const row = inboundLogRow(m, v.contacts);
+        if (!row) continue;
+        const { data: saved } = await sb.from("message_log").upsert(row, { onConflict: "dedupe_key", ignoreDuplicates: true }).select("id");
+        if (saved?.length) await alertInbound(row); // first delivery only (Meta retries webhooks)
+        continue;
+      }
       const phone = waNumber(m.from);
       if (!phone) continue;
       if (!(await optOutPhone(sb, phone))) continue;
@@ -54,3 +63,12 @@ export const POST: APIRoute = async ({ request }) => {
   }
   return new Response("ok", { status: 200 });
 };
+
+/** Email us each new inbound WhatsApp so nobody waits on a message no one sees. */
+async function alertInbound(row: { to_phone: string | null; payload: { text: string; name: string | null } }) {
+  const who = `${row.payload.name ? row.payload.name + " · " : ""}+${row.to_phone}`;
+  const esc = (x: string) => x.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+  const html = `<p><b>${esc(who)}</b> sent a WhatsApp to 91522 07607:</p><blockquote>${esc(row.payload.text)}</blockquote>`
+    + `<p><a href="tel:+${row.to_phone}">Call them</a> · <a href="https://wa.me/${row.to_phone}">Reply on WhatsApp</a></p>`;
+  console.log("[wa inbound]", await sendTransactionalEmail(SUPPORT_EMAIL, `WhatsApp from ${who}`, html, "wa_inbound"));
+}
