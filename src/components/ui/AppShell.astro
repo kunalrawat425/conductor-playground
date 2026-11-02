@@ -9,7 +9,8 @@ import "../../styles/components.css";
 import { jsonLdString } from "../../lib/html";
 import AppHeader from "./organisms/AppHeader.astro";
 import BottomNav from "./organisms/BottomNav.astro";
-import WatiChatButton from "../WatiChatButton.astro";
+// WhatsApp chat widget off (founder, 2 Nov 2026). To bring it back, uncomment this and the line in the body.
+// import WatiChatButton from "../WatiChatButton.astro";
 import VercelAnalytics from "../VercelAnalytics.astro";
 import SellerActiveGate from "../SellerActiveGate.astro";
 import type { AppHeaderProps, BottomNavProps } from "../../types/components";
@@ -397,6 +398,6 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
     <GeoHelpDialog />
     <FunnelTrack />
     {enableTracking && <VercelAnalytics />}
-    {enableTracking && !path.startsWith("/dashboard") && !path.startsWith("/diwali") && <WatiChatButton marginBottom={hideNav ? "20" : "84"} />}
+    {/* WhatsApp widget off (founder, 2 Nov): {enableTracking && !path.startsWith("/dashboard") && !path.startsWith("/diwali") && <WatiChatButton marginBottom={hideNav ? "20" : "84"} />} */}
   </body>
 </html>
