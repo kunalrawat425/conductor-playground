@@ -1129,6 +1129,14 @@ const tags = [
     // when only one seller has items).
     let activeCheckoutSellerId = sellerId;
 
+    // "View cart" felt dead (founder, 2 Nov): checkout waited on two calls in a row with no feedback,
+    // so buyers tapped again. The cart bubble now warms this up, and checkout reuses it if it's fresh.
+    const fulfillWarm = new Map(); // seller id → { at, p }
+    function warmFulfillment(sellerSid) {
+      const w = fulfillWarm.get(sellerSid);
+      if (!w || Date.now() - w.at > 30000) fulfillWarm.set(sellerSid, { at: Date.now(), p: fetchSellerFulfillment(sellerSid) });
+      return fulfillWarm.get(sellerSid).p;
+    }
     async function fetchSellerFulfillment(sellerSid) {
       try {
         const res = await fetch(
@@ -1335,7 +1343,25 @@ const tags = [
           <span class="v2-cart-ch" aria-hidden="true">›</span>
         </button>
       </div>`;
-      document.getElementById("v2-checkout-btn")?.addEventListener("click", () => openCheckout(sellerId));
+      document.getElementById("v2-checkout-btn")?.addEventListener("click", tapViewCart);
+      warmFulfillment(sellerId);
+    }
+
+    // Instant feedback on tap, and one checkout at a time (a second tap used to start another).
+    let viewCartBusy = false;
+    async function tapViewCart() {
+      if (viewCartBusy) return;
+      viewCartBusy = true;
+      const label = document.querySelector("#v2-checkout-btn .v2-cart-t b");
+      if (label) label.textContent = "Opening…";
+      document.getElementById("v2-checkout-btn")?.setAttribute("aria-busy", "true");
+      try { await openCheckout(sellerId); }
+      finally {
+        viewCartBusy = false;
+        const l = document.querySelector("#v2-checkout-btn .v2-cart-t b");
+        if (l) l.textContent = "View cart";
+        document.getElementById("v2-checkout-btn")?.removeAttribute("aria-busy");
+      }
     }
 
     // ---- Checkout step 1 (Blinkit-style): items, deal, you might also like, bill, pay bar.
@@ -1597,6 +1623,8 @@ const tags = [
         return;
       }
 
+      const fulfillP = warmFulfillment(sid); // in parallel with the cart check below
+
       // -- LIVE VALIDATION --
       if (typeof c.validateCartLive === "function") {
         const result = await c.validateCartLive(sid, cartMode);
@@ -1624,8 +1652,9 @@ const tags = [
         return;
       }
 
-      const fulfill = await fetchSellerFulfillment(sid);
+      const fulfill = await fulfillP;
       if (!fulfill) {
+        fulfillWarm.delete(sid); // don't reuse a failed load
         window.v2Toast?.("error", "Couldn't load checkout", "Try again in a moment");
         return;
       }
