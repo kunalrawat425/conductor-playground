@@ -159,6 +159,20 @@ export function echoLogRow(e: any) {
   };
 }
 
+/** A customer's inbound WhatsApp → message_log row (kind "inbound"; to_phone holds the SENDER). */
+export function inboundLogRow(m: any, contacts?: any[]) {
+  if (!m?.id || !m?.from) return null;
+  const ms = Number(m.timestamp) * 1000 || Date.now();
+  const text = m.text?.body ?? m.button?.text ?? m.interactive?.button_reply?.title ?? m.interactive?.list_reply?.title
+    ?? (m.type ? `[${m.type}${m[m.type]?.caption ? `: ${m[m.type].caption}` : ""}]` : "");
+  const name = (contacts || []).find((c) => c?.wa_id === m.from)?.profile?.name ?? null;
+  return {
+    dedupe_key: `in:${m.id}`, kind: "inbound", channel: "whatsapp",
+    to_phone: waNumber(m.from) ?? String(m.from), slot_date: istDate(ms),
+    status: "received", provider_id: m.id, payload: { text: String(text).slice(0, 2000), name, type: m.type ?? null },
+  };
+}
+
 /** Meta webhook signature: X-Hub-Signature-256 = "sha256=" + HMAC-SHA256(raw body, app secret). */
 export function validWebhookSignature(rawBody: string, header: string | null, secret = env("WA_APP_SECRET")): boolean {
   if (!secret || !header?.startsWith("sha256=")) return false;
