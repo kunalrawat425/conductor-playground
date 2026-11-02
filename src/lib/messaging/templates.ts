@@ -159,10 +159,10 @@ export const DRAFT_TEMPLATES: TemplateDef[] = [
 /** How many {{n}} body variables a template takes (0 for an unknown name). */
 export const varCount = (name: string) => TEMPLATE[name]?.examples.length ?? 0;
 
-/** "Priya" from "priya sharma"; templates greet "fish lover" when we have no name. */
+/** "Priya" from "priya sharma"; templates greet "seafood lover" when we have no name (founder, 2 Nov). */
 export function firstName(name: string | null | undefined): string {
   const w = String(name || "").trim().split(/\s+/)[0];
-  return w ? w.charAt(0).toUpperCase() + w.slice(1) : "fish lover";
+  return w ? w.charAt(0).toUpperCase() + w.slice(1) : "seafood lover";
 }
 
 /** A checkout's fish in one line, costliest first: "Surmai", "Surmai and Bombil", "Surmai, Bombil and 1 more";

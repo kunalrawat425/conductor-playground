@@ -57,7 +57,7 @@ export type OrderLine = { id: string; seller_id: string; name: string; species?:
 export type BuyerState = {
   id: string;
   created_at: string;
-  name: string;                      // first name for the greeting ("fish lover" when unknown)
+  name: string;                      // first name for the greeting ("seafood lover" when unknown)
   lat?: number | null; lng?: number | null;
   cart: CartLine[];
   last_order_at: string | null;      // latest real order (any status)
