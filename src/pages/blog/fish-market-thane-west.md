@@ -53,4 +53,4 @@ tags: ["Thane", "Fish Market", "Fish Guide"]
 
 See [fish delivery in Thane](/area/thane) for hours, delivery fee and today's prices.
 
-Questions? WhatsApp [9152207607](https://api.whatsapp.com/send?phone=919152207607) (7:30 AM to 9 PM).
+Questions? Call [+91 91522 07607](tel:+919152207607) (7:30 AM to 9 PM).

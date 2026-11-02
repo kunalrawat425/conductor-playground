@@ -4,7 +4,7 @@ import { getHomeReviews } from "../lib/server/seller-reviews";
 import UtmCapture from "../components/UtmCapture.astro";
 // WhatsApp chat widget off (founder, 2 Nov 2026). To bring it back, uncomment this and the line in the body.
 // import WatiChatButton from "../components/WatiChatButton.astro";
-import { LOGO_URL, whatsappLink } from "../lib/brand";
+import { LOGO_URL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from "../lib/brand";
 import { jsonLdString } from "../lib/html";
 import { SOCIAL_ICONS } from "../lib/social-icons";
 export const prerender = false;
@@ -30,7 +30,7 @@ const footerLogo = festive ? "/logo-gold.png" : "/logo-white.png";
 const SOCIAL = [
   { label: "Instagram @relifish_", href: "https://www.instagram.com/relifish_/", path: SOCIAL_ICONS.instagram },
   { label: "Facebook", href: "https://www.facebook.com/p/ReliFish-61589987936346/", path: SOCIAL_ICONS.facebook },
-  { label: "WhatsApp", href: whatsappLink("Hi Relifish, I have a question"), path: SOCIAL_ICONS.whatsapp },
+  { label: `Call ${SUPPORT_PHONE_DISPLAY}`, href: SUPPORT_PHONE_TEL, path: SOCIAL_ICONS.phone },
 ];
 
 // Photo dial: real seller/listing photos with a glass "claim this spot" card after every second photo.
@@ -459,7 +459,7 @@ const REVIEW_SLOTS = [
     /* Same brand colours as the footer icons (founder 31 Oct) */
     .soc a[aria-label^="Instagram"]{background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fd5949 45%,#d6249f 60%,#285AEB 90%)}
     .soc a[aria-label="Facebook"]{background:#1877F2}
-    .soc a[aria-label="WhatsApp"]{background:#25D366}
+    .soc a[aria-label^="Call"]{background:#25D366}
     .soc a:hover{filter:brightness(1.1)}
     .soc svg{width:22px;height:22px}
     .dial{background:none!important;--cw:clamp(170px,26vw,330px);--ch:calc(var(--cw)*1.38);position:relative;height:calc(var(--ch)*.82 + 70px);width:100vw;max-width:none;margin:22px 0 0 calc(50% - 50vw);touch-action:pan-y;cursor:grab;overflow:hidden;user-select:none;-webkit-user-select:none;border-radius:0;
@@ -1201,7 +1201,7 @@ const REVIEW_SLOTS = [
       <h2 id="wall-h">Thane's fish lovers<br/><span class="hl">are posting</span></h2>
       <div class="soc">
         {SOCIAL.map((s) => (
-          <a href={s.href} target="_blank" rel="noopener" aria-label={s.label}>
+          <a href={s.href} target={s.href.startsWith("tel:") ? undefined : "_blank"} rel="noopener" aria-label={s.label}>
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={s.path} /></svg>
           </a>
         ))}
@@ -1673,7 +1673,7 @@ const REVIEW_SLOTS = [
           </div>
           <button type="submit" class="wl-btn" id="wl-btn">📋 Join the waitlist — free</button>
           <div class="wl-note">No spam. WhatsApp only when we launch near you.</div>
-          <div class="wl-note">Or <a id="wl-wa" href={whatsappLink("Hi Relifish, please tell me when you deliver to my area")} target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">message us on WhatsApp</a></div>
+          <div class="wl-note">Or <a href={SUPPORT_PHONE_TEL} style="color:inherit;text-decoration:underline;">call us on {SUPPORT_PHONE_DISPLAY}</a></div>
         </form>
         <div class="wl-success" id="wl-success">
           <div class="wl-success-icon">🎉</div>
@@ -1686,10 +1686,7 @@ const REVIEW_SLOTS = [
   </div>
 </section>
 <script>
-import { whatsappLink } from "../lib/brand";
 (function(){
-  const waLink=document.getElementById('wl-wa'),areaIn=document.getElementById('wl-area');
-  areaIn?.addEventListener('input',()=>{const a=areaIn.value.trim();waLink.href=whatsappLink(`Hi Relifish, please tell me when you deliver to ${a||'my area'}`);});
   const form=document.getElementById('wl-form'),btn=document.getElementById('wl-btn'),
         suc=document.getElementById('wl-success'),msg=document.getElementById('wl-msg');
   if(!form)return;

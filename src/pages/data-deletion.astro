@@ -1,6 +1,6 @@
 ---
 import LandingLayout from "../layouts/LandingLayout.astro";
-import { SUPPORT_EMAIL, whatsappLink } from "../lib/brand";
+import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from "../lib/brand";
 const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
 ---
 <LandingLayout
@@ -17,7 +17,7 @@ const brandName = import.meta.env.PUBLIC_BRAND_NAME || "Relifish";
       <p>Send us a message from the phone number you use on {brandName}, or email us from any address and include that phone number:</p>
       <ul>
         <li><strong>Email:</strong> <a href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("Delete my Relifish data")}`}>{SUPPORT_EMAIL}</a> with the subject "Delete my Relifish data".</li>
-        <li><strong>WhatsApp:</strong> <a href={whatsappLink("Hi Relifish, please delete my account and data.")} target="_blank" rel="noopener">+91 91522 07607</a></li>
+        <li><strong>Call:</strong> <a href={SUPPORT_PHONE_TEL}>{SUPPORT_PHONE_DISPLAY}</a></li>
       </ul>
       <p>We may ask you to confirm the request from that phone number, so that nobody else can delete your account.</p>
 

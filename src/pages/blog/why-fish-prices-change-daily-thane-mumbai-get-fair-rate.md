@@ -61,6 +61,6 @@ On Relifish, each verified seller sets their own prices and updates them as thei
 
 You can compare sellers for one fish on its own page, for example [surmai](/fish/surmai), [pomfret](/fish/pomfret) or [prawns](/fish/prawns). Prices are shown without login; see [today's fish prices](/fish-price-today) for all sellers.
 
-Sellers on Relifish currently serve parts of [Thane](/area/thane), [Tardeo](/area/tardeo) and [Kamothe](/area/kamothe). Read [how ordering works](/blog/first-relifish-order-guide-thane), or contact us on WhatsApp at [9152207607](https://api.whatsapp.com/send?phone=919152207607) (7:30 AM to 9 PM) or at [relifishstore@gmail.com](mailto:relifishstore@gmail.com).
+Sellers on Relifish currently serve parts of [Thane](/area/thane), [Tardeo](/area/tardeo) and [Kamothe](/area/kamothe). Read [how ordering works](/blog/first-relifish-order-guide-thane), or call us on [+91 91522 07607](tel:+919152207607) (7:30 AM to 9 PM) or at [relifishstore@gmail.com](mailto:relifishstore@gmail.com).
 
 **→ [See which sellers serve you](/shop?utm_source=blog&utm_medium=article&utm_campaign=fish_prices)**

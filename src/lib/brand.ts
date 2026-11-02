@@ -30,12 +30,8 @@ export function canonicalFor(pathname: string): string {
 // No personal name on the site (founder, 2 Nov 2026). Full public address once the founder gives one.
 export const BUSINESS_ADDRESS = "";
 
-/** Business WhatsApp (+91 91522 07607). All buyer, seller and lead support goes here. */
+/** Support line (+91 91522 07607). All buyer, seller and lead support is a phone call (founder, 2 Nov 2026: WhatsApp to this number reaches nobody). */
 export const SUPPORT_WHATSAPP = "919152207607";
+export const SUPPORT_PHONE_TEL = `tel:+${SUPPORT_WHATSAPP}`;
+export const SUPPORT_PHONE_DISPLAY = "+91 91522 07607";
 export const SUPPORT_EMAIL = "relifishstore@gmail.com";
-
-/** Opens a WhatsApp chat with us, optionally prefilled. api.whatsapp.com, not wa.me: wa.me mangled emoji in ?text=. */
-export function whatsappLink(text?: string): string {
-  const base = `https://api.whatsapp.com/send?phone=${SUPPORT_WHATSAPP}`;
-  return text ? `${base}&text=${encodeURIComponent(text)}` : base;
-}
