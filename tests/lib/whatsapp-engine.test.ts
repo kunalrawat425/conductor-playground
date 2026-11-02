@@ -119,7 +119,7 @@ describe("templates", () => {
       expect(!!m.image, m.template).toBe(APPROVED[m.template][1]);
     }
     expect(orderMessage("paid", ord, "manoj", noon)).toEqual({ template: "rf2_paid", body: ["#EEB0F7AC", "Manoj", "Fishtokri"] });
-    expect(orderMessage("paid", ord, null, night)).toEqual({ template: "rf2_paid_evening", body: ["#EEB0F7AC", "fish lover", "Sun 25 Oct, 9–11 AM", "Fishtokri"] });
+    expect(orderMessage("paid", ord, null, night)).toEqual({ template: "rf2_paid_evening", body: ["#EEB0F7AC", "seafood lover", "Sun 25 Oct, 9–11 AM", "Fishtokri"] });
     expect(orderMessage("paid", { ...ord, is_preorder: false }, "manoj", night).template).toBe("rf2_paid");
     expect(orderMessage("confirmed", ord, "manoj", noon).body).toEqual(["Fishtokri", "#EEB0F7AC", "Sun 25 Oct, 9–11 AM"]);
     expect(orderMessage("out_for_delivery", ord, "manoj", noon).body).toEqual(["#EEB0F7AC", "11 AM"]);
@@ -135,7 +135,7 @@ describe("templates", () => {
     const removed = orderMessage("cancelled", ord, "manoj", noon, { reason: "Not available.", refund: "₹285 refund is being processed, it reaches you in 5–7 working days", removedFrom: "aa11bb22-0000-4000-8000-000000000000" });
     expect(removed.template).toBe("rf2_cancelled");
     expect(removed.body).toEqual(["Manoj", "#AA11BB22 (Silver Pomfret)", "the seller removed Silver Pomfret (Not available), the rest of your order goes ahead", "₹285 refund is being processed, it reaches you in 5–7 working days"]);
-    expect(firstName("  ")).toBe("fish lover");
+    expect(firstName("  ")).toBe("seafood lover");
   });
   it("catch a price, a trailing variable and a promo in a utility template", () => {
     const base = TEMPLATES[0];
