@@ -933,6 +933,7 @@ const { id } = Astro.params;
             // app takes over — ask the server whether the payment went through.
             if (await syncPayment(o.id)) return;
             try { if (typeof gtag === "function") gtag("event", "payment_dismissed", { order_id: o.id }); } catch {}
+            try { (window as any).rfTrack?.("pay_dismissed", { order_id: o.id }); } catch {}
             btn.disabled = false;
             btn.style.display = "block";
             btn.textContent = `Pay ₹${fmt(balance)} →`;
@@ -942,8 +943,10 @@ const { id } = Astro.params;
       });
 
       try { if (typeof gtag === "function") gtag("event", "payment_started", { order_id: o.id, value: Number(createData.amount) / 100, currency: "INR" }); } catch {}
+      try { (window as any).rfTrack?.("pay_opened", { order_id: o.id }); } catch {}
       rzp.on?.("payment.failed", (resp: any) => {
         try { if (typeof gtag === "function") gtag("event", "payment_failed", { order_id: o.id, reason: resp?.error?.reason || resp?.error?.code || "unknown" }); } catch {}
+        try { (window as any).rfTrack?.("pay_failed", { order_id: o.id, reason: resp?.error?.reason || resp?.error?.code || "unknown" }); } catch {}
       });
       rzp.open();
     });
