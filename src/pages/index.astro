@@ -439,16 +439,6 @@ const REVIEW_SLOTS = [
     }
     @media(min-width:1200px){h1{font-size:56px}}
 
-    /* ── Fish photo marquee ── */
-    .ticker{overflow:hidden;padding:16px 0 8px}
-    .ticker-track{display:flex;width:max-content;animation:marquee 34s linear infinite}
-    .ticker-track:hover{animation-play-state:paused}
-    @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-    .ti{flex:none;width:136px;margin-right:10px;background:#fff;border:2px solid var(--line);border-radius:16px;overflow:hidden}
-    .ti-img{width:100%;height:110px;object-fit:cover}
-    .ti .fish{display:block;font:800 13px Inter;color:var(--ink);padding:6px 9px 0}
-    .ti-t{display:block;font:600 12px Inter;color:#64748B;padding:0 9px 8px}
-
     /* ── Social proof wall ── */
     .wall{padding:34px 16px 10px;text-align:center}
     .wall h2{margin-bottom:12px}
@@ -499,7 +489,7 @@ const REVIEW_SLOTS = [
       .wall-grid>div:last-child>*{margin-left:0;margin-right:0;width:100%;box-sizing:border-box}
       .post{margin-top:0}
     }
-    @media(prefers-reduced-motion:reduce){.dc-claim .pl,.ticker-track,.fish3d{animation:none}}
+    @media(prefers-reduced-motion:reduce){.dc-claim .pl,.fish3d{animation:none}}
 
     /* ── Claim sheet (native <dialog>) ── */
     .claim-sheet{border:0;padding:0;background:transparent;width:100%;max-width:100%;max-height:100%;margin:auto 0 0}
@@ -1177,17 +1167,6 @@ const REVIEW_SLOTS = [
     </div>
   </div>
 </section>
-
-<!-- FISH PHOTO MARQUEE -->
-<div class="ticker">
-  <div class="ticker-track">
-    {[...[["/fish/pomfret.jpg?v=2","Pomfret","Morning fresh"],["/fish/surmai.jpg?v=2","Surmai","Direct from seller"],["/fish/prawns.jpg?v=2","Prawns","Pre-order ahead"],["/fish/bangda.jpg?v=2","Bangda","Cleaned & cut"],
-      ["/fish/rawas.jpg?v=2","Rawas","Limited daily"],["/fish/crab.jpg?v=2","Crab","Seasonal catch"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/bombay/halwa.jpg","Halwa","Reserve yours"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg","Bombay Duck","Fresh daily"]], ...[["/fish/pomfret.jpg?v=2","Pomfret","Morning fresh"],["/fish/surmai.jpg?v=2","Surmai","Direct from seller"],["/fish/prawns.jpg?v=2","Prawns","Pre-order ahead"],["/fish/bangda.jpg?v=2","Bangda","Cleaned & cut"],
-      ["/fish/rawas.jpg?v=2","Rawas","Limited daily"],["/fish/crab.jpg?v=2","Crab","Seasonal catch"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/bombay/halwa.jpg","Halwa","Reserve yours"],["https://witoghpdfocywiosmrzv.supabase.co/storage/v1/object/public/fish-photos/ocean/11_bombil.jpg","Bombay Duck","Fresh daily"]]].map(([e,n,t])=>(
-      <div class="ti"><img class="ti-img" src={e} alt="" loading="lazy" width="136" height="110" /><span class="fish">{n}</span> <span class="ti-t">{t}</span></div>
-    ))}
-  </div>
-</div>
 
 <!-- ═══ SOCIAL PROOF ═══ -->
 <section class="wall" id="posting" aria-labelledby="wall-h">
