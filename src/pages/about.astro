@@ -1,7 +1,7 @@
 ---
 export const prerender = true;
 import AppShell from "../components/ui/AppShell.astro";
-import { OPERATED_BY, whatsappLink } from "../lib/brand";
+import { whatsappLink } from "../lib/brand";
 const SITE = "https://www.relifish.com";
 ---
 <AppShell
@@ -19,7 +19,6 @@ const SITE = "https://www.relifish.com";
         "url": SITE,
         "logo": { "@type": "ImageObject", "url": `${SITE}/icon-192.svg` },
         "foundingDate": "2025",
-        "founder": { "@type": "Person", "name": "Kunal Rawat" },
         "description": "Fish marketplace: buy fish online from verified sellers in Thane, South Mumbai and Navi Mumbai. Order same-day or pre-order for tomorrow; sellers deliver or keep it ready for pickup.",
         "areaServed": [
           { "@type": "City", "name": "Thane" },
@@ -74,7 +73,6 @@ const SITE = "https://www.relifish.com";
         Email: <a href="mailto:relifishstore@gmail.com" style="color:var(--v2-brand,#2563eb);">relifishstore@gmail.com</a><br />
         Hours: 7:30 AM to 9 PM
       </p>
-      <p style="font:400 15px/1.7 var(--v2-font,Inter);color:var(--v2-ink-2);">{OPERATED_BY}.</p>
     </section>
 
   </article>
