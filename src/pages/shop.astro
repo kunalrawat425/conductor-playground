@@ -975,7 +975,12 @@ const categories = [
       </button>
     </div>`;
     // One shop: straight to its checkout (the seller page reopens it). Several: show the list.
-    const go = (sid: string) => { try { sessionStorage.setItem("rf_resume_checkout", JSON.stringify({ sid, t: Date.now() })); } catch {} window.location.href = `/seller/${encodeURIComponent(sid)}`; };
+    // The seller page takes a moment to load: say so right away, or buyers think the tap missed (founder, 2 Nov).
+    const go = (sid: string) => {
+      const label = el.querySelector(".hc-pill .hc-t b"); if (label) label.textContent = "Opening cart…";
+      try { sessionStorage.setItem("rf_resume_checkout", JSON.stringify({ sid, t: Date.now() })); } catch {}
+      window.location.href = `/seller/${encodeURIComponent(sid)}`;
+    };
     document.getElementById("hc-pill")?.addEventListener("click", () => {
       if (one) return go(groups[0].seller_id);
       el.dataset.open = open ? "0" : "1"; renderHomeCarts();
