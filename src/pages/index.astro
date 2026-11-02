@@ -30,7 +30,6 @@ const footerLogo = festive ? "/logo-gold.png" : "/logo-white.png";
 const SOCIAL = [
   { label: "Instagram @relifish_", href: "https://www.instagram.com/relifish_/", path: SOCIAL_ICONS.instagram },
   { label: "Facebook", href: "https://www.facebook.com/p/ReliFish-61589987936346/", path: SOCIAL_ICONS.facebook },
-  { label: `Call ${SUPPORT_PHONE_DISPLAY}`, href: SUPPORT_PHONE_TEL, path: SOCIAL_ICONS.phone },
 ];
 
 // Photo dial: real seller/listing photos with a glass "claim this spot" card after every second photo.
@@ -66,8 +65,7 @@ const pose = (i: number) => {
   return `transform:rotate(${a}deg);z-index:${100 - Math.round(Math.abs(a))};${Math.abs(a) < 48 ? "" : "visibility:hidden"}`;
 };
 const REVIEW_SLOTS = [
-  { t: "Your review goes here. Order, enjoy your fish, then tap ＋ on the wheel to claim your spot.", n: "You?" },
-  { t: "Loved the cut? Fresh enough? Tell Thane. Your review can be the first one on this wall.", n: "Claim this spot" },
+  { t: "No reviews yet. Order, enjoy your fish, then tap ＋ to leave the first one.", n: "" },
 ];
 ---
 <!DOCTYPE html>
@@ -159,7 +157,7 @@ const REVIEW_SLOTS = [
     /* .ft .ft-top chains: the scoped rules are .x[cid] y[cid] (0,4,0) */
     body.home .ft .ft-top .ft-brand img{filter:none;height:auto;width:150px}
     body.home .ft-desc,body.home .ft .ft-top .ft-col a,body.home .ft-phone{color:#CBD5E1}
-    body.home .ft .ft-top .ft-col a{padding:4px 0;margin-bottom:4px}
+    body.home .ft .ft-top .ft-col a{padding:12px 0;margin-bottom:0}
     body.home .ft .ft-top .ft-col a:hover{color:#fff}
     body.home .ft .ft-top .ft-col h4{color:#fff}
     body.home .ft-bottom{color:rgba(255,255,255,.65);border-top-color:rgba(255,255,255,.15)}
@@ -212,7 +210,7 @@ const REVIEW_SLOTS = [
     /* ── Hero ── */
     .hero{padding:22px 16px 10px;text-align:center}
     .hero-inner{max-width:var(--max);margin:0 auto;display:grid;gap:22px;align-items:center}
-    h1{font:400 44px/1.1 var(--display);letter-spacing:-1.5px;text-transform:uppercase;color:var(--ink)}
+    h1{font:400 36px/1.1 var(--display);letter-spacing:-1.5px;text-transform:uppercase;color:var(--ink)}
     h1 .blu{color:var(--accent)}
     .hero-sub{font:600 16px/1.5 Inter;color:#334155;margin:16px auto 0;max-width:430px}
     .hero-sub strong{color:var(--ink);font-weight:800}
@@ -227,7 +225,7 @@ const REVIEW_SLOTS = [
     .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:24px}
     .hs{background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 6px;box-shadow:3px 3px 0 var(--line);text-align:center}
     .hs-n{font:400 28px var(--display);color:var(--accent)}
-    .hs-l{font:700 11px/1.35 Inter;color:#334155;margin-top:4px}
+    .hs-l{font:700 12px/1.35 Inter;color:#334155;margin-top:4px}
 
     /* ── Hero right — interactive phone demo ── */
     .hero-right{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
@@ -410,7 +408,7 @@ const REVIEW_SLOTS = [
     .fish3d-e{font-size:28px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5));transform:scaleX(-1)}
     .ftag-img{width:24px;height:24px;border-radius:50%;object-fit:cover;margin-right:8px;vertical-align:middle;flex-shrink:0}
     .fish3d-img{width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid rgba(255,255,255,.85);box-shadow:0 3px 8px rgba(0,0,0,.45)}
-    .fish3d-n{font:700 10px Inter;color:#fff}
+    .fish3d-n{font:700 12px Inter;color:#fff}
     .fish3d-t{font:400 8px Inter;color:rgba(255,255,255,.4);margin-top:1px}
     .fish3d-f{font:700 7px Inter;color:var(--blue-light);background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.25);border-radius:100px;padding:2px 6px;margin-top:3px;display:inline-block}
     /* phone demo: mobile shows the three fish chips only (the phone is desktop-only, as before) */
@@ -423,8 +421,8 @@ const REVIEW_SLOTS = [
       .hero-right::before,.demo-phone,.demo-dots,.demo-hint{display:none}
       .fish-mini{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x mandatory;text-align:left}
       .fish3d{position:static;animation:none;flex:none;scroll-snap-align:start;background:var(--chip);border:0;box-shadow:none;backdrop-filter:none;min-height:44px}
-      .fish3d-t{color:rgba(255,255,255,.75);font-size:10px}
-      .fish3d-f{color:var(--yellow);background:transparent;border:0;padding:0;font-size:10px}
+      .fish3d-t{color:rgba(255,255,255,.75);font-size:12px}
+      .fish3d-f{color:var(--yellow);background:transparent;border:0;padding:0;font-size:12px}
     }
     @media(min-width:940px){
       .hero{padding:44px 28px 36px;text-align:left}
@@ -435,7 +433,7 @@ const REVIEW_SLOTS = [
       .hero-stats{max-width:520px}
       .fish3d{background:#fff;border:2px solid var(--line);box-shadow:4px 4px 0 var(--line);backdrop-filter:none}
       .fish3d-n{color:var(--ink);font-size:12px}
-      .fish3d-t{color:var(--muted);font-size:10px}
+      .fish3d-t{color:var(--muted);font-size:12px}
       .fish3d-img{border-color:var(--line)}
       .demo-phone{border:3px solid var(--line);box-shadow:8px 8px 0 var(--line)}
     }
@@ -449,7 +447,7 @@ const REVIEW_SLOTS = [
     .ti{flex:none;width:136px;margin-right:10px;background:#fff;border:2px solid var(--line);border-radius:16px;overflow:hidden}
     .ti-img{width:100%;height:110px;object-fit:cover}
     .ti .fish{display:block;font:800 13px Inter;color:var(--ink);padding:6px 9px 0}
-    .ti-t{display:block;font:600 11px Inter;color:#64748B;padding:0 9px 8px}
+    .ti-t{display:block;font:600 12px Inter;color:#64748B;padding:0 9px 8px}
 
     /* ── Social proof wall ── */
     .wall{padding:34px 16px 10px;text-align:center}
@@ -784,7 +782,7 @@ const REVIEW_SLOTS = [
 <div class="topbar">
 <div class="ann">
   <DiwaliDecor part="lights" />
-  <span>🛵 <b>2-hour delivery slots</b> · cleaned &amp; cut, at your door</span>
+  <span>🛵 <b>Same-day or pre-order</b> · cleaned &amp; cut, at your door</span>
 </div>
 
 <!-- NAV — no seller links -->
@@ -933,6 +931,9 @@ const REVIEW_SLOTS = [
         Order fresh fish online directly from verified sellers.
         <strong>Order today or pre-order for tomorrow.</strong>
       </p>
+      <div class="hero-ctas">
+        <a href="/shop" class="btn-primary">Order fresh fish →</a>
+      </div>
       <!-- Citable prose for AI search engines — do not remove -->
       <p class="hero-cite">Relifish is a marketplace for fresh fish from verified sellers in Thane and Mumbai. Each seller lists the fish they have that day — surmai, pomfret, rawas, bangda, prawns and more. Order same-day, or pre-order for tomorrow or later, and the seller delivers to your home or keeps it ready for pickup.</p>
       <div class="fish-tags">
@@ -940,11 +941,8 @@ const REVIEW_SLOTS = [
           <a class="ftag" href={`/shop?species=${k}`}><img class="ftag-img" src={`/fish/${k}.jpg?v=2`} alt="" width="32" height="32" />{f}</a>
         ))}
       </div>
-      <div class="hero-ctas">
-        <a href="/shop" class="btn-primary">Order fresh fish →</a>
-      </div>
       <div class="hero-stats">
-        <div class="hs"><div class="hs-n">3</div><div class="hs-l">Areas: Thane, South Mumbai, Kamothe</div></div>
+        <div class="hs"><div class="hs-n">2</div><div class="hs-l">Verified sellers live in Thane</div></div>
         <div class="hs"><div class="hs-n">2 hr</div><div class="hs-l">Delivery slots</div></div>
         <div class="hs"><div class="hs-n">2</div><div class="hs-l">Ways to order: today or pre-order</div></div>
       </div>
@@ -1241,9 +1239,7 @@ const REVIEW_SLOTS = [
           ))}
           {REVIEW_SLOTS.map((r, i) => (
             <div class="rv-slide" hidden={HOME_REVIEWS.length + i > 0}>
-              <div class="st" aria-label="No rating yet">☆☆☆☆☆</div>
-              <p>“{r.t}”</p>
-              <small>— {r.n}</small>
+              <p>{r.t}</p>
               <button type="button" class="claimbtn" data-claim>＋ Claim this spot</button>
             </div>
           ))}
@@ -1602,7 +1598,7 @@ const REVIEW_SLOTS = [
         {i:"📍",t:"Your neighbourhood seller",d:"A verified seller cleans and cuts your fish the way you like it. Now online, with pre-order.",g:"Verified nearby seller",b:"Anonymous warehouse"},
         {i:"🌙",t:"Reserve before it sells out",d:"Popular fish goes first. Pre-order and your seller holds your portion for your delivery day.",g:"Reserved for you",b:"First come first served"},
         {i:"🛵",t:"Pickup or home delivery",d:"Each seller sets their own delivery terms. Collect from the seller or get it delivered. Clear before you order.",g:"Your choice",b:"Fixed delivery windows"},
-        {i:"💬",t:"Direct contact",d:"WhatsApp your seller for cuts, special requests, freshness questions. Real people.",g:"Direct WhatsApp",b:"Chatbot support"},
+        {i:"💬",t:"Direct contact",d:"Ask your seller about cuts, special requests and freshness. Real people.",g:"Real people",b:"Chatbot support"},
       ].map(c=>(
         <div class="why-card">
           <div class="why-icon">{c.i}</div>
@@ -1615,10 +1611,6 @@ const REVIEW_SLOTS = [
           </div>
         </div>
       ))}
-    </div>
-    <div class="stats-bar">
-      <div class="sb"><div class="sb-n">3</div><div class="sb-l">Areas live: Thane, Tardeo, Kamothe</div></div>
-      <div class="sb"><div class="sb-n">2</div><div class="sb-l">Ways to order: today or pre-order</div></div>
     </div>
   </div>
 </section>
