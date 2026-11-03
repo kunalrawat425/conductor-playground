@@ -203,7 +203,6 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
   const lines: (CartLine | OrderLine)[] =
     stage === "cart" ? onMenuLines(b).filter((l) => l.seller_id === seller.id) : stage === "cart_swap" ? offMenuLines(b, seller.id) : stage === "unpaid" ? [b.unpaid!] : stage === "again" ? [b.delivered!] : [];
   const items = [...new Set(lines.map((l) => l.name))].slice(0, 3); // latest first
-  const fish = items.join(" and ");
   const day = WEEKDAY[istDow(due)];
   const m = {
     kind, slot_date: istDate(due), due_ms: due, mode: offer.mode, seller, personal: items.length > 0, items,
@@ -223,13 +222,14 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
     if (!items.length) return null;
     // Promo slot → rf2_promo_cart; the 1 h cart reminder (act_cart) → rf2_cart_today / rf2_cart_preorder.
     // Cart reminders open the seller page with checkout already open (founder 31 Oct); not logged in → just the menu.
+    // Founder 3 Nov: buyers never see a seller or fish name. "Your fresh fish from Relifish is still in your cart".
     const path = `${m.path}?checkout=1`;
     return kind === "promo"
-      ? { ...m, path, template: "rf2_promo_cart", body: [day, b.name, fish, seller.name, offer.when] }
-      : { ...m, path, template: offer.mode === "today" ? "rf2_cart_today" : "rf2_cart_preorder", body: [b.name, fish, seller.name, offer.when] };
+      ? { ...m, path, template: "rf2_promo_cart", body: [day, b.name, "fresh fish", "Relifish", offer.when] }
+      : { ...m, path, template: offer.mode === "today" ? "rf2_cart_today" : "rf2_cart_preorder", body: [b.name, "fresh fish", "Relifish", offer.when] };
   }
-  if (stage === "unpaid") return { ...m, template: "rf2_promo_unpaid", body: [day, b.name, fish, offer.when], path: `/track/${b.unpaid!.id}` };
-  if (stage === "again") return { ...m, template: "rf2_order_again", body: [b.name, fish, seller.name, offer.when] };
+  if (stage === "unpaid") return { ...m, template: "rf2_promo_unpaid", body: [day, b.name, "fresh fish", offer.when], path: `/track/${b.unpaid!.id}` };
+  if (stage === "again") return { ...m, template: "rf2_order_again", body: [b.name, "fresh fish", "Relifish", offer.when] };
   // Morning slot (Fri/Sat/Sun 8:30) with a Today slot bookable: "Today's fresh catch is in … Order by 4 PM for delivery today"
   // (not the first slot: someone ordering at 3 PM gets 4–6 PM).
   if (offer.mode === "today" && offer.by && seller.todayMenu && istMin(due) < 12 * 60) {
@@ -246,7 +246,8 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
 /** `all` (founder's one-off "send to all", 30 Oct): also skips the 72 h / 48 h gaps, the Meta hold and the
  *  inactive / just-delivered rules. Opt-in, STOP, DND, open order, quiet hours and 1 a day still apply. */
 /** `notBefore` (IST minute): promos sent by SMS pass PROMO_SMS_START, so a Fri/Sat/Sun 8:30 promo goes at 10:00 instead. */
-export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history: SentLog[], sendNow = false, all = false, notBefore = 0): Decision | Skip {
+/** `bySms`: the promo goes as SMS, where the generic catch promo becomes PROMO_NEW (no fish list, see promoSms). */
+export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history: SentLog[], sendNow = false, all = false, notBefore = 0, bySms = false): Decision | Skip {
   if (b.dnd) return { skip: "do not message" };
   if (b.opted_out) return { skip: "opted out" };
   if (b.open_order) return { skip: "open order" };
@@ -283,7 +284,14 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   if (!isDue(now, due)) return { skip: "nothing due" };
   // At send time the offer is re-read: what the message promises is what checkout offers now.
   const offer = offerAt(seller, now);
-  return (offer && compose("promo", stage, due, b, seller, offer)) || { skip: "nothing due" };
+  const d = offer && compose("promo", stage, due, b, seller, offer);
+  if (!d) return { skip: "nothing due" };
+  // Founder 3 Nov: no seller or fish names to buyers. These templates list fish by nature, so they never go
+  // on WhatsApp; by SMS the generic catch promo is PROMO_NEW, which names neither.
+  if (d.template === "rf2_cart_swap" || (!bySms && (d.template === "rf2_catch_prices" || d.template === "rf2_catch_preorder"))) {
+    return { skip: "no item names (founder 3 Nov)" };
+  }
+  return d;
 }
 
 // ── Promotional SMS (founder, 1 Nov) ──
@@ -293,27 +301,24 @@ export const PROMO_SMS_END = 21 * 60;
 export type PromoSmsKey = "PROMO_NEW" | "PROMO_CART" | "PROMO_AGAIN";
 
 /**
- * The SMS version of a promo decision: one DLT promotional template per stage, no prices. The
- * generic promo names the verified sellers delivering to them, nearest first (founder, 1 Nov); `all` = every live seller. Same rules as the WhatsApp promo (decide(): stage, 1 a day, 72 h gap, 48 h after a reminder,
+ * The SMS version of a promo decision: one DLT promotional template per stage, no prices, and no seller or
+ * fish names (founder, 3 Nov): those slots say "Relifish" / "fresh fish order". Same rules as the WhatsApp promo (decide(): stage, 1 a day, 72 h gap, 48 h after a reminder,
  * DND / STOP / open order / just delivered / inactive) plus the 10:00–21:00 window. null = no SMS
  * (outside the window, the unpaid stage, or the cart-swap substitute, which needs a price).
  */
-export function promoSms(d: Decision, b: BuyerState, now: number, all: MsgSeller[] = []): { key: PromoSmsKey; vars: string[] } | null {
+export function promoSms(d: Decision, b: BuyerState, now: number): { key: PromoSmsKey; vars: string[] } | null {
   const m = istMin(now);
   if (m < PROMO_SMS_START || m >= PROMO_SMS_END) return null;
-  const fish = d.items.join(" and ");
   switch (d.template) {
-    case "rf2_promo_cart": return fish ? { key: "PROMO_CART", vars: [b.name, fish, d.when] } : null;
+    // "your fresh fish order is still in your Relifish cart"
+    case "rf2_promo_cart": return b.cart.length ? { key: "PROMO_CART", vars: [b.name, "fresh fish order", d.when] } : null;
     // Unpaid order: no promo SMS. They already got the gentle unpaid reminder 30 min after checkout, a weekend
     // nudge about the same order would be spam, and MSG91 auto-rejects order wording in promotional SMS (1 Nov).
     case "rf2_promo_unpaid": return null;
-    case "rf2_order_again": return fish ? { key: "PROMO_AGAIN", vars: [b.name, fish, d.when] } : null;
-    case "rf2_catch_prices": case "rf2_catch_preorder": {
-      // Founder (1 Nov): not a fish list. The verified sellers delivering to them, nearest first, and the next delivery.
-      const near = coveringSellers(b, all.length ? all : [d.seller]).map((x) => x.name);
-      const names = (near.length ? near : [d.seller.name]).join(", ");
-      return { key: "PROMO_NEW", vars: [b.name, names, d.when] };
-    }
+    // "hope you enjoyed the Relifish order"
+    case "rf2_order_again": return b.delivered ? { key: "PROMO_AGAIN", vars: [b.name, "Relifish order", d.when] } : null;
+    // "verified fish sellers delivering near you: Relifish" (decide() already found a seller delivering to them).
+    case "rf2_catch_prices": case "rf2_catch_preorder": return { key: "PROMO_NEW", vars: [b.name, "Relifish", d.when] };
     default: return null;
   }
 }
@@ -406,7 +411,7 @@ export function decideActivity(now: number, b: BuyerState, sellers: MsgSeller[],
 /** The 1 h cart reminder for a buyer with something on the menu in their cart (null if nothing fits). */
 export function cartMessage(now: number, b: BuyerState, seller: MsgSeller, offer: Offer): Omit<ActDecision, "dedupe_key"> | null {
   const d = compose("act_cart", "cart", now, b, seller, offer);
-  return d && { ...d, sms: { key: "CART", vars: [b.name, d.items.join(" and ")] } };
+  return d && { ...d, sms: { key: "CART", vars: [b.name, "fresh fish"] } }; // "your Relifish order for fresh fish is not placed yet"
 }
 
 /** The 1 h welcome: "a local seller near you…", next slot, today's catch photo. */

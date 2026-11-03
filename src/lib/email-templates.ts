@@ -238,7 +238,6 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
     buyerNotes, cutStyle, bundleSize, bundleCount, pricingLabel,
   } = args;
 
-  const fishName = args.items && args.items.length > 1 ? `${args.items.length} items` : capitalizeFishName(species);
   const orderIdShort = orderId ? orderId.substring(0, 8) : "";
   const rows = [
     orderRows(args, args.isPreorder ? "Est. Max Total" : "Total"),
@@ -250,7 +249,8 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
   return shell(`
     ${orderStatusHeader(statusLabel)}
     ${orderIntro(
-      args.isPreorder ? `${fishName} pre-order` : `${fishName} order update`,
+      // Founder, 3 Nov: the buyer's heading never names the fish (the seller's still does).
+      args.isPreorder ? "Your Relifish pre-order" : "Your Relifish order update",
       args.isPreorder
         ? "Your pre-order has been placed. The final price is set on your delivery day — you will only be charged up to the max estimate shown."
         : args.note || "Here's the latest on your order. You can see it any time in Your orders. Questions? Call us on +91 91522 07607."

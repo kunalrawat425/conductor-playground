@@ -17,6 +17,13 @@ describe("buyer email subjects (founder, 26 Oct)", () => {
     expect(deliveredOnTime("2026-10-26T08:30:00Z", Date.parse("2026-10-26T09:00:00Z"))).toBe(false);
     expect(deliveredOnTime(null)).toBe(false);
   });
+  it("never name the fish or the seller (founder, 3 Nov)", () => {
+    for (const k of ["placed", "confirmed", "out_for_delivery", "delivered", "seller_cancelled", "buyer_cancelled", "expired_unpaid", "refunded"] as const) {
+      const { subject, preview } = buyerEmailCopy(k, { fish: "Surmai", seller: "Fishtokri", slot: "today, 12–2 PM", amount: 1380 });
+      expect(`${subject} ${preview}`, k).not.toMatch(/surmai|fishtokri/i);
+    }
+    expect(buyerEmailCopy("placed", { fish: "Surmai" }).preview).toContain("your Relifish order");
+  });
   it("evening pre-orders promise a 9:30 AM confirmation; previews are hidden and escaped", () => {
     expect(buyerEmailCopy("placed", { fish: "Halwa", seller: "The Nomadic Catch", eveningPreorder: true }).preview).toContain("by 9:30 AM");
     expect(buyerEmailCopy("placed", { fish: "Surmai", seller: "Fishtokri" }).preview).toContain("within 2 hours");
