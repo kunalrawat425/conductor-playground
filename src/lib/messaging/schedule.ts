@@ -14,7 +14,9 @@
  *     after 30 days inactive.
  *     No promo within 48 h of an activity reminder (founder, 30 Oct), and none for 72 h after Meta
  *     blocked a marketing message to that buyer (per-user marketing limit: wait, don't retry).
- *  R  Activity reminders (founder, 30 Oct), once per action, 8 AM–9 PM, decideActivity():
+ *  R  Activity reminders (founder, 30 Oct), once per action, decideActivity(). Cart and sign-up 8 AM–9 PM;
+ *     the unpaid one any hour, 30 min after checkout (founder, 3 Nov: a 10:49 PM checkout for an 8 AM
+ *     slot was never reminded):
  *     unpaid checkout + 30 min → rf2_unpaid · cart left + 1 h → rf2_cart_today / rf2_cart_preorder ·
  *     sign-up with no cart + 1 h → rf2_welcome. Highest only (unpaid > cart > sign-up); cart/sign-up
  *     only when no promo or reminder went that day and Meta's 72 h hold is over (both are MARKETING);
@@ -352,20 +354,20 @@ export type ActDecision = Decision & { dedupe_key: string; sms: { key: "CART" | 
 export function decideActivity(now: number, b: BuyerState, sellers: MsgSeller[], history: SentLog[]): UnpaidDue | ActDecision | Skip {
   if (b.dnd) return { skip: "do not message" };
   if (b.opted_out) return { skip: "opted out" };
-  if (!inSendHours(now)) return { skip: "quiet hours" };
   const done = (key: string) => history.some((x) => x.dedupe_key?.startsWith(`${key}:`) && x.status !== "dry_run");
   const today = istDate(now);
 
-  // 1. Unpaid checkout: 30 min after it was placed, while its slot is still ahead (≤ 24 h). Each checkout once.
+  // 1. Unpaid checkout: 30 min after it was placed, at any hour, while its slot is still ahead (≤ 24 h). Each checkout once.
   for (const u of b.unpaids ?? (b.unpaid ? [b.unpaid] : [])) {
     if (!u.created_at || superseded(b, u)) continue;
     const due = Date.parse(u.created_at) + UNPAID_AFTER_MS;
     const key = `act_unpaid:${u.checkout || u.id}`;
     const slotAhead = !u.slot_start || Date.parse(u.slot_start) > now;
-    if (now - Date.parse(u.created_at) < DAY_MS && slotAhead && !done(key) && reminderWindow(due, now)) {
+    if (now - Date.parse(u.created_at) < DAY_MS && slotAhead && !done(key) && isDue(now, due)) {
       return { kind: "act_unpaid", dedupe_key: key, slot_date: today, due_ms: due, order_id: u.id };
     }
   }
+  if (!inSendHours(now)) return { skip: "quiet hours" };
   if (b.open_order) return { skip: "open order" };
   // One marketing message a day: a promo today caps the cart / sign-up reminder too. Meta hold: wait 72 h.
   const capped = history.some((x) => isReal(x) && x.slot_date === today && MARKETING_KINDS.includes(x.kind));

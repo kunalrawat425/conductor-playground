@@ -60,13 +60,14 @@ export async function dispatch(sb: any, d: Dispatch): Promise<DispatchResult> {
 
 /**
  * May a failed WhatsApp row go by SMS at `now`? Never a "stuck in queue" row (its WhatsApp may have
- * gone out). Reminders (act_*) only 8 AM–9 PM and within 60 min of the WhatsApp; the caller also
+ * gone out). Reminders (act_*) within 60 min of the WhatsApp, cart/sign-up only 8 AM–9 PM; the caller also
  * re-checks they're still true. Order updates: any time (within the cron's 6 h look-back).
  */
 export function smsFallbackDue(row: { kind?: string; error?: string | null; created_at?: string }, now: number): boolean {
   if (String(row.error || "").startsWith("stuck in queue")) return false;
   if (!String(row.kind).startsWith("act_")) return true;
-  return inSendHours(now) && now - Date.parse(String(row.created_at)) < 60 * 60_000;
+  const fresh = now - Date.parse(String(row.created_at)) < 60 * 60_000;
+  return fresh && (row.kind === "act_unpaid" || inSendHours(now)); // unpaid: any hour (founder, 3 Nov)
 }
 
 /**

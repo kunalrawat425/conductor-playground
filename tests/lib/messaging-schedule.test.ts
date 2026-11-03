@@ -419,6 +419,12 @@ describe("activity reminders (founder, 30 Oct): unpaid 30 min, cart 1 h, sign-up
     expect(reminderWindow(T("23", "22:00"), T("24", "08:05"))).toBe(true);
     expect(reminderWindow(T("23", "22:00"), T("24", "10:05"))).toBe(false);
   });
+  it("unpaid reminder goes at any hour: a 10:49 PM checkout for an 8 AM slot is reminded at 11:19 PM (founder, 3 Nov)", () => {
+    const b = buyer({ unpaid: unpaid(T("23", "22:49"), T("24", "08:00")), last_order_at: iso(T("23", "22:49")) });
+    expect(act(T("23", "23:10"), b).skip).toBe("quiet hours");          // not due yet; cart/sign-up still sleep
+    expect(act(T("23", "23:20"), b)).toMatchObject({ kind: "act_unpaid" });
+    expect(act(T("24", "02:00"), b).skip).toBe("quiet hours");          // past the 2 h window: once only, no 2 AM text
+  });
   it("every unpaid checkout gets its own reminder, oldest first", () => {
     const u1 = { ...unpaid(T("23", "10:00")), id: "o1", checkout: "c1" };
     const u2 = { ...unpaid(T("23", "10:10")), id: "o2", checkout: "c2" };
