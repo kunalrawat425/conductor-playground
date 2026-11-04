@@ -59,8 +59,10 @@ export function smsPayload(flowId: string, to: string, vars: string[], promo = f
 }
 
 /** The DLT template for this key is set up in MSG91 (env MSG91_FLOW_<KEY>). Until then SMS is skipped, not failed. */
+/** Founder (4 Nov): promo SMS stopped in prod (98 sent on 3 Nov, no orders). Stays stopped unless env PROMO_SMS_STOPPED=false. */
+const promoStopped = () => env("PROMO_SMS_STOPPED") !== "false";
 export const smsReady = (key: SmsKey) =>
-  !!env(`MSG91_FLOW_${key}`) && (!isPromoSms(key) || (env("PROMO_SMS_LIVE") === "true" && !!env("MSG91_PROMO_SENDER")));
+  !!env(`MSG91_FLOW_${key}`) && (!isPromoSms(key) || (!promoStopped() && env("PROMO_SMS_LIVE") === "true" && !!env("MSG91_PROMO_SENDER")));
 
 export async function sendSms(to: string, key: SmsKey, vars: string[]): Promise<SendResult> {
   const flowId = env(`MSG91_FLOW_${key}`);

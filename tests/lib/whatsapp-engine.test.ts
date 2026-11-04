@@ -524,11 +524,13 @@ describe("promotional SMS sending (founder, 1 Nov)", () => {
     expect((await dispatch(sb, msg)).status).toBe("no_channel");
     vi.stubEnv("PROMO_SMS_LIVE", "true");
     expect(smsReady("PROMO_NEW")).toBe(false); // still no MSG91_PROMO_SENDER
+    vi.stubEnv("MSG91_PROMO_SENDER", "873543");
+    expect(smsReady("PROMO_NEW")).toBe(false); // founder stop (4 Nov): off unless PROMO_SMS_STOPPED=false
     expect(sb.rows).toHaveLength(0);
     expect((globalThis.fetch as any).mock.calls).toHaveLength(0);
   });
   it("sends from the numeric promo header, not RLFISH; reminders keep RLFISH", async () => {
-    base(); vi.stubEnv("PROMO_SMS_LIVE", "true"); vi.stubEnv("MSG91_PROMO_SENDER", "873543");
+    base(); vi.stubEnv("PROMO_SMS_STOPPED", "false"); vi.stubEnv("PROMO_SMS_LIVE", "true"); vi.stubEnv("MSG91_PROMO_SENDER", "873543");
     (globalThis.fetch as any).mockResolvedValue(ok({ type: "success", message: "p1" }));
     const sb = fakeSb();
     const r = await dispatch(sb, msg);
@@ -538,7 +540,7 @@ describe("promotional SMS sending (founder, 1 Nov)", () => {
     expect(smsPayload("f", "91x", ["a"]).sender).toBe("RLFISH");
   });
   it("a promo goes once: a second run is a duplicate", async () => {
-    base(); vi.stubEnv("PROMO_SMS_LIVE", "true"); vi.stubEnv("MSG91_PROMO_SENDER", "873543");
+    base(); vi.stubEnv("PROMO_SMS_STOPPED", "false"); vi.stubEnv("PROMO_SMS_LIVE", "true"); vi.stubEnv("MSG91_PROMO_SENDER", "873543");
     (globalThis.fetch as any).mockResolvedValue(ok({ type: "success", message: "p1" }));
     const sb = fakeSb();
     await dispatch(sb, msg);
