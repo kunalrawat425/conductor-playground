@@ -11,7 +11,7 @@ const jsonLd = {
       "@id": "https://www.relifish.com/for-sellers",
       "url": "https://www.relifish.com/for-sellers",
       "name": "Sell Fish Online Mumbai — Free Store | Relifish",
-      "description": "Start selling fish online in Mumbai. Free to list. Accept orders, pre-orders, and online payments. Relifish is the online fish selling platform built for Mumbai fish sellers.",
+      "description": "Start selling fish online in Mumbai. Accept orders, pre-orders, and online payments. Relifish is the online fish selling platform built for Mumbai fish sellers.",
       "inLanguage": "en-IN",
       "about": { "@id": "https://www.relifish.com#service" },
       "isPartOf": { "@id": "https://www.relifish.com" },
@@ -35,13 +35,6 @@ const jsonLd = {
         { "@type": "City", "name": "Thane" },
         { "@type": "City", "name": "Navi Mumbai" }
       ],
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "INR",
-        "description": "Free to list.",
-        "availability": "https://schema.org/InStock"
-      },
       "hasOfferCatalog": {
         "@type": "OfferCatalog",
         "name": "Seller Features",
@@ -72,7 +65,7 @@ const jsonLd = {
       "@type": "HowTo",
       "@id": "https://www.relifish.com/for-sellers#howto",
       "name": "How to start selling fish online on Relifish",
-      "description": "Set up your online fish store in Mumbai on Relifish. Accept orders, pre-orders, and online payments. Free to list.",
+      "description": "Set up your online fish store in Mumbai on Relifish. Accept orders, pre-orders, and online payments.",
       "totalTime": "PT5M",
       "estimatedCost": { "@type": "MonetaryAmount", "currency": "INR", "value": "0" },
       "step": [
@@ -85,7 +78,6 @@ const jsonLd = {
     {
       "@type": "FAQPage",
       "mainEntity": [
-        { "@type": "Question", "name": "Is Relifish free for fish sellers?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Relifish is free to list your fish products. You set your price. No hidden fees, no monthly charges." } },
         { "@type": "Question", "name": "How do I sell fish online in Mumbai?", "acceptedAnswer": { "@type": "Answer", "text": "Sign up on Relifish, add your fish inventory with photos and prices, and share your store link on WhatsApp and Instagram. Buyers in your area find you, browse your live catalogue, and order directly." } },
         { "@type": "Question", "name": "Can I accept fish pre-orders on Relifish?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Set when you take pre-orders and which days you deliver. Buyers pick a delivery day and time. Demand is locked in advance — you buy exactly what's needed at the docks, so you can buy closer to what's needed and reduce wastage." } },
         { "@type": "Question", "name": "Does Relifish support fish home delivery?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Set a delivery radius in km, flat delivery fee or per-km rate. Distance is auto-calculated from the buyer's address to your location. Buyers outside your serviceable radius see pickup only." } },
@@ -102,7 +94,7 @@ const jsonLd = {
 ---
 <AppShell
   title="Sell Fish Online Mumbai — Free Store | Relifish"
-  description="Start selling fish online in Mumbai. Free to list. Accept orders, pre-orders, and online payments in your serviceable area."
+  description="Start selling fish online in Mumbai. Accept orders, pre-orders, and online payments in your serviceable area."
   hideNav={true}
   hideHeader={true}
   jsonLd={jsonLd}
@@ -330,7 +322,7 @@ const jsonLd = {
           <a href="/dashboard/login">Get Started</a>
         </div>
       </form>
-      <p class="fs-cta-note" style="margin-top:20px;">Free to list · Improve customer experience with every order</p>
+      <p class="fs-cta-note" style="margin-top:20px;">Improve customer experience with every order</p>
       <p class="fs-cta-sub">New seller? <a href="/dashboard/login">Start free →</a> · Questions? <a href={SUPPORT_PHONE_TEL}>Call us</a></p>
     </div>
 
@@ -375,7 +367,7 @@ const jsonLd = {
   <div class="fs-wrap">
     <p class="fs-eyebrow" style="color:#DC2626;">The Old Way vs The Relifish Way</p>
     <h2 class="fs-h2" style="color:#0F172A;">Stop taking orders on WhatsApp.<br/>Start running a real business.</h2>
-    <p class="fs-lead">Missed calls at 6am, manual Excel sheets, and payment tracking chaos. Relifish replaces the chaos with a professional online storefront. Free to use.</p>
+    <p class="fs-lead">Missed calls at 6am, manual Excel sheets, and payment tracking chaos. Relifish replaces the chaos with a professional online storefront.</p>
 
     <div style="display:grid;grid-template-columns:1fr;gap:16px;">
       <div class="fs-problem-box">
@@ -996,7 +988,6 @@ const jsonLd = {
     <h2 class="fs-h2" style="color:#0F172A;">Common questions</h2>
     <div style="display:flex;flex-direction:column;gap:0;border-top:1px solid #E2E8F0;">
       {[
-        {q:"Is Relifish free to use?", a:"Yes. Free to list your products. You set your own prices."},
         {q:"Do I need a smartphone or computer?", a:"Just a smartphone. Your dashboard is mobile-first. Manage orders, inventory, and notifications all from your phone."},
         {q:"How do buyers find my store?", a:"Share your link (relifish.com/s/your-store) on WhatsApp and Instagram. Buyers can also find you on the Relifish shop page."},
         {q:"Can I set my own shop hours?", a:"Yes. Set your open/close times, which days you operate, and your pre-order window. Orders are blocked when your shop is closed."},
@@ -1017,7 +1008,7 @@ const jsonLd = {
   <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(0,102,255,0.12) 0%,transparent 65%);pointer-events:none;"></div>
   <div style="position:relative;z-index:1;" class="fs-wrap">
     <h2 style="font:900 44px/1.1 Inter;color:#fff;margin:0 0 14px;letter-spacing:-1.5px;">Start selling today</h2>
-    <p style="font:400 16px/1.6 Inter;color:rgba(255,255,255,0.45);margin:0 0 36px;max-width:440px;margin-left:auto;margin-right:auto;">Free to list. Your fish, your prices, your buyers.</p>
+    <p style="font:400 16px/1.6 Inter;color:rgba(255,255,255,0.45);margin:0 0 36px;max-width:440px;margin-left:auto;margin-right:auto;">Your fish, your prices, your buyers.</p>
     <a href="/dashboard/login" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#0066FF;color:#fff;font:800 16px Inter;padding:18px 48px;border-radius:14px;text-decoration:none;box-shadow:0 4px 32px rgba(0,102,255,0.4);">
       Create Your Free Store →
     </a>
