@@ -74,14 +74,15 @@ export async function loadCheckout(sb: any, order_id: string): Promise<{ ord: an
 export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | null | undefined, nowMs = Date.now(), cancel?: WaCancel, checkout?: any[]): { template: string; body: string[]; image?: string | null } {
   const short = `#${String(ord.id).slice(0, 8).toUpperCase()}`;
   const name = firstName(buyerName);
-  const fish = fishName(ord.listing?.description, ord.listing?.species || ord.species);
-  const seller = ord.listing?.seller?.name || "The seller";
+  // Founder 3 Nov: buyers never see the seller's or the fish's name. Seller slots say "Relifish", fish slots "fresh fish".
+  const fish = "fresh fish";
+  const seller = "Relifish";
   const slot = ord.delivery_slot_start && ord.delivery_slot_end ? slotLabel(ord.delivery_slot_start, ord.delivery_slot_end) : "as agreed with the seller";
   const image = orderPhoto(ord, checkout, cancel);
   const arriving = slotAhead(ord, nowMs) ? arrivingByLabel(ord.delivery_slot_end) : "soon";
   const istHour = new Date(nowMs + 5.5 * 3_600_000).getUTCHours();
   switch (event) {
-    case "unpaid": return { template: "rf2_unpaid", body: [name, short, checkoutFish(ord, checkout), slot], image };
+    case "unpaid": return { template: "rf2_unpaid", body: [name, short, fish, slot], image };
     case "paid": return ord.is_preorder && istHour >= 18
       ? { template: "rf2_paid_evening", body: [short, name, slot, seller] }
       : { template: "rf2_paid", body: [short, name, seller] };
@@ -91,9 +92,10 @@ export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | 
     case "cancelled": {
       const why = cancel?.reason?.replace(/\.+$/, "") || "the seller couldn't take it";
       const refund = cancel?.refund || "none needed, nothing was charged";
-      // "Your order #CART (Saundale) couldn't go ahead: the seller removed Saundale (not available), the rest of your order goes ahead."
+      // "Your order #CART couldn't go ahead: an item was not available, the rest of your order goes ahead."
+      // No reason here: the seller types it, and it may name the fish.
       if (cancel?.removedFrom) {
-        return { template: "rf2_cancelled", body: [name, `#${String(cancel.removedFrom).slice(0, 8).toUpperCase()} (${fish})`, `the seller removed ${fish} (${why}), the rest of your order goes ahead`, refund] };
+        return { template: "rf2_cancelled", body: [name, `#${String(cancel.removedFrom).slice(0, 8).toUpperCase()}`, "an item was not available, the rest of your order goes ahead", refund] };
       }
       return { template: "rf2_cancelled", body: [name, short, why, refund] };
     }
@@ -106,22 +108,21 @@ const slotAhead = (ord: any, nowMs: number) => !!ord.delivery_slot_end && Date.p
 /** The SMS version of an order update (DLT templates in sms.ts; values cut to 30 chars there). Pure. */
 export function orderSms(event: OrderWaEvent, ord: any, buyerName: string | null | undefined, cancel?: WaCancel, checkout?: any[], nowMs = Date.now()): SmsPart {
   const short = `#${String(ord.id).slice(0, 8).toUpperCase()}`;
-  const fish = fishName(ord.listing?.description, ord.listing?.species || ord.species);
-  const seller = ord.listing?.seller?.name || "The seller";
   const slot = ord.delivery_slot_start && ord.delivery_slot_end ? slotLabel(ord.delivery_slot_start, ord.delivery_slot_end) : "as agreed";
   const name = firstName(buyerName);
+  // Founder 3 Nov: no seller or fish names (the DLT text is registered; only the values change).
   switch (event) {
-    case "unpaid": return { key: "UNPAID", vars: [name, checkoutFish(ord, checkout, 30), slot] };
-    case "paid": return { key: "PAID", vars: [short, seller, slot] };
+    case "unpaid": return { key: "UNPAID", vars: [name, "fresh fish", slot] };
+    case "paid": return { key: "PAID", vars: [short, "Relifish", slot] };
     case "confirmed": return { key: "CONFIRMED", vars: [name, short, slotAhead(ord, nowMs) || !ord.delivery_slot_end ? slot : "soon"] };
     case "out_for_delivery": return { key: "OUT", vars: [short, slotAhead(ord, nowMs) ? arrivingByLabel(ord.delivery_slot_end) : "soon"] };
-    case "completed": return { key: "DELIVERED", vars: [short, fish] };
+    case "completed": return { key: "DELIVERED", vars: [short, "fresh fish"] };
     case "cancelled": {
       // Refund only when money was taken; otherwise "No payment was taken" (founder, 1 Nov).
       const amt = String(cancel?.refund || "").match(/₹\s?\d+(?:,\d+)*(?:\.\d+)?/)?.[0]?.replace(/\s/g, "");
       const why = cancel?.reason?.replace(/\.+$/, "") || "the seller couldn't take it";
       const [id, reason] = cancel?.removedFrom
-        ? [`#${String(cancel.removedFrom).slice(0, 8).toUpperCase()} (${fish})`, `${fish} not available`]
+        ? [`#${String(cancel.removedFrom).slice(0, 8).toUpperCase()}`, "an item not available"]
         : [short, why];
       return amt ? { key: "CANCELLED", vars: [name, id, reason, amt] } : { key: "CANCELLED_NOPAY", vars: [name, id, reason] };
     }

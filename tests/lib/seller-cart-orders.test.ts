@@ -101,8 +101,8 @@ describe("cart-level transitions", () => {
     expect(push.mock.calls[0][0]).toMatchObject({ status: "confirmed", species: "Pomfret + Surmai" });
     expect(email).toHaveBeenCalledTimes(2); // one buyer + one seller
     expect(email.mock.calls[0][1]).toBe("Your Relifish order is confirmed"); // founder, 26 Oct
-    expect(email.mock.calls[0][2]).toContain("Pomfret + Surmai, cleaned and cut your way"); // preview line
-    expect(email.mock.calls[0][2]).toContain("Surmai");
+    expect(email.mock.calls[0][2]).toContain("Your order, cleaned and cut your way"); // preview line: no fish names (founder, 3 Nov)
+    expect(email.mock.calls[0][2]).toContain("Surmai"); // the order table still lists the items
     expect(email.mock.calls[0][2]).toContain("₹760"); // 600 + 120 + 40 delivery
   });
 
@@ -155,7 +155,7 @@ describe("item-level cancel", () => {
     const copy = buyerOrderPushNotification(p.status, p.species, null, p.cancel);
     expect(copy.body).toBe("Surmai was removed from your order #O1 — ₹120 refunded. Reason: Surmai sold out.");
     expect(email).toHaveBeenCalledTimes(1);
-    expect(email.mock.calls[0][1]).toBe("Sorry, Surmai was removed from your order #O1 — ₹120 refunded");
+    expect(email.mock.calls[0][1]).toBe("Sorry, an item was removed from your order #O1 — ₹120 refunded");
     // WhatsApp rf2_cancelled about the removed row, under the cart's order number.
     expect(wa).toHaveBeenCalledTimes(1);
     expect(wa.mock.calls[0]).toEqual(["o2", "cancelled", { reason: "Surmai sold out", refund: "₹120 refunded", removedFrom: "o1" }]);
@@ -169,7 +169,7 @@ describe("item-level cancel", () => {
     const pending = "₹120 refund is being processed, it reaches you in 5–7 working days";
     const p = push.mock.calls[0][0];
     expect(buyerOrderPushNotification(p.status, p.species, null, p.cancel).body).toBe(`Surmai was removed from your order #O1 — ${pending}. Reason: Not available.`);
-    expect(email.mock.calls[0][1]).toBe(`Sorry, Surmai was removed from your order #O1 — ${pending}`);
+    expect(email.mock.calls[0][1]).toBe(`Sorry, an item was removed from your order #O1 — ${pending}`);
     expect(email.mock.calls[0][1]).not.toMatch(/₹120 refunded/);
     expect(wa.mock.calls[0][2]).toMatchObject({ refund: pending, removedFrom: "o1" });
   });

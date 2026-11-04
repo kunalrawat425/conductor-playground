@@ -62,6 +62,7 @@ function copyLines(event: OrderEvent, species: string, orderIdShort: string, amo
   const refund = amount != null ? ` Refund: ${refundLine(amount, refundSent)}.` : "";
   const why = reason ? ` Reason: ${reason}.` : "";
   // Buyer lines: a gentle status, then the next step and a real person to talk to (founder, 1 Nov).
+  // Never the fish or seller name (founder, 3 Nov): "your Relifish order". Seller lines keep the fish, they pack it.
   // buyerSubject here is overridden by email-subjects in copyFor.
   const help = `Call us on ${SUPPORT_PHONE_DISPLAY}`;
   switch (event) {
@@ -69,7 +70,7 @@ function copyLines(event: OrderEvent, species: string, orderIdShort: string, amo
       return {
         buyerSubject: `Payment received — ${fish} · #${orderIdShort}`,
         buyerHeading: "Payment received, thank you",
-        buyerLine: `We received your payment${amt} for your ${fish} (order #${orderIdShort}). We'll let you know as soon as it's confirmed. Any special request for the cut? ${help}.`,
+        buyerLine: `We received your payment${amt} for your Relifish order #${orderIdShort}. We'll let you know as soon as it's confirmed. Any special request for the cut? ${help}.`,
         sellerSubject: `New paid order — please confirm · ${fish} · #${orderIdShort}`,
         sellerHeading: "New paid order — confirm it",
         sellerLine: `The buyer paid${amt} for ${fish} (order #${orderIdShort}). Open your dashboard to confirm or decline it.`,
@@ -78,7 +79,7 @@ function copyLines(event: OrderEvent, species: string, orderIdShort: string, amo
       return {
         buyerSubject: `You cancelled your order — ${fish} · #${orderIdShort}`,
         buyerHeading: "Your order is cancelled",
-        buyerLine: `Your ${fish} order #${orderIdShort} is cancelled, as you asked.${why}${refund} Whenever you'd like fish again, the menu is open. Questions? ${help}.`,
+        buyerLine: `Your Relifish order #${orderIdShort} is cancelled, as you asked.${why}${refund} Whenever you'd like fish again, the menu is open. Questions? ${help}.`,
         sellerSubject: `Order CANCELLED by the buyer — ${fish} · #${orderIdShort}`,
         sellerHeading: "Order cancelled by the buyer",
         sellerLine: `The buyer cancelled their ${fish} order #${orderIdShort}${amt}.${why} Do not prepare this order.`,
@@ -87,7 +88,7 @@ function copyLines(event: OrderEvent, species: string, orderIdShort: string, amo
       return {
         buyerSubject: `Order cancelled — ${fish} · #${orderIdShort}`,
         buyerHeading: "Sorry, your order couldn't go ahead",
-        buyerLine: `Sorry, your ${fish} order #${orderIdShort} couldn't go ahead.${why}${refund} Want another fish or a different slot? ${help}, we'll help you right away.`,
+        buyerLine: `Sorry, your Relifish order #${orderIdShort} couldn't go ahead.${why}${refund} Want another fish or a different slot? ${help}, we'll help you right away.`,
         sellerSubject: `You cancelled order #${orderIdShort} — ${fish}`,
         sellerHeading: "Order cancelled",
         sellerLine: `You cancelled ${fish} order #${orderIdShort}.${why} The buyer has been notified and refunded.`,
@@ -96,7 +97,7 @@ function copyLines(event: OrderEvent, species: string, orderIdShort: string, amo
       return {
         buyerSubject: `Order cancelled — payment not completed · ${fish}`,
         buyerHeading: "Your order didn't go through",
-        buyerLine: `Your ${fish} order #${orderIdShort} didn't go through, so it's now closed and no payment was taken. Got stuck anywhere? ${help}, we'll sort it out. Whenever you'd like, the menu is open for your next order.`,
+        buyerLine: `Your Relifish order #${orderIdShort} didn't go through, so it's now closed and no payment was taken. Got stuck anywhere? ${help}, we'll sort it out. Whenever you'd like, the menu is open for your next order.`,
         sellerSubject: `Order expired unpaid — ${fish} · #${orderIdShort}`,
         sellerHeading: "Order expired unpaid",
         sellerLine: `The buyer never completed payment for ${fish} order #${orderIdShort}, so it was cancelled automatically. Do not prepare this order. Stock has been released.`,
@@ -105,7 +106,7 @@ function copyLines(event: OrderEvent, species: string, orderIdShort: string, amo
       return {
         buyerSubject: `Refund processed — ${fish} · #${orderIdShort}`,
         buyerHeading: "Refund processed",
-        buyerLine: `A refund${amt} was processed for your ${fish} order #${orderIdShort}. It should reach your account in 5–7 working days. Questions? ${help}.`,
+        buyerLine: `A refund${amt} was processed for your Relifish order #${orderIdShort}. It should reach your account in 5–7 working days. Questions? ${help}.`,
         sellerSubject: `Refund processed — ${fish} · #${orderIdShort}`,
         sellerHeading: "Refund processed",
         sellerLine: `A refund${amt} was processed for ${fish} order #${orderIdShort}.`,
@@ -221,9 +222,10 @@ export async function notifyOrderParties(opts: {
     ? (paidOnline ? refundDueRupees(group, cartRows) || null : null)
     : group.reduce((sum: number, r: any) => sum + Number(r.total_price || 0) + Number(r.delivery_fee || 0), 0) || null);
   const refundSent = group.every((r: any) => !!r.refund_sent_at);
-  const itemsHtml = group.length > 1
-    ? `<ul style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 20px;padding-left:18px;">${group.map((r: any) =>
-        `<li>${String(r.listing?.species || r.species || "Fish")} · ${Number(r.quantity)} ${r.quantity_unit || ""} · ₹${Number(r.total_price || 0).toLocaleString("en-IN")}</li>`).join("")}</ul>`
+  // The seller's list names the fish; the buyer's says "Item 1, Item 2…" (founder, 3 Nov: no fish names to buyers).
+  const itemsList = (buyer: boolean) => group.length > 1
+    ? `<ul style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 20px;padding-left:18px;">${group.map((r: any, i: number) =>
+        `<li>${buyer ? `Item ${i + 1}` : String(r.listing?.species || r.species || "Fish")} · ${Number(r.quantity)} ${r.quantity_unit || ""} · ₹${Number(r.total_price || 0).toLocaleString("en-IN")}</li>`).join("")}</ul>`
     : "";
   const typed = cancelReasonText(o.cancel_reason);
   const reason = typed && isLateCancel(o.cancel_reason) ? `Order was late — ${typed}` : typed;
@@ -262,7 +264,7 @@ export async function notifyOrderParties(opts: {
     try {
       const { data: buyer } = await sb.from("buyers").select("email").eq("id", o.buyer_id).single();
       out.buyer_email = buyer?.email
-        ? await sendEmail(buyer.email, c.buyerSubject, withPreview(shell(c.buyerHeading, c.buyerLine, order_id, "View order", itemsHtml), c.buyerPreview), "buyer")
+        ? await sendEmail(buyer.email, c.buyerSubject, withPreview(shell(c.buyerHeading, c.buyerLine, order_id, "View order", itemsList(true)), c.buyerPreview), "buyer")
         : "skipped: buyer has no email";
     } catch (err: any) {
       out.buyer_email = `failed: ${err?.message}`;
@@ -285,7 +287,7 @@ export async function notifyOrderParties(opts: {
   }
 
   out.seller_email = sellerEmail
-    ? await sendEmail(sellerEmail, c.sellerSubject, shell(c.sellerHeading, c.sellerLine, order_id, "Open dashboard", itemsHtml), "seller")
+    ? await sendEmail(sellerEmail, c.sellerSubject, shell(c.sellerHeading, c.sellerLine, order_id, "Open dashboard", itemsList(false)), "seller")
     : "skipped: seller has no email";
 
   if (sellerId) {
