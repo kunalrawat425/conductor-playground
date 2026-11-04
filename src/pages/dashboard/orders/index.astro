@@ -380,8 +380,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         <button class="v2-btn v2-btn-sm" style="background:var(--v2-bg);color:var(--v2-orange);border:1.5px solid #FED7AA;" data-action="retry_refund" data-order-id="${o.id}">Retry refund</button>
       </div>`;
     }
-    if (rs.state === "delayed") return box("#FFF7ED", "#FED7AA", "var(--v2-orange)", `↩ Refund ₹${amtStr} to buyer — delayed, retrying`);
-    return box("#F5F3FF", "#C4B5FD", "#7C3AED", `↩ Refund ₹${amtStr} to buyer — processing via Razorpay`);
+    if (rs.state === "delayed") return box("#FFF7ED", "#FED7AA", "var(--v2-orange)", `↩ Refund ₹${amtStr} to buyer, delayed, retrying`);
+    return box("#F5F3FF", "#C4B5FD", "#7C3AED", `↩ Refund ₹${amtStr} to buyer, processing via Razorpay`);
   }
 
   async function init() {
@@ -601,7 +601,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           pending_payment: ["New", "v2-oc-badge-new"],
           scheduled: ["Scheduled", "v2-oc-badge-new"],
           confirmed: ["Confirmed", "v2-oc-badge-new"],
-          paid: ["Paid — confirm", "v2-oc-badge-urgent"],
+          paid: ["Paid, confirm", "v2-oc-badge-urgent"],
           ready_for_pickup: ["Ready", "v2-oc-badge-ready"],
           out_for_delivery: ["Out for delivery", "v2-oc-badge-ready"],
           picked_up: ["Picked up", "v2-oc-badge-done"],
@@ -622,7 +622,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           // lost). Ready/Out-for-delivery are rejected by the server from here, so
           // the one useful action is to confirm it.
           if (isPaidViaRazorpay) {
-            actionsHtml = `<div style="padding:8px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:var(--v2-radius-sm);margin-bottom:6px;font:600 11px Inter;color:#15803d;">✅ Payment received — confirm to start preparing</div>
+            actionsHtml = `<div style="padding:8px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:var(--v2-radius-sm);margin-bottom:6px;font:600 11px Inter;color:#15803d;">✅ Payment received, confirm to start preparing</div>
               ${slotEditorHtml(o, isPreorder, "accept")}
               <div class="v2-oc-actions"><button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="accept" data-order-id="${o.id}">✓ Confirm order</button></div>`;
           } else {
@@ -633,7 +633,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             const hasRzpOrder = !!o.razorpay_order_id;
             const reconcileBtn = hasRzpOrder
               ? `<button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="reconcile-razorpay" data-order-id="${o.id}">🔄 Check Razorpay for payment</button>`
-              : `<div style="font:500 11px Inter;color:var(--v2-ink-3);">Buyer hasn't opened payment yet — nothing to reconcile.</div>`;
+              : `<div style="font:500 11px Inter;color:var(--v2-ink-3);">Buyer hasn't opened payment yet, nothing to reconcile.</div>`;
             actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;gap:6px;">
               <div style="font:500 11px Inter;color:var(--v2-ink-3);">⏳ Waiting for buyer to complete Razorpay payment. If buyer says money was deducted, click below to reconcile.</div>
               <div style="display:flex;gap:8px;">${reconcileBtn}</div>
@@ -645,7 +645,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           }
         } else if (o.status === "paid") {
           // Buyer paid; the seller decides. Accept → confirmed, decline → full refund.
-          actionsHtml = `<div style="padding:8px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:var(--v2-radius-sm);margin-bottom:6px;font:600 11px Inter;color:#15803d;">✅ Buyer paid ₹${(cart ? live.reduce((s, r) => s + (Number(r.paid_amount) || 0), 0) : Number(o.paid_amount) || 0).toLocaleString("en-IN")} — confirm to accept the order</div>
+          actionsHtml = `<div style="padding:8px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:var(--v2-radius-sm);margin-bottom:6px;font:600 11px Inter;color:#15803d;">✅ Buyer paid ₹${(cart ? live.reduce((s, r) => s + (Number(r.paid_amount) || 0), 0) : Number(o.paid_amount) || 0).toLocaleString("en-IN")}, confirm to accept the order</div>
             ${slotEditorHtml(o, isPreorder, "accept")}
             <div class="v2-oc-actions" style="flex-direction:column;gap:6px;">
               <div style="display:flex;gap:8px;">
@@ -701,7 +701,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
                   ${o.refund_sent_at
                     ? `<div style="font:700 12px Inter;color:var(--v2-green);">✓ Refund of ₹${dueBack.toLocaleString("en-IN")} sent via Razorpay</div>`
                     : `<div style="font:700 12px Inter;color:var(--v2-orange);">↩ Refund ₹${dueBack.toLocaleString("en-IN")} to buyer</div>
-                  <div style="font:400 11px Inter;color:var(--v2-ink-3);">Final price came in lower than they paid. The difference is refunded automatically via Razorpay — just fulfil the order as normal.</div>`}
+                  <div style="font:400 11px Inter;color:var(--v2-ink-3);">Final price came in lower than they paid. The difference is refunded automatically via Razorpay, just fulfil the order as normal.</div>`}
                 </div>`
               : "";
             actionsHtml = `${owedBlock}${fulfill}<button class="v2-btn v2-btn-sm" style="width:100%;margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="seller_cancel" data-order-id="${o.id}">Cancel order · refund buyer</button>`;
@@ -781,7 +781,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         if (["pending", "scheduled", "pending_payment", "pre_order"].includes(o.status)) {
           nextStepHint = isPaidViaRazorpay ? "Next: Confirm the order." : "Waiting for buyer to complete Razorpay payment.";
         } else if (o.status === "paid") {
-          nextStepHint = "Next: Confirm the order (or decline — the buyer is refunded in full).";
+          nextStepHint = "Next: Confirm the order (or decline, the buyer is refunded in full).";
         } else if (o.status === "confirmed" && needsFinalPrice) {
           nextStepHint = "Next: Set final price before delivery or pickup.";
         } else if (o.status === "confirmed") {
@@ -858,7 +858,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Reconcile failed");
       if (data.ok && (data.reconciled || data.already_confirmed)) {
-        if (resultEl) { resultEl.style.color = "#15803d"; resultEl.textContent = data.already_confirmed ? "✓ Already confirmed" : "✓ Payment found — order confirmed"; }
+        if (resultEl) { resultEl.style.color = "#15803d"; resultEl.textContent = data.already_confirmed ? "✓ Already confirmed" : "✓ Payment found, order confirmed"; }
         (window as any).v2Toast?.("success", "Reconciled", data.already_confirmed ? "Order was already confirmed" : `Payment ${data.payment_id} confirmed`);
         setTimeout(() => loadOrders(true), 800);
       } else {

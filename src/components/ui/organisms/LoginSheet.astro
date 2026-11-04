@@ -23,7 +23,7 @@ const MAX_ATTEMPTS = 3;
   <!-- Step 1: phone entry -->
   <div id={`${id}-step1`}>
     <p style="font:400 13px Inter;color:var(--v2-ink-2);margin:0 0 16px;line-height:1.5;">
-      Enter your mobile number. We'll send a one-time code — no password needed.
+      Enter your mobile number. We'll send a one-time code, no password needed.
     </p>
     <form id={`${id}-phone-form`} autocomplete="off">
       <PhoneInput id={`${id}-phone`} required={true} />
@@ -273,7 +273,7 @@ const MAX_ATTEMPTS = 3;
       return;
     }
     if (otpAttempts >= MAX_ATTEMPTS) {
-      getEl("hint").textContent = "Too many attempts — tap Resend for a new code.";
+      getEl("hint").textContent = "Too many attempts, tap Resend for a new code.";
       return;
     }
     const btn = getEl("verify-otp");
@@ -296,8 +296,8 @@ const MAX_ATTEMPTS = 3;
         const hint = getEl("hint");
         // Plain server text only (lib/friendly-error via Toast.astro); technical text falls back to the attempts line.
         hint.textContent = (window.v2FriendlyError ? window.v2FriendlyError(data.error, "") : data.error) || (left > 0
-          ? `Wrong code — ${left} ${left === 1 ? "try" : "tries"} left`
-          : "No tries left — tap Resend for a new code");
+          ? `Wrong code, ${left} ${left === 1 ? "try" : "tries"} left`
+          : "No tries left, tap Resend for a new code");
         document.querySelectorAll(`#${id}-step2 .v2-otp-cell`).forEach((c) => {
           c.value = "";
           c.classList.add("v2-input-error");

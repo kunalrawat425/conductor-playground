@@ -68,7 +68,7 @@ export const GET: APIRoute = async () => {
     }
 
     // Dynamic Markdown generation
-    let markdown = `# Live Fresh Fish Price Guide — Relifish (Thane & Mumbai)\n\n`;
+    let markdown = `# Live Fresh Fish Price Guide, Relifish (Thane & Mumbai)\n\n`;
     markdown += `*Last updated: Today (Live Database Catalogue)*\n\n`;
     markdown += `This guide lists live price ranges from the current listings of active sellers on Relifish. Prices change daily and are set by each seller.\n\n`;
     markdown += `Relifish connects buyers directly to verified fish sellers in Thane, South Mumbai (Tardeo) and Kamothe (Navi Mumbai).\n\n`;

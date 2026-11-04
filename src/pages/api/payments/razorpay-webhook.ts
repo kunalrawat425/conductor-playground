@@ -142,7 +142,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         .is("refund_id", null)
         .select("order_id");
     if (!order) {
-      if (shared) console.warn(`[razorpay-webhook] ${evtType}: refund ${refund_id} on cart payment ${razorpay_payment_id} has no notes.order_id (manual dashboard refund?) — not attributed to an item`);
+      if (shared) console.warn(`[razorpay-webhook] ${evtType}: refund ${refund_id} on cart payment ${razorpay_payment_id} has no notes.order_id (manual dashboard refund?), not attributed to an item`);
       console.log(`[razorpay-webhook] ${evtType}: no order carries payment ${razorpay_payment_id} (extra/balance payment, legacy, or ledger-only)`);
       return new Response(JSON.stringify({ ok: true, event: evtType, reconciled: 0 }), { status: 200 });
     }

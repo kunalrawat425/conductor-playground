@@ -75,10 +75,10 @@ const REVIEW_SLOTS = [
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <UtmCapture />
   <title>Fresh Fish Online in Thane &amp; Mumbai | Relifish</title>
-  <meta name="description" content="Order fresh fish online from verified sellers in Thane and Mumbai. Order same-day or pre-order for tomorrow or later — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
+  <meta name="description" content="Order fresh fish online from verified sellers in Thane and Mumbai. Order same-day or pre-order for tomorrow or later, surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
   <link rel="canonical" href={SITE} />
   <meta property="og:title" content="Fresh Fish Online in Thane &amp; Mumbai | Relifish" />
-  <meta property="og:description" content="Order fresh fish online from verified sellers in Thane and Mumbai. Order same-day or pre-order for tomorrow or later — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
+  <meta property="og:description" content="Order fresh fish online from verified sellers in Thane and Mumbai. Order same-day or pre-order for tomorrow or later, surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
   <meta property="og:image" content={`${SITE}/og-image.jpg`} />
   <meta property="og:url" content={SITE} />
   <meta property="og:type" content="website" />
@@ -86,7 +86,7 @@ const REVIEW_SLOTS = [
   <meta property="og:locale" content="en_IN" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Fresh Fish Online in Thane &amp; Mumbai | Relifish" />
-  <meta name="twitter:description" content="Order fresh fish online from verified sellers in Thane and Mumbai. Order same-day or pre-order for tomorrow or later — surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
+  <meta name="twitter:description" content="Order fresh fish online from verified sellers in Thane and Mumbai. Order same-day or pre-order for tomorrow or later, surmai, pomfret, rawas &amp; prawns, home delivery or pickup." />
   <meta name="twitter:image" content={`${SITE}/og-image.jpg`} />
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="manifest" href="/manifest.json" />
@@ -658,8 +658,8 @@ const REVIEW_SLOTS = [
     /* ── Why ── */
     .why-grid{display:grid;gap:10px}
     .why-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:16px;padding:16px}
-    .why-icon{font-size:24px}
-    .why-card h3{font:800 16px Inter;margin:6px 0 4px;color:#fff}
+    .why-head{display:flex;align-items:center;gap:8px;margin:0 0 4px}.why-icon{font-size:22px;line-height:1;flex:none}
+    .why-card h3{font:800 16px Inter;margin:0;color:#fff}
     .why-card p{font:500 14px/1.5 Inter;color:#CBD5E1;margin:0 0 10px}
     .why-vs{display:flex;gap:6px;flex-wrap:wrap}
     .wvg{background:#DCFCE7;color:#166534;border-radius:999px;padding:3px 9px;font:700 12px Inter}
@@ -915,17 +915,17 @@ const REVIEW_SLOTS = [
       <DiwaliDecor part="banner" />
       <h1>
         Buy fresh fish<br/>
-        <span class="blu">in Thane &amp; Mumbai —</span><br/>direct from verified sellers.
+        <span class="blu">in Thane &amp; Mumbai,</span><br/>direct from verified sellers.
       </h1>
       <p class="hero-sub">
         Order fresh fish online directly from verified sellers.
         <strong>Order today or pre-order for tomorrow.</strong>
       </p>
       <div class="hero-ctas">
-        <a href="/shop" class="btn-primary">Order fresh fish →</a>
+        <a href="/shop" class="btn-primary">Order Fresh Fish →</a>
       </div>
       <!-- Citable prose for AI search engines — do not remove -->
-      <p class="hero-cite">Relifish is a marketplace for fresh fish from verified sellers in Thane and Mumbai. Each seller lists the fish they have that day — surmai, pomfret, rawas, bangda, prawns and more. Order same-day, or pre-order for tomorrow or later, and the seller delivers to your home or keeps it ready for pickup.</p>
+      <p class="hero-cite">Relifish is a marketplace for fresh fish from verified sellers in Thane and Mumbai. Each seller lists the fish they have that day, surmai, pomfret, rawas, bangda, prawns and more. Order same-day, or pre-order for tomorrow or later, and the seller delivers to your home or keeps it ready for pickup.</p>
       <div class="fish-tags">
         {[["Pomfret","pomfret"],["Surmai","surmai"],["Prawns","prawns"],["Bangda","bangda"],["Rawas","rawas"],["Crab","crab"]].map(([f,k])=>(
           <a class="ftag" href={`/shop?species=${k}`}><img class="ftag-img" src={`/fish/${k}.jpg?v=2`} alt="" width="32" height="32" />{f}</a>
@@ -959,7 +959,7 @@ const REVIEW_SLOTS = [
               <div class="d0-tagline">Fish from verified sellers.<br/>Order today or pre-order for tomorrow.</div>
             </div>
             <div class="demo-cta demo-cta-dark">
-              <div class="demo-cta-btn">Get started →</div>
+              <div class="demo-cta-btn">Get Started →</div>
             </div>
           </div>
 
@@ -989,7 +989,7 @@ const REVIEW_SLOTS = [
                   <div class="d1-icon">📍</div>
                   <div><div class="d1-name">Vasant Vihar</div><div class="d1-dist">Thane West</div></div>
                 </div>
-                <div class="demo-cta"><div class="demo-cta-btn">Confirm — Hiranandani →</div></div>
+                <div class="demo-cta"><div class="demo-cta-btn">Confirm, Hiranandani →</div></div>
               </div>
             </div>
           </div>
@@ -1093,7 +1093,7 @@ const REVIEW_SLOTS = [
                 </div>
               </div>
               <div class="d5-pay-sticky">
-                <div class="d5-pay-btn">Pay securely online →</div>
+                <div class="d5-pay-btn">Pay Securely Online →</div>
                 <div style="text-align:center;font:400 7px Inter;color:#9CA3AF;padding:4px 0 0">Secure online payment</div>
               </div>
             </div>
@@ -1151,7 +1151,7 @@ const REVIEW_SLOTS = [
               <div class="d8-title">Fresh fish delivered!</div>
               <div class="d8-sub">Your Pomfret and Bombil, cut the way you asked.</div>
             </div>
-            <div class="demo-cta demo-cta-white"><div class="demo-cta-btn">Order again next week →</div></div>
+            <div class="demo-cta demo-cta-white"><div class="demo-cta-btn">Order Again Next Week →</div></div>
           </div>
 
         </div>
@@ -1172,7 +1172,7 @@ const REVIEW_SLOTS = [
 <section class="wall" id="posting" aria-labelledby="wall-h">
   <div class="wrap wall-grid">
     <div>
-      <h2 id="wall-h">Thane's fish lovers<br/><span class="hl">are posting</span></h2>
+      <h2 id="wall-h">Our <span class="hl">Reviews</span></h2>
       <div class="soc">
         {SOCIAL.map((s) => (
           <a href={s.href} target={s.href.startsWith("tel:") ? undefined : "_blank"} rel="noopener" aria-label={s.label}>
@@ -1185,41 +1185,41 @@ const REVIEW_SLOTS = [
           <figure class="dc dc-claim dc-rev" style={pose(i)}>
             <span class="st" aria-label={`${d.review.rating} out of 5`}>{stars(d.review.rating)}</span>
             <q>{d.review.text}</q>
-            <figcaption class="dc-s">Verified buyer · {d.review.sellerName}</figcaption>
+            <figcaption class="dc-s">Verified Buyer · {d.review.sellerName}</figcaption>
           </figure>
         ) : d ? (
           <figure class="dc" style={pose(i)}><img src={d.src} alt={d.cap} width="200" height="272" loading="lazy" draggable="false" /><figcaption>{d.cap}</figcaption></figure>
         ) : (
           <button type="button" class="dc dc-claim" data-claim style={pose(i)}>
             <span class="pl" aria-hidden="true">＋</span>
-            <b>Claim this spot</b>
+            <b>Claim This Spot</b>
             <span class="st" aria-hidden="true">★★★★★</span>
-            <span class="dc-s">Your plate + your review, here for everyone to see</span>
+            <span class="dc-s">Your review and your plate, shown here</span>
           </button>
         ))}
       </div>
-      <p class="hint">👆 Swipe the wheel · tap a ＋ to claim your spot</p>
+      <p class="hint">👆 Swipe to see more reviews, tap ＋ to add yours</p>
     </div>
     <div>
       <div class="post">
-        <b class="post-t">Post your plate 🍽️</b>
-        <p>Share your Relifish fish fry or curry, tag <b>@relifish_</b> and get featured here.</p>
-        <a class="btn-shop" href="https://www.instagram.com/relifish_/" target="_blank" rel="noopener">Tag us on Instagram</a>
+        <b class="post-t">Share Your Review 🍽️</b>
+        <p>Loved your order? Rate it from My Orders, or tag <b>@relifish_</b> with your dish to get featured here.</p>
+        <a class="btn-shop" href="https://www.instagram.com/relifish_/" target="_blank" rel="noopener">Tag Us On Instagram →</a>
       </div>
       <div class="rv">
-        <h3>What buyers say</h3>
+        <h3>What Buyers Say</h3>
         <div class="rvc" id="rv">
           {HOME_REVIEWS.map((r, i) => (
             <div class="rv-slide" hidden={i > 0}>
               <div class="st" aria-label={`${r.rating} out of 5`}>{stars(r.rating)}</div>
               <p>“{r.text}”</p>
-              <small>— Verified buyer · {r.sellerName}</small>
+              <small>Verified Buyer · {r.sellerName}</small>
             </div>
           ))}
           {REVIEW_SLOTS.map((r, i) => (
             <div class="rv-slide" hidden={HOME_REVIEWS.length + i > 0}>
               <p>{r.t}</p>
-              <button type="button" class="claimbtn" data-claim>＋ Claim this spot</button>
+              <button type="button" class="claimbtn" data-claim>＋ Claim This Spot</button>
             </div>
           ))}
         </div>
@@ -1234,7 +1234,7 @@ const REVIEW_SLOTS = [
     <div class="sh-ic" id="claim-ic" aria-hidden="true">🐟</div>
     <p class="sh-t" id="claim-t">This spot is waiting for you</p>
     <p class="sh-p" id="claim-p">Order your first fresh fish. After it's delivered, post your plate and your review here.</p>
-    <a class="btn-primary" id="claim-go" href="/shop">Order now →</a>
+    <a class="btn-primary" id="claim-go" href="/shop">Order Now →</a>
     <button type="button" class="sh-x" id="claim-x">Keep browsing</button>
   </div>
 </dialog>
@@ -1316,13 +1316,13 @@ const REVIEW_SLOTS = [
       el("claim-t").textContent = "Claim your spot";
       const seller = order.listing?.seller?.name;
       el("claim-p").textContent = `${seller ? `Your order from ${seller}` : "Your order"} was delivered. Rate it and add a photo of your plate.`;
-      go.href = `/track/${encodeURIComponent(order.id)}`; go.textContent = "Rate it & add a photo →";
+      go.href = `/track/${encodeURIComponent(order.id)}`; go.textContent = "Rate It & Add a Photo →";
       el("claim-x").textContent = "Maybe later";
     } else {
       ic.textContent = "🐟"; ic.classList.remove("stars");
       el("claim-t").textContent = "This spot is waiting for you";
       el("claim-p").textContent = "Order your first fresh fish. After it's delivered, post your plate and your review here.";
-      go.href = "/shop"; go.textContent = "Order now →";
+      go.href = "/shop"; go.textContent = "Order Now →";
       el("claim-x").textContent = "Keep browsing";
     }
     (window as any).gtag?.("event", "claim_spot_tap", { state });
@@ -1388,7 +1388,7 @@ const REVIEW_SLOTS = [
                 <div><div class="s1-rn">Vasant Vihar</div><div class="s1-rd">Thane West</div></div>
               </div>
             </div>
-            <div class="s1-btn">Confirm — Hiranandani →</div>
+            <div class="s1-btn">Confirm, Hiranandani →</div>
           </div>
         </div>
         <div>
@@ -1521,8 +1521,8 @@ const REVIEW_SLOTS = [
     </div>
 
     <div class="btns">
-      <a href="/shop" class="btn-primary">Start ordering →</a>
-      <a href="/blog/first-relifish-order-guide-thane" class="btn-ghost">Full buyer guide →</a>
+      <a href="/shop" class="btn-primary">Start Ordering →</a>
+      <a href="/blog/first-relifish-order-guide-thane" class="btn-ghost">Full Buyer Guide →</a>
     </div>
   </div>
 </section>
@@ -1551,15 +1551,15 @@ const REVIEW_SLOTS = [
           <div class="fish-body">
             <div class="fish-name">{f.n}</div>
             <div class="fish-marathi">{f.m}</div>
-            <div class="fish-login">See today's price →</div>
+            <div class="fish-login">See Today's Price →</div>
             <div class="fish-cta">Pre-order →</div>
           </div>
         </a>
       ))}
     </div>
     <div class="btns">
-      <a href="/shop" class="btn-primary">See today's prices →</a>
-      <a href="/shop" class="btn-ghost">Browse sellers →</a>
+      <a href="/shop" class="btn-primary">See Today's Prices →</a>
+      <a href="/shop" class="btn-ghost">Browse Sellers →</a>
     </div>
   </div>
 </section>
@@ -1580,8 +1580,7 @@ const REVIEW_SLOTS = [
         {i:"💬",t:"Direct contact",d:"Ask your seller about cuts, special requests and freshness. Real people.",g:"Real people",b:"Chatbot support"},
       ].map(c=>(
         <div class="why-card">
-          <div class="why-icon">{c.i}</div>
-          <h3>{c.t}</h3>
+          <div class="why-head"><span class="why-icon">{c.i}</span><h3>{c.t}</h3></div>
           <p>{c.d}</p>
           <div class="why-vs">
             <span class="wvg">✓ {c.g}</span>
@@ -1630,7 +1629,7 @@ const REVIEW_SLOTS = [
               </select>
             </div>
           </div>
-          <button type="submit" class="wl-btn" id="wl-btn">Join the waitlist</button>
+          <button type="submit" class="wl-btn" id="wl-btn">Join the Waitlist</button>
           <div class="wl-note">No spam. One SMS when we launch near you.</div>
           <div class="wl-note">Or <a href={SUPPORT_PHONE_TEL} style="color:inherit;text-decoration:underline;">call us on {SUPPORT_PHONE_DISPLAY}</a></div>
         </form>
@@ -1638,7 +1637,7 @@ const REVIEW_SLOTS = [
           <div class="wl-success-icon">🎉</div>
           <div class="wl-success-title">You're on the list!</div>
           <div class="wl-success-sub" id="wl-msg">We'll text you when sellers go live near you.</div>
-          <a href="/shop" class="btn-primary" style="width:100%;justify-content:center;margin-top:8px">Browse sellers now →</a>
+          <a href="/shop" class="btn-primary" style="width:100%;justify-content:center;margin-top:8px">Browse Sellers Now →</a>
         </div>
       </div>
     </div>
@@ -1660,8 +1659,8 @@ const REVIEW_SLOTS = [
         form.style.display='none';
         if(d.area_count>1)msg.textContent=`${d.area_count} people near you are waiting. We'll text you when we launch.`;
         suc.classList.add('show');
-      }else{btn.disabled=false;btn.textContent="Join the waitlist";alert(d.error||'Something went wrong.');}
-    }catch{btn.disabled=false;btn.textContent="Join the waitlist";alert('Network error. Try again.');}
+      }else{btn.disabled=false;btn.textContent="Join the Waitlist";alert(d.error||'Something went wrong.');}
+    }catch{btn.disabled=false;btn.textContent="Join the Waitlist";alert('Network error. Try again.');}
   });
 })();
 </script>
@@ -1676,7 +1675,7 @@ const REVIEW_SLOTS = [
         <div class="dl-inner">
           <div class="dl-icon buy">🛒</div>
           <div>
-            <div class="dl-title">Full buyer guide</div>
+            <div class="dl-title">Full Buyer Guide</div>
             <div class="dl-sub">How pre-order works, payment, pickup, freshness, refunds and FAQs.</div>
           </div>
           <div class="dl-arrow">→</div>
@@ -1686,7 +1685,7 @@ const REVIEW_SLOTS = [
         <div class="dl-inner">
           <div class="dl-icon buy"><img src={LOGO_URL} alt="Relifish" style="height:28px;width:auto;filter:brightness(0) invert(1);" /></div>
           <div>
-            <div class="dl-title">Browse sellers now</div>
+            <div class="dl-title">Browse Sellers Now</div>
             <div class="dl-sub">See which sellers are open near you and today's prices. Log in only to order.</div>
           </div>
           <div class="dl-arrow">→</div>
@@ -1711,7 +1710,7 @@ const REVIEW_SLOTS = [
       <details class="faq">
         <summary>Relifish isn't available in my area yet?<div class="faq-toggle">+</div></summary>
         <p>Join the waitlist and we'll WhatsApp you when a seller goes live in your area.</p>
-        <div class="faq-blue-bar">📍 Not in your area yet? <a href="#waitlist" class="faq-blue-cta">Join the waitlist →</a></div>
+        <div class="faq-blue-bar">📍 Not in your area yet? <a href="#waitlist" class="faq-blue-cta">Join the Waitlist →</a></div>
       </details>
     </div>
   </div>

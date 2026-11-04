@@ -77,7 +77,7 @@ const otherFish = [...new Set(listings.map((l: any) => String(l.species).toLower
   jsonLd={found ? {
     "@context": "https://schema.org",
     "@graph": [
-      productJsonLd({ name: `${fishName} — ${sellerName}`, description, url: optMatch ? `${url}?opt=${encodeURIComponent(optParam!)}` : url, image: photoAbs, sellerName, offer: schemaOffer!, shippingFee: sellerDeliveryFee(seller) }),
+      productJsonLd({ name: `${fishName}, ${sellerName}`, description, url: optMatch ? `${url}?opt=${encodeURIComponent(optParam!)}` : url, image: photoAbs, sellerName, offer: schemaOffer!, shippingFee: sellerDeliveryFee(seller) }),
       {
         "@type": "BreadcrumbList",
         "itemListElement": [

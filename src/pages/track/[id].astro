@@ -191,7 +191,7 @@ const { id } = Astro.params;
       pre_order: "Pre-order placed",
       scheduled: "Scheduled pickup",
       confirmed: "Confirmed ✓",
-      paid: "Paid — waiting for confirmation",
+      paid: "Paid, waiting for confirmation",
       payment_required: "Final price is in",
       ready_for_pickup: "Ready for pickup",
       out_for_delivery: "Out for delivery",
@@ -235,12 +235,12 @@ const { id } = Astro.params;
     const late = rule.ok && rule.late;
     const wrap = document.createElement("div");
     wrap.innerHTML = late
-      ? `<button class="v2-od-cancel" style="margin-top:10px;">Cancel — order is late</button>
+      ? `<button class="v2-od-cancel" style="margin-top:10px;">Cancel, order is late</button>
          <div style="font:500 12px Inter;color:var(--v2-ink-2);margin-top:6px;text-align:center;">Full refund to your original payment.</div>`
       : `<button class="v2-od-cancel" style="margin-top:10px;">Cancel order${paid ? " · full refund" : ""}</button>`;
     container.appendChild(wrap);
     wrap.querySelector("button").addEventListener("click", () => cancelWithReason(o.id, {
-      title: late ? "Cancel — order is late" : "Cancel this order?",
+      title: late ? "Cancel, order is late" : "Cancel this order?",
       note: late ? "Full refund to your original payment." : paid ? "Your payment is refunded in full to your original payment method (5–7 working days)." : "This cannot be undone.",
       doneNote: paid ? "Refund started" : "",
     }));
@@ -570,7 +570,7 @@ const { id } = Astro.params;
         const rsColor = rs.state === "refunded" ? "#059669" : rs.state === "delayed" ? "#B45309" : "#7C3AED";
         const rsTitle = rs.state === "refunded"
           ? `✓ Refunded on ${new Date(o.refund_sent_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}`
-          : rs.state === "delayed" ? "Refund delayed — retrying" : "Refund processing";
+          : rs.state === "delayed" ? "Refund delayed, retrying" : "Refund processing";
         refundHtml = `
           <div style="background:var(--v2-bg);border:1.5px solid #FCA5A5;border-radius:var(--v2-radius);padding:16px;margin-top:8px;margin-bottom:8px;">
             <div style="font:800 14px Inter;color:#DC2626;margin-bottom:8px;">❌ ${escape(label)}</div>
@@ -696,10 +696,10 @@ const { id } = Astro.params;
       const cutLabels: Record<string, string> = { whole: "🐟 Whole", cleaned: "✂️ Cleaned", cut: "🔪 Cut" };
       const cutDisplay = (o.cut_style || "").split(",").filter(Boolean).map((c: string) => cutLabels[c] || c).join(", ");
       const headline = o.status === "paid"
-        ? "✅ Payment received — waiting for confirmation"
+        ? "✅ Payment received, waiting for confirmation"
         : o.status === "confirmed"
           // A pre-order can be days away: don't say "being prepared" on Thursday for Sunday.
-          ? (isPreorderCatchFlow(o) || o.is_preorder || o.placement_kind === "preorder" ? "✅ Pre-order confirmed" : "✅ Order confirmed — your fish is being prepared")
+          ? (isPreorderCatchFlow(o) || o.is_preorder || o.placement_kind === "preorder" ? "✅ Pre-order confirmed" : "✅ Order confirmed, your fish is being prepared")
           : "🗓️ Order scheduled";
       actions.innerHTML = `
         <div style="background:var(--v2-bg);border:1px solid #86EFAC;border-radius:var(--v2-radius);padding:14px;margin-top:8px;">
@@ -725,8 +725,8 @@ const { id } = Astro.params;
       // fish is "being prepared".
       const stillLive = finalAmt > 0 && refundAmt < paidAmt;
       const refundBadge = stillLive
-        ? `<div style="font:700 10px Inter;color:#059669;background:#DCFCE7;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;">✅ Your order is confirmed — being prepared</div>`
-        : `<div style="font:700 10px Inter;color:#B45309;background:#FEF3C7;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;">Order closed — payment refunded</div>`;
+        ? `<div style="font:700 10px Inter;color:#059669;background:#DCFCE7;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;">✅ Your order is confirmed, being prepared</div>`
+        : `<div style="font:700 10px Inter;color:#B45309;background:#FEF3C7;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;">Order closed, payment refunded</div>`;
       const refundEta = `Razorpay refunds reach your original payment method within <strong>5–7 working days</strong>.`;
       const sentAt = o.refund_sent_at ? new Date(o.refund_sent_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : null;
       const note = o.refund_note || "";

@@ -223,7 +223,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           if (buyer_id) {
             preNotify.push(
               supabase.from("buyers").select("email").eq("id", buyer_id).single().then(({ data: b }) =>
-                sendTransactionalEmail(b?.email, "Pre-order placed — your Relifish order", orderEmailBuyer(poEmailArgs), "preorder-buyer")
+                sendTransactionalEmail(b?.email, "Pre-order placed, your Relifish order", orderEmailBuyer(poEmailArgs), "preorder-buyer")
               )
             );
           }
@@ -467,7 +467,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       if (buyer_id) {
         mail.push(
           supabase.from("buyers").select("email").eq("id", buyer_id).single().then(({ data: buyer }) =>
-            sendTransactionalEmail(buyer?.email, `${statusLabel} — your Relifish order`, orderEmailBuyer(emailArgs), "order-buyer")
+            sendTransactionalEmail(buyer?.email, `${statusLabel}, your Relifish order`, orderEmailBuyer(emailArgs), "order-buyer")
           ).catch((err) => console.warn("[orders/create] buyer email lookup failed", { err: err?.message }))
         );
       }

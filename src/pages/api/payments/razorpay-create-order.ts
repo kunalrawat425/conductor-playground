@@ -111,7 +111,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         // says nothing about the order — treating those as "gone" cleared ids
         // that had captured money against them (BUG-41 again).
         answered = true;
-        console.warn("[razorpay-create-order] stale razorpay_order_id — Razorpay does not recognise it, replacing", {
+        console.warn("[razorpay-create-order] stale razorpay_order_id, Razorpay does not recognise it, replacing", {
           order_id, razorpay_order_id: order.razorpay_order_id, status: cachedRes.status,
         });
       } else {
@@ -186,7 +186,7 @@ export const POST: APIRoute = async ({ request, url }) => {
               razorpay_order_id: order.razorpay_order_id, razorpay_payment_id: capturedId, source: "create_order",
             });
             if (r.kind === "confirmed") {
-              console.log(`[razorpay-create-order] order ${order_id} was already paid (${capturedId}) — reconciled instead of re-charging`);
+              console.log(`[razorpay-create-order] order ${order_id} was already paid (${capturedId}), reconciled instead of re-charging`);
               const { notifyOrderParties } = await import("../../../lib/server/notify-order-parties");
               await notifyOrderParties({ order_id, event: "payment_confirmed", origin: url.origin })
                 .catch((err: any) => console.warn("[razorpay-create-order] notify failed", { order_id, err: err?.message }));

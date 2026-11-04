@@ -55,7 +55,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   if (!order.razorpay_order_id) {
-    return new Response(JSON.stringify({ ok: false, reason: "No Razorpay order on this row — buyer hasn't clicked Pay yet" }), { status: 200 });
+    return new Response(JSON.stringify({ ok: false, reason: "No Razorpay order on this row, buyer hasn't clicked Pay yet" }), { status: 200 });
   }
 
   if (order.status === "confirmed") {

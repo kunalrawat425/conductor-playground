@@ -159,7 +159,7 @@ const { id = "v2-cart-stack" } = Astro.props;
     if (!body) return;
     const Cart = window.RelifishCart;
     if (!Cart) {
-      body.innerHTML = `<div class="v2-cs-empty">Cart not ready — try again.</div>`;
+      body.innerHTML = `<div class="v2-cs-empty">Cart not ready, try again.</div>`;
       if (header) header.style.display = "none";
       return;
     }
