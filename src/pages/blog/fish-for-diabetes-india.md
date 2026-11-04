@@ -37,7 +37,7 @@ The ADA's list of fish high in omega-3 includes salmon, herring, sardines, macke
 | [Bangda](/fish/bangda) (Indian mackerel) | 21.51 | 1.53 | 0.33 |
 | [Rohu](/fish/rohu) | 19.71 | 2.39 | 0.07 |
 | [Prawns](/fish/prawns) (tiger prawns) | 14.25 | 0.74 | 0.12 |
-| [Rawas](/fish/rawas) (Indian salmon; see note) | 17.9 | 0.1 | — |
+| [Rawas](/fish/rawas) (Indian salmon; see note) | 17.9 | 0.1 |, |
 
 Note: rawas is not in IFCT 2017. Its row is from the Philippine Food Composition Table for the same species, *Eleutheronema tetradactylum*, which does not report EPA or DHA.
 

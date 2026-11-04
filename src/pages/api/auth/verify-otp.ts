@@ -96,7 +96,7 @@ export const POST: APIRoute = async ({ request }) => {
       // Fail closed: a missing MSG91 env var in production used to make the
       // fixed dev code log into ANY account.
       if (!otpDevBypassAllowed()) {
-        console.error("[verify-otp] MSG91 not configured outside dev — refusing dev-code login");
+        console.error("[verify-otp] MSG91 not configured outside dev, refusing dev-code login");
         return new Response(JSON.stringify({ error: "Login is temporarily unavailable" }), { status: 503 });
       }
       if (code !== "123456") {
@@ -148,7 +148,7 @@ export const POST: APIRoute = async ({ request }) => {
         .update({ expires_at: new Date().toISOString(), verify_attempts: MAX_VERIFY_ATTEMPTS })
         .eq("phone", normalised);
       if (burnErr) {
-        console.error("[verify-otp] FAILED TO BURN OTP — code stays valid until expiry", {
+        console.error("[verify-otp] FAILED TO BURN OTP, code stays valid until expiry", {
           phone: normalised, err: burnErr.message,
         });
       }

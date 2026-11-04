@@ -87,7 +87,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     return new Response(JSON.stringify({
       error: settled.refund.ok
         ? "This order was already closed or paid, so this payment is being refunded to you."
-        : "This order was already closed or paid. We could not refund this payment automatically — support will refund it.",
+        : "This order was already closed or paid. We could not refund this payment automatically, support will refund it.",
       error_code: "payment_refunded",
     }), { status: 409 });
   }
@@ -195,7 +195,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       const { orderEmailSeller, capitalizeFishName } = await import("../../../lib/email-templates");
       const species = label;
       const html = orderEmailSeller({
-        statusLabel: "Paid — open your dashboard to confirm or decline",
+        statusLabel: "Paid, open your dashboard to confirm or decline",
         species,
         quantity: Number((order as any).quantity) || 1,
         quantity_unit: (order as any).quantity_unit || "kg",
@@ -210,7 +210,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             total_price: Number(r.total_price) || 0, pricingLabel: r.pricing_label || null, bundleSize: b.size, bundleCount: b.count };
         }),
       });
-      const sellerEmailReq = postToResend({ to: _sellerForEmail.email, subject: `New paid order — please confirm: ${capitalizeFishName(species)}`, html }, resendApiKey).catch((err) => console.warn("[razorpay-verify] seller email failed", { order_id, err: err?.message || String(err) }));
+      const sellerEmailReq = postToResend({ to: _sellerForEmail.email, subject: `New paid order, please confirm: ${capitalizeFishName(species)}`, html }, resendApiKey).catch((err) => console.warn("[razorpay-verify] seller email failed", { order_id, err: err?.message || String(err) }));
       await sellerEmailReq;
 
       // Seller push — new order paid

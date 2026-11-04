@@ -28,7 +28,7 @@ const initialPricingJson = JSON.stringify(
   novalidate
 >
   <p class="listing-lead">
-    Choose <strong>count</strong> (per piece) <em>or</em> <strong>weight</strong> (per kg — use decimals like 0.5 for half kg) — not both. All price tiers share that basis so one stock number matches every order. Set pricing first, then enter stock in that unit.
+    Choose <strong>count</strong> (per piece) <em>or</em> <strong>weight</strong> (per kg, use decimals like 0.5 for half kg), not both. All price tiers share that basis so one stock number matches every order. Set pricing first, then enter stock in that unit.
   </p>
 
   <section class="listing-card" id="listing-section-details" aria-labelledby="listing-h-details">
@@ -112,7 +112,7 @@ const initialPricingJson = JSON.stringify(
     <h2 class="listing-section-title" id="listing-h-photo">Photo</h2>
     <div class="listing-field">
       <label for="photo"
-        >Upload {isEdit ? <span class="listing-opt">(optional — replaces current)</span> : <span class="listing-opt">(optional)</span>}</label
+        >Upload {isEdit ? <span class="listing-opt">(optional, replaces current)</span> : <span class="listing-opt">(optional)</span>}</label
       >
       <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" class="listing-file-input" />
       <p class="form-hint">Square photo, shown on your menu. Keep the whole fish inside the square. JPEG, PNG or WebP, at least 400×400 px, max 5 MB.</p>
@@ -196,7 +196,7 @@ const initialPricingJson = JSON.stringify(
 
   <section class="listing-card listing-card--compact" id="listing-section-preorder" aria-labelledby="listing-h-preorder">
     <h2 class="listing-section-title" id="listing-h-preorder">Pre-order settings 🌙</h2>
-    <p class="listing-section-intro">Pre-orders are <strong>independent of inventory</strong>. Buyers pre-order "upcoming catch" — stock is not deducted. Enable per listing.</p>
+    <p class="listing-section-intro">Pre-orders are <strong>independent of inventory</strong>. Buyers pre-order "upcoming catch", stock is not deducted. Enable per listing.</p>
     <div class="listing-field">
       <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
         <input

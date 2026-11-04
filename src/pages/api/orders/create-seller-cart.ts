@@ -474,7 +474,7 @@ async function sendCartOrderEmail(
   // BUG-24 + BUG-27: awaited, and non-2xx from Resend is now logged instead of
   // being swallowed by `.catch(() => {})`.
   await Promise.allSettled([
-    sendTransactionalEmail(buyerEmail, `${statusLabel} — your Relifish order`, orderEmailBuyer(emailArgs), "cart-buyer"),
+    sendTransactionalEmail(buyerEmail, `${statusLabel}, your Relifish order`, orderEmailBuyer(emailArgs), "cart-buyer"),
     sendTransactionalEmail(sellerEmail, sellerSubject, orderEmailSeller({ ...emailArgs, buyerPhone: buyer_phone }), "cart-seller"),
   ]);
 }

@@ -130,7 +130,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Toggle MSG91 via env variable
     const OTP_SEND_ENABLED = import.meta.env.PUBLIC_ENABLE_MSG91 === "true";
     if (!OTP_SEND_ENABLED && !otpDevBypassAllowed()) {
-      console.error("[send-otp] MSG91 disabled outside dev — refusing to issue the fixed dev code");
+      console.error("[send-otp] MSG91 disabled outside dev, refusing to issue the fixed dev code");
       return new Response(JSON.stringify({ error: "Login is temporarily unavailable" }), { status: 503 });
     }
     const otp = OTP_SEND_ENABLED ? generateOTP() : "123456";

@@ -29,14 +29,14 @@ Per 100 g raw edible portion.
 | [Pomfret](/fish/pomfret) (white/silver pomfret) | 123 | 19.02 | 5.12 | 0.59 | Lean protein with some omega-3 |
 | [Halwa](/fish/halwa) (black pomfret) | 123 | 18.91 | 4.83 | 0.81 | Lean protein with some omega-3 |
 | [Tarli](/fish/sardine) (oil sardine) | 152 | 17.91 | 8.99 | 0.61 | Omega-3 from a small fish |
-| [Rawas](/fish/rawas) (Indian salmon, fourfinger threadfin; see note) | 73 | 17.9 | 0.1 | — | Very low fat |
+| [Rawas](/fish/rawas) (Indian salmon, fourfinger threadfin; see note) | 73 | 17.9 | 0.1 |, | Very low fat |
 | [Bombil](/fish/bombil) (Bombay duck) | 69 | 13.53 | 1.03 | 0.20 | Very light, soft fish |
 | [Prawns](/fish/prawns) (tiger prawns, *Penaeus monodon*) | 65 | 14.25 | 0.74 | 0.12 | Fewest calories in this table |
 | [Bhetki](/fish/bhetki) (barramundi) | 68 | 15.28 | 0.29 | 0.02 | Very lean, mild white fish |
 | [Rohu](/fish/rohu) | 102 | 19.71 | 2.39 | 0.07 | Lean freshwater protein |
 | [Katla](/fish/katla) | 94 | 17.94 | 2.15 | 0.37 | Lean freshwater protein |
 | [Salmon](/fish/salmon) (Atlantic salmon) | 172 | 20.97 | 9.86 | 1.60 | Most EPA + DHA in this table (also the most fat and calories) |
-| [Ghol](/fish/ghol) (blackspotted croaker) | — | — | — | — | No published value found |
+| [Ghol](/fish/ghol) (blackspotted croaker) |, |, |, |, | No published value found |
 
 **How to read this table**
 

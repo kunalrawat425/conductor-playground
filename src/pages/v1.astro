@@ -6,7 +6,7 @@ import LocationPicker from "../components/LocationPicker.astro";
 import LoginModal from "../components/LoginModal.astro";
 ---
 
-<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Relifish"} - Fresh Fish, Delivered Fast`} description="Fresh fish from verified Goa sellers — order now for pickup or pre-order tonight for tomorrow's morning catch. Prices per kg, no surprises." activeTab="home" needsMap={true} jsonLd={{
+<AppShell title={`${import.meta.env.PUBLIC_BRAND_NAME || "Relifish"} - Fresh Fish, Delivered Fast`} description="Fresh fish from verified Goa sellers, order now for pickup or pre-order tonight for tomorrow's morning catch. Prices per kg, no surprises." activeTab="home" needsMap={true} jsonLd={{
   "@context": "https://schema.org",
   "@graph": [
     {
@@ -24,7 +24,7 @@ import LoginModal from "../components/LoginModal.astro";
       "@type": "LocalBusiness",
       "name": "Relifish",
       "url": "https://www.relifish.com",
-      "description": "Fresh fish marketplace — order from verified Goa fish sellers for pickup or delivery",
+      "description": "Fresh fish marketplace, order from verified Goa fish sellers for pickup or delivery",
       "address": {
         "@type": "PostalAddress",
         "addressRegion": "Goa",
@@ -148,7 +148,7 @@ import LoginModal from "../components/LoginModal.astro";
         <input type="hidden" id="qw-utm-medium" name="utm_medium" />
         <input type="hidden" id="qw-utm-campaign" name="utm_campaign" />
         <input type="tel" id="qw-phone" placeholder="Your phone number" required />
-        <input type="email" id="qw-email" placeholder="Your email (optional — for launch updates)" />
+        <input type="email" id="qw-email" placeholder="Your email (optional, for launch updates)" />
         <input type="text" id="qw-area" placeholder="Your area (e.g. Andheri West)" required />
 
         <div class="qw-group">
@@ -183,7 +183,7 @@ import LoginModal from "../components/LoginModal.astro";
         </div>
 
         <button type="submit" class="qw-btn" id="qw-submit">👉 Notify Me When Live</button>
-        <p class="qw-note">Join now — you'll still be eligible for launch discounts & exclusive offers</p>
+        <p class="qw-note">Join now, you'll still be eligible for launch discounts & exclusive offers</p>
       </form>
 
       <div id="qw-success" style="display:none;">

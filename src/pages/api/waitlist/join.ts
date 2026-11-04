@@ -78,7 +78,7 @@ export const POST: APIRoute = async ({ request }) => {
       try {
         const sent = await postToResend({
             to: "relifishstore@gmail.com",
-            subject: `New Waitlist: ${area} — ${phoneE164}`,
+            subject: `New Waitlist: ${area}, ${phoneE164}`,
             html: `
               <h2>New Buyer Waitlist Entry</h2>
               <table style="border-collapse:collapse;font-family:sans-serif;">
@@ -130,7 +130,7 @@ export const POST: APIRoute = async ({ request }) => {
                   </p>
                   <p style="font-size:12px;color:#999;margin:20px 0 0;line-height:1.5;">
                     Questions? Call us on ${SUPPORT_PHONE_DISPLAY}, a real person answers. Or email ${SUPPORT_EMAIL}<br/>
-                    — Team Relifish, Mumbai
+                   , Team Relifish, Mumbai
                   </p>
                 </div>
               `,

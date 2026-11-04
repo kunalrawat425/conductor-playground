@@ -74,7 +74,7 @@ export const POST: APIRoute = async ({ request }) => {
         ${rows.map(([k, v]) => `<tr><td style="padding:8px;font-weight:bold;">${k}</td><td style="padding:8px;">${escapeHtml(v || "—")}</td></tr>`).join("")}
       </table>
     `;
-    const sent = await sendTransactionalEmail(SUPPORT_EMAIL, `New seller application: ${s.name} — ${s.phone}`, html, "seller-apply");
+    const sent = await sendTransactionalEmail(SUPPORT_EMAIL, `New seller application: ${s.name}, ${s.phone}`, html, "seller-apply");
     // "skipped" = no Resend key (local / preview): the shop details are still saved on the row.
     if (sent.startsWith("failed")) return json({ error: "Couldn't send your details. Please try again." }, 502);
     return json({ success: true }, 200);

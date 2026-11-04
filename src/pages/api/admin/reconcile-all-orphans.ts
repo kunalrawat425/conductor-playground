@@ -75,7 +75,7 @@ export const POST: APIRoute = async ({ request }) => {
     for (const captured of capturedAll) {
       if (dryRun) {
         const closed = ["cancelled", "declined"].includes((o as any).status);
-        report.push({ order_id: (o as any).id, rzp_order: rzpOrder, reconciled: !closed, reason: closed ? "dry-run — paid after close, would REFUND" : "dry-run — would confirm", pay_id: captured.id });
+        report.push({ order_id: (o as any).id, rzp_order: rzpOrder, reconciled: !closed, reason: closed ? "dry-run, paid after close, would REFUND" : "dry-run, would confirm", pay_id: captured.id });
         if (!closed) flipped += 1;
         continue;
       }

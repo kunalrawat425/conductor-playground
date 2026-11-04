@@ -101,7 +101,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     const subscription = normalizePushSubscription(seller?.push_subscription);
     if (!subscription?.endpoint) {
-      await log("skipped", "no push subscription — seller has not enabled notifications");
+      await log("skipped", "no push subscription, seller has not enabled notifications");
       return new Response(JSON.stringify({ skipped: true, reason: "no push subscription" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -147,7 +147,7 @@ export const POST: APIRoute = async ({ request }) => {
           .update({ push_subscription: null, push_enabled: false })
           .eq("id", seller_id);
         console.warn(`[notify-seller] pruned dead subscription for seller ${seller_id} (HTTP ${pushErrorStatus(pushErr)})`);
-        return new Response(JSON.stringify({ skipped: true, reason: "subscription expired — cleared", pruned: true }), {
+        return new Response(JSON.stringify({ skipped: true, reason: "subscription expired, cleared", pruned: true }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });

@@ -27,7 +27,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const { role, id, email } = body;
     console.log("[verify-email] POST payload:", JSON.stringify(body));
     if (!role || !id || !email) {
-      console.error("[verify-email] Missing fields — role:", role, "id:", id, "email:", email);
+      console.error("[verify-email] Missing fields, role:", role, "id:", id, "email:", email);
       return new Response(JSON.stringify({ error: "role, id, email required" }), { status: 400 });
     }
     if (!resendApiKey) {
@@ -42,7 +42,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const { data: record, error: dbErr } = await supabase.from(table).select("email").eq("id", id).single();
     console.log("[verify-email] DB lookup:", { table, id, record, dbErr: dbErr?.message });
     if (!record || record.email !== email) {
-      console.error("[verify-email] Email mismatch — DB:", record?.email, "payload:", email);
+      console.error("[verify-email] Email mismatch, DB:", record?.email, "payload:", email);
       return new Response(JSON.stringify({ error: "Email mismatch. Save profile first." }), { status: 400 });
     }
 
@@ -51,7 +51,7 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     const emailRes = await postToResend({
       to: email,
-      subject: "Verify your email — Relifish",
+      subject: "Verify your email, Relifish",
       html: verifyEmailTemplate(email, verifyUrl),
     }, resendApiKey);
 
