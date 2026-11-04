@@ -8,14 +8,7 @@ export default defineConfig({
   // so a tab still holding the old page used to show unstyled (founder, 31 Oct). Inline CSS can't go missing.
   build: { inlineStylesheets: "always" },
   redirects: {
-    // Old static seller pitch pages (they quoted commission and fees) are offline; their links land on /for-sellers.
-    "/seller-banner": "/for-sellers",
-    "/seller-banner.html": "/for-sellers",
-    "/seller-simple.html": "/for-sellers",
-    "/seller-detailed.html": "/for-sellers",
-    "/seller-onboard.html": "/for-sellers",
-    "/seller-pitch-flyer.html": "/for-sellers",
-    "/sop.html": "/for-sellers",
+    "/seller-banner": "/seller-banner.html",
   },
   vite: {
     server: {

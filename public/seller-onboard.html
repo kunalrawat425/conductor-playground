@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Relifish — List Your Fish Shop Online FREE</title>
-<meta name="description" content="First 10 sellers get FREE lifetime listing. Join Relifish — Mumbai's fish marketplace. Get online orders, grow your customer base.">
-<meta property="og:title" content="Relifish — List Your Fish Shop Online FREE">
-<meta property="og:description" content="First 10 sellers get FREE setup. Online orders, more customers, zero hassle.">
+<title>Relifish — List Your Fish Shop Online</title>
+<meta name="description" content="Join Relifish — Mumbai's fish marketplace. Get online orders, grow your customer base.">
+<meta property="og:title" content="Relifish — List Your Fish Shop Online">
+<meta property="og:description" content="Online orders, more customers, zero hassle.">
 <meta property="og:image" content="https://www.relifish.store/icon-512.svg">
 <meta property="og:url" content="https://www.relifish.store/seller-onboard.html">
 <meta name="theme-color" content="#0F172A">
@@ -129,12 +129,6 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0F172A;color:#fff;min-
     <div class="live-pill"><span class="live-dot"></span> 7 sellers joined</div>
   </div>
 
-  <!-- Urgency -->
-  <div class="urgency">
-    <div class="slots-count">3</div>
-    <div class="txt">FREE slots left out of 10.<br><b>First 10 sellers = zero commission forever.</b></div>
-  </div>
-
   <!-- Hero -->
   <div class="hero">
     <h1>List your fish shop <span>online in 2 minutes</span></h1>
@@ -142,12 +136,12 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0F172A;color:#fff;min-
   </div>
 
   <!-- What you get -->
-  <div class="section-label">What you get — FREE</div>
+  <div class="section-label">What you get</div>
   <div class="benefits">
     <div class="ben">
       <div class="emoji">🏪</div>
       <div class="info">
-        <h4>Your own online store <span class="free-badge">FREE</span></h4>
+        <h4>Your own online store</h4>
         <p>Your shop name, your fish, your prices. Buyers find you by area. Like a digital dukaan.</p>
       </div>
     </div>
@@ -177,13 +171,6 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0F172A;color:#fff;min-
       <div class="info">
         <h4>Dashboard to manage everything</h4>
         <p>See all orders, track daily sales, manage inventory. Simple dashboard, works on phone.</p>
-      </div>
-    </div>
-    <div class="ben">
-      <div class="emoji">🆓</div>
-      <div class="info">
-        <h4>ZERO commission for first 10 sellers</h4>
-        <p>Free forever. No hidden charges. We make money only when you make more money.</p>
       </div>
     </div>
   </div>
@@ -231,7 +218,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0F172A;color:#fff;min-
       <div class="av a4">SB</div>
       <div class="av a5">AG</div>
     </div>
-    <div class="txt"><b>7 sellers already joined</b> from Versova, Sassoon Dock, and Mahim. <b>3 spots left</b> for free onboarding.</div>
+    <div class="txt"><b>7 sellers already joined</b> from Versova, Sassoon Dock, and Mahim.</div>
   </div>
 
   <!-- Before/After -->
@@ -277,7 +264,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0F172A;color:#fff;min-
 
   <!-- FORM -->
   <div class="form-wrap" id="form-section">
-    <h3>Join Relifish — Free Setup</h3>
+    <h3>Join Relifish — Store Setup</h3>
     <p class="form-sub">Takes 2 minutes. We'll call you within 24 hours.</p>
     <form id="seller-form">
       <div class="field">
@@ -333,8 +320,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0F172A;color:#fff;min-
           <button type="button" class="chip" data-val="100kg+">100+ kg</button>
         </div>
       </div>
-      <button type="submit" class="submit-btn" id="sf-submit">Join Relifish — Free Setup →</button>
-      <p class="form-note">Free for first 10 sellers. No credit card. No catch. We call you.</p>
+      <button type="submit" class="submit-btn" id="sf-submit">Join Relifish — Store Setup →</button>
+      <p class="form-note">We call you.</p>
     </form>
 
     <div class="success" id="sf-success">
@@ -342,7 +329,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0F172A;color:#fff;min-
       <h3>You're in!</h3>
       <p>Welcome to Relifish. We'll WhatsApp you within 24 hours to set up your store.<br><br>
       <b>Your seller number: #<span id="seller-num">8</span></b><br>
-      <span style="color:#FEF08A;font-weight:700">You're in the FREE onboarding batch!</span></p>
+      <span style="color:#FEF08A;font-weight:700">You're in!</span></p>
     </div>
   </div>
 
@@ -352,10 +339,6 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0F172A;color:#fff;min-
     <div class="faq-item">
       <div class="faq-q">What is Relifish?</div>
       <div class="faq-a">Relifish is Mumbai's fish marketplace. It puts your fish shop online so buyers across your area can find you, see your prices, and order directly. Think of it as your own website + WhatsApp shop, but easier.</div>
-    </div>
-    <div class="faq-item">
-      <div class="faq-q">Is it really free?</div>
-      <div class="faq-a">Yes. First 10 sellers get zero commission forever. After that, we take a small 5-8% commission only when you make a sale. No upfront fees, no monthly charges.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">Do I need a smartphone?</div>
@@ -433,12 +416,12 @@ document.getElementById('seller-form').addEventListener('submit', async function
       document.getElementById('seller-num').textContent = data.seller_number || '8';
     } else {
       btn.disabled = false;
-      btn.textContent = 'Join Relifish — Free Setup →';
+      btn.textContent = 'Join Relifish — Store Setup →';
       alert(data.error || 'Something went wrong. Please call us on +91 91522 07607.');
     }
   } catch(_) {
     btn.disabled = false;
-    btn.textContent = 'Join Relifish — Free Setup →';
+    btn.textContent = 'Join Relifish — Store Setup →';
     alert('Something went wrong. Please call us on +91 91522 07607.');
   }
 });
