@@ -341,7 +341,7 @@ describe("SMS (MSG91)", () => {
       for (const v of s.vars) expect(cut30(v).length).toBeLessThanOrEqual(30);
     }
     expect(orderSms("cancelled", ord, "kunal", { reason: "x.", refund: "₹285, started today" })).toEqual({ key: "CANCELLED", vars: ["Kunal", "#1B26326F", "x", "₹285"] });
-    expect(orderSms("cancelled", ord, "kunal", { reason: "x", refund: "none needed, nothing was charged" })).toEqual({ key: "CANCELLED_NOPAY", vars: ["Kunal", "#1B26326F", "x"] });
+    expect(orderSms("cancelled", ord, "kunal", { reason: "x", refund: "none needed, nothing was charged" })).toEqual({ key: "CANCELLED_NOPAY", vars: ["Kunal", "#1B26326F"] });
     // No seller name in any order SMS (founder, 1 Nov).
     expect(orderSms("confirmed", ord, "kunal").vars[0]).toBe("Kunal");
     expect(cut30("a".repeat(40))).toHaveLength(30);

@@ -123,7 +123,7 @@ export function orderSms(event: OrderWaEvent, ord: any, buyerName: string | null
       const [id, reason] = cancel?.removedFrom
         ? [`#${String(cancel.removedFrom).slice(0, 8).toUpperCase()} (${fish})`, `${fish} not available`]
         : [short, why];
-      return amt ? { key: "CANCELLED", vars: [name, id, reason, amt] } : { key: "CANCELLED_NOPAY", vars: [name, id, reason] };
+      return amt ? { key: "CANCELLED", vars: [name, id, reason, amt] } : { key: "CANCELLED_NOPAY", vars: [name, id] };
     }
   }
 }
