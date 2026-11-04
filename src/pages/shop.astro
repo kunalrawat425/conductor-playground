@@ -677,6 +677,13 @@ const categories = [
     if (filterState.topRated) {
       filtered = [...filtered].sort((a, b) => (b.seller.rating_avg || 0) - (a.seller.rating_avg || 0));
     }
+    // Founder (4 Nov): Fishtokri always sits second in the seller list, even when it's the nearest.
+    const ftIdx = filtered.findIndex((g) => g.seller.id === "2f39dfce-15c0-4f9a-a5b3-e95280479dbd");
+    if (ftIdx !== -1 && ftIdx !== 1 && filtered.length > 1) {
+      filtered = [...filtered];
+      const [ft] = filtered.splice(ftIdx, 1);
+      filtered.splice(1, 0, ft);
+    }
 
     if (allGroups.length === 0) {
       count.textContent = "0";
