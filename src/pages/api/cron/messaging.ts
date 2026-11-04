@@ -196,9 +196,9 @@ async function run({ url }: { url: URL }): Promise<Response> {
       const sample = [...(seller.live || [])].filter((m) => m.photo).sort((a, b) => b.price - a.price)[0];
       const withCart = st.cart.some((l) => l.on_menu) || !sample ? st : { ...st, cart: [{ seller_id: seller.id, name: sample.name, species: sample.species, photo: sample.photo, price: sample.price, on_menu: true, updated_at: new Date().toISOString() }] };
       const d = kind === "cart" ? cartMessage(Date.now(), withCart, seller, offer) : kind === "signup" ? signupMessage(Date.now(), st, seller, offer) : null;
-      const p = kind === "promo" ? decide(Date.now(), withCart, sellers, [], true, true) : null; // test phone only: due now, and the per-buyer gaps (recent delivery, inactive) are skipped
+      const p = kind === "promo" ? decide(Date.now(), withCart, sellers, [], true, true, 0, viaSms) : null; // test phone only: due now, and the per-buyer gaps (recent delivery, inactive) are skipped
       if (d) msg = { template: d.template, body: d.body, headerImage: d.photo, link_path: d.path, seller_id: seller.id, sms: d.sms };
-      else if (p && !("skip" in p)) msg = { template: p.template, body: p.body, headerImage: p.photo, link_path: p.path, seller_id: seller.id, sms: promoSms(p, st, Date.now(), sellers) };
+      else if (p && !("skip" in p)) msg = { template: p.template, body: p.body, headerImage: p.photo, link_path: p.path, seller_id: seller.id, sms: promoSms(p, st, Date.now()) };
       else if (kind === "promo") return json({ error: `no promo fits right now: ${(p as any)?.skip}` }, 404);
     } else {
       // Order kinds: the test buyer's latest order (its real values).
@@ -271,12 +271,12 @@ async function run({ url }: { url: URL }): Promise<Response> {
     } else {
       // Promos go by SMS when WhatsApp can't carry them (off, or not opted in): those wait for 10:00 (promotional SMS window).
       const bySms = !whatsappOk || env("WHATSAPP_OFF") === "true";
-      const d = decide(now, state, sellers, history, promoNow, promoAll, bySms ? PROMO_SMS_START : 0);
+      const d = decide(now, state, sellers, history, promoNow, promoAll, bySms ? PROMO_SMS_START : 0, bySms);
       if ("skip" in d) { report.push({ buyer: who, skip: act.skip === "nothing due" ? d.skip : `${act.skip}; ${d.skip}` }); continue; }
       // One promo, one channel: WhatsApp if opted in, else the promotional SMS for their stage (founder, 1 Nov).
       // Never a WhatsApp→SMS fallback for promos; DND / STOP are already skipped by decide().
       msg = { dedupe_key: `${d.kind}:${b.id}:${d.slot_date}`, kind: d.kind, slot_date: d.slot_date, buyer_id: b.id, seller_id: d.seller.id, phone: b.phone, whatsappOk,
-        template: d.template, body: d.body, headerImage: d.photo, link_path: d.path, sms: promoSms(d, state, now, sellers), smsOk: !state.dnd, smsFallback: false };
+        template: d.template, body: d.body, headerImage: d.photo, link_path: d.path, sms: promoSms(d, state, now), smsOk: !state.dnd, smsFallback: false };
     }
     if (!msg) continue;
     // 2 reminder/promo SMS a week (founder, 1 Nov): an SMS-bound reminder or promo past the cap is skipped here (the DB refuses it anyway).

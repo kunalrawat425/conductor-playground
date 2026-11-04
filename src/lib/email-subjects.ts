@@ -10,7 +10,7 @@ export type BuyerEmailKind =
   | "seller_cancelled" | "buyer_cancelled" | "expired_unpaid" | "refunded";
 
 export type BuyerEmailCtx = {
-  fish: string;
+  fish?: string;               // accepted from callers but never shown (founder, 3 Nov: no fish names to buyers)
   seller?: string | null;
   slot?: string | null;        // "today, 12–2 PM"
   by?: string | null;          // "2 PM" (out for delivery)
@@ -24,18 +24,18 @@ const rs = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 
 export function buyerEmailCopy(kind: BuyerEmailKind, c: BuyerEmailCtx): { subject: string; preview: string } {
   // Gentle next-step wording (founder, 1 Nov): no seller name, no dues tone; help is a real person.
-  // ctx.seller is still accepted from callers but no longer shown.
+  // ctx.seller and ctx.fish are still accepted from callers but never shown (founder, 3 Nov: no seller or fish names).
   switch (kind) {
     case "placed":
       return { subject: "Your Relifish order is placed ✅", preview: c.eveningPreorder
-        ? `Payment received for your ${c.fish}, thank you. Pre-orders are confirmed by 9:30 AM, and we'll let you know.`
-        : `Payment received for your ${c.fish}, thank you. It's usually confirmed within 2 hours, and we'll let you know.` };
+        ? "Payment received for your Relifish order, thank you. Pre-orders are confirmed by 9:30 AM, and we'll let you know."
+        : "Payment received for your Relifish order, thank you. It's usually confirmed within 2 hours, and we'll let you know." };
     case "confirmed":
-      return { subject: "Your Relifish order is confirmed", preview: `${c.fish}, cleaned and cut your way, reaches you ${c.slot || "in your slot"}.` };
+      return { subject: "Your Relifish order is confirmed", preview: `Your order, cleaned and cut your way, reaches you ${c.slot || "in your slot"}.` };
     case "out_for_delivery":
       return { subject: "Your Relifish order is on the way 🛵", preview: `${c.by ? `Should reach you by ${c.by}. ` : ""}Please keep your phone close for the delivery person.` };
     case "delivered":
-      return { subject: c.onTime ? "Your Relifish order is delivered, on time!" : "Your Relifish order is delivered", preview: `Hope the ${c.fish} turns out just right. How was it?` };
+      return { subject: c.onTime ? "Your Relifish order is delivered, on time!" : "Your Relifish order is delivered", preview: "Hope your Relifish order turns out just right. How was it?" };
     case "seller_cancelled":
       return { subject: "Your Relifish order couldn't go ahead", preview: `Sorry! ${c.amount ? `${refundLine(c.amount, !!c.refundSent)}.` : "No payment was taken."} We can help you pick another fish or slot.` };
     case "buyer_cancelled":

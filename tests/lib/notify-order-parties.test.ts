@@ -30,19 +30,19 @@ describe("notify-order-parties copy", () => {
     }
   });
 
-  it("embeds species and short order id in both audiences' lines", () => {
+  it("short order id in both lines; the fish only in the seller's (founder, 3 Nov: the buyer's says 'your Relifish order')", () => {
     for (const e of EVENTS) {
-      const c = copyFor(e, "surmai", "DEADBEEF", 500)!;
-      expect(c.buyerLine).toContain("surmai");
+      const c = copyFor(e, "surmai", "DEADBEEF", 500, null, { seller: "Fishtokri" })!;
+      expect(c.buyerLine).toContain("your Relifish order".slice(5));
       expect(c.buyerLine).toContain("DEADBEEF");
       expect(c.sellerLine).toContain("surmai");
       expect(c.sellerLine).toContain("DEADBEEF");
+      for (const t of [c.buyerLine, c.buyerHeading, c.buyerPreview]) expect(t, e).not.toMatch(/surmai|fishtokri/i);
     }
   });
 
-  it("falls back to 'fish' when species is empty", () => {
+  it("falls back to 'fish' in the seller's line when species is empty", () => {
     const c = copyFor("payment_confirmed", "", "AB12CD34", null)!;
-    expect(c.buyerLine).toContain("fish");
     expect(c.sellerLine).toContain("fish");
   });
 

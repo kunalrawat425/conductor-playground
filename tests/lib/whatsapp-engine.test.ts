@@ -118,23 +118,25 @@ describe("templates", () => {
       expect(m.body, m.template).toHaveLength(varCount(m.template));
       expect(!!m.image, m.template).toBe(APPROVED[m.template][1]);
     }
-    expect(orderMessage("paid", ord, "manoj", noon)).toEqual({ template: "rf2_paid", body: ["#EEB0F7AC", "Manoj", "Fishtokri"] });
-    expect(orderMessage("paid", ord, null, night)).toEqual({ template: "rf2_paid_evening", body: ["#EEB0F7AC", "seafood lover", "Sun 25 Oct, 9–11 AM", "Fishtokri"] });
+    expect(orderMessage("paid", ord, "manoj", noon)).toEqual({ template: "rf2_paid", body: ["#EEB0F7AC", "Manoj", "Relifish"] });
+    expect(orderMessage("paid", ord, null, night)).toEqual({ template: "rf2_paid_evening", body: ["#EEB0F7AC", "seafood lover", "Sun 25 Oct, 9–11 AM", "Relifish"] });
     expect(orderMessage("paid", { ...ord, is_preorder: false }, "manoj", night).template).toBe("rf2_paid");
-    expect(orderMessage("confirmed", ord, "manoj", noon).body).toEqual(["Fishtokri", "#EEB0F7AC", "Sun 25 Oct, 9–11 AM"]);
+    expect(orderMessage("confirmed", ord, "manoj", noon).body).toEqual(["Relifish", "#EEB0F7AC", "Sun 25 Oct, 9–11 AM"]);
     expect(orderMessage("out_for_delivery", ord, "manoj", noon).body).toEqual(["#EEB0F7AC", "11 AM"]);
     // Slot already over (late confirm / late dispatch): "soon", never a time that has passed.
     const late = Date.parse("2026-10-25T12:00:00+05:30");
     expect(orderMessage("out_for_delivery", ord, "manoj", late).body[1]).toBe("soon");
     expect(orderMessage("confirmed", ord, "manoj", late).body[2]).toBe("soon");
     expect(orderSms("out_for_delivery", ord, "manoj", undefined, undefined, late).vars[1]).toBe("soon");
-    expect(orderMessage("completed", ord, "manoj", noon).body).toEqual(["Silver Pomfret", "Manoj", "Fishtokri"]);
+    expect(orderMessage("completed", ord, "manoj", noon).body).toEqual(["fresh fish", "Manoj", "Relifish"]);
     expect(orderMessage("cancelled", ord, "manoj", noon, { reason: "the seller ran out of pomfret today", refund: "₹1,380, started today, reaches your account in 5–7 working days" }).body)
       .toEqual(["Manoj", "#EEB0F7AC", "the seller ran out of pomfret today", "₹1,380, started today, reaches your account in 5–7 working days"]);
-    // One item removed, the rest goes ahead: the cart's order number and the reason name the item.
+    // One item removed, the rest goes ahead: the cart's order number, and no fish name (founder, 3 Nov).
     const removed = orderMessage("cancelled", ord, "manoj", noon, { reason: "Not available.", refund: "₹285 refund is being processed, it reaches you in 5–7 working days", removedFrom: "aa11bb22-0000-4000-8000-000000000000" });
     expect(removed.template).toBe("rf2_cancelled");
-    expect(removed.body).toEqual(["Manoj", "#AA11BB22 (Silver Pomfret)", "the seller removed Silver Pomfret (Not available), the rest of your order goes ahead", "₹285 refund is being processed, it reaches you in 5–7 working days"]);
+    expect(removed.body).toEqual(["Manoj", "#AA11BB22", "an item was not available, the rest of your order goes ahead", "₹285 refund is being processed, it reaches you in 5–7 working days"]);
+    // Founder, 3 Nov: no seller or fish name in any order update.
+    for (const e of events) expect(orderMessage(e, ord, "manoj", noon).body.join(" "), e).not.toMatch(/fishtokri|pomfret/i);
     expect(firstName("  ")).toBe("seafood lover");
   });
   it("catch a price, a trailing variable and a promo in a utility template", () => {
@@ -177,12 +179,11 @@ describe("order update photo: the checkout's costliest live item, never stock (f
       expect(orderMessage(e, cheap, "manoj", noon, undefined, checkout).image, e).toBe("https://x/pomfret.jpg");
     }
   });
-  it("unpaid reminders name the whole checkout, costliest first; the SMS value fits 30 chars", () => {
+  it("unpaid reminders say \"fresh fish\", never the checkout's fish (founder, 3 Nov)", () => {
     const fish = (id: string, price: number, description: string, species: string) => o(id, price, null, { status: "pending_payment", listing: { ...cheap.listing, description, species } });
     const checkout = [fish("a", 300, "Bombil", "bombil"), fish("b", 1380, "Silver Pomfret", "pomfret"), fish("c", 900, "Surmai", "surmai"), otherCart, removed];
-    expect(orderMessage("unpaid", checkout[0], "manoj", noon, undefined, checkout).body[2]).toBe("Silver Pomfret, Surmai and 1 more");
-    expect(orderSms("unpaid", checkout[0], "manoj", undefined, checkout).vars[1]).toBe("Silver Pomfret and 2 more");
-    expect(orderMessage("unpaid", checkout[0], "manoj", noon, undefined, checkout.slice(0, 1)).body[2]).toBe("Bombil");
+    expect(orderMessage("unpaid", checkout[0], "manoj", noon, undefined, checkout).body[2]).toBe("fresh fish");
+    expect(orderSms("unpaid", checkout[0], "manoj", undefined, checkout).vars[1]).toBe("fresh fish");
   });
   it("the costliest item has no photo → null, no cheaper or stock fallback", () => {
     const checkout = [cheap, { ...dear, listing: { ...dear.listing, photo_url: null } }];
@@ -342,8 +343,14 @@ describe("SMS (MSG91)", () => {
     }
     expect(orderSms("cancelled", ord, "kunal", { reason: "x.", refund: "₹285, started today" })).toEqual({ key: "CANCELLED", vars: ["Kunal", "#1B26326F", "x", "₹285"] });
     expect(orderSms("cancelled", ord, "kunal", { reason: "x", refund: "none needed, nothing was charged" })).toEqual({ key: "CANCELLED_NOPAY", vars: ["Kunal", "#1B26326F", "x"] });
-    // No seller name in any order SMS (founder, 1 Nov).
+    // No seller or fish name in any order SMS (founder, 1 and 3 Nov).
     expect(orderSms("confirmed", ord, "kunal").vars[0]).toBe("Kunal");
+    expect(orderSms("paid", ord, "kunal").vars[1]).toBe("Relifish");
+    expect(orderSms("completed", ord, "kunal").vars[1]).toBe("fresh fish");
+    expect(orderSms("cancelled", ord, "kunal", { reason: "Not available.", refund: "₹285, started today", removedFrom: "aa11bb22-0000" }))
+      .toEqual({ key: "CANCELLED", vars: ["Kunal", "#AA11BB22", "an item not available", "₹285"] });
+    expect(orderSms("cancelled", ord, "kunal", { reason: "Not available.", removedFrom: "aa11bb22-0000" }))
+      .toEqual({ key: "CANCELLED_NOPAY", vars: ["Kunal", "#AA11BB22", "an item not available"] });
     expect(cut30("a".repeat(40))).toHaveLength(30);
   });
   it("rf2_cancelled goes out on Wati as the utility copy rfw_cancelled_u", () => {
@@ -516,7 +523,7 @@ describe("promotional SMS sending (founder, 1 Nov)", () => {
   const ok = (body: any) => new Response(JSON.stringify(body), { status: 200 });
   const base = () => { vi.stubEnv("SMS_LIVE", "true"); vi.stubEnv("MSG91_AUTH_KEY", "k"); vi.stubEnv("MSG91_FLOW_PROMO_NEW", "flowpromo"); vi.stubEnv("MSG91_SENDER_ID", "RLFISH"); };
   const msg = { dedupe_key: "promo:b1:2026-11-07", kind: "promo", slot_date: "2026-11-07", buyer_id: "b1", phone: "9870619974", whatsappOk: false,
-    template: "rf2_catch_prices", body: [], link_path: "/shop", sms: { key: "PROMO_NEW" as const, vars: ["Priya", "Fishtokri, The Nomadic Catch", "today, 4–6 PM"] }, smsOk: true, smsFallback: false };
+    template: "rf2_catch_prices", body: [], link_path: "/shop", sms: { key: "PROMO_NEW" as const, vars: ["Priya", "Relifish", "today, 4–6 PM"] }, smsOk: true, smsFallback: false };
   it("is off unless PROMO_SMS_LIVE=true and a promo header is set: nothing logged, nothing sent", async () => {
     base();
     const sb = fakeSb();
@@ -536,7 +543,7 @@ describe("promotional SMS sending (founder, 1 Nov)", () => {
     const r = await dispatch(sb, msg);
     expect([r.status, r.channel]).toEqual(["sent", "sms"]);
     const body = JSON.parse((globalThis.fetch as any).mock.calls[0][1].body);
-    expect(body).toMatchObject({ flow_id: "flowpromo", sender: "873543", var1: "Priya", var2: "Fishtokri, The Nomadic Catch", var3: "today, 4-6 PM" });
+    expect(body).toMatchObject({ flow_id: "flowpromo", sender: "873543", var1: "Priya", var2: "Relifish", var3: "today, 4-6 PM" });
     expect(smsPayload("f", "91x", ["a"]).sender).toBe("RLFISH");
   });
   it("a promo goes once: a second run is a duplicate", async () => {

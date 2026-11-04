@@ -5,7 +5,6 @@ import { normalizeIndianMobile } from "../../../lib/indian-phone";
 import { resolveOrderAddress, saveAddressSnapshot } from "../../../lib/server/order-address";
 import { computeDeliveryFee, haversineKm } from "../../../lib/order-pricing";
 import {
-  capitalizeFishName,
   orderEmailBuyer,
   type OrderEmailArgs,
   UNPAID_EMAIL_LABEL,
@@ -221,11 +220,10 @@ export const POST: APIRoute = async ({ request, url }) => {
             bundleCount: bs ? Math.round(quantity / bs) : null,
             pricingLabel: orderPricingLabel || null,
           };
-          const speciesLabel = capitalizeFishName(species || "Fish");
           if (buyer_id) {
             preNotify.push(
               supabase.from("buyers").select("email").eq("id", buyer_id).single().then(({ data: b }) =>
-                sendTransactionalEmail(b?.email, `Pre-order placed — ${speciesLabel}`, orderEmailBuyer(poEmailArgs), "preorder-buyer")
+                sendTransactionalEmail(b?.email, "Pre-order placed — your Relifish order", orderEmailBuyer(poEmailArgs), "preorder-buyer")
               )
             );
           }
@@ -461,7 +459,6 @@ export const POST: APIRoute = async ({ request, url }) => {
         bundleCount: null,
         pricingLabel: orderPricingLabel || null,
       };
-      const speciesForEmail = capitalizeFishName(species || "Fish");
 
       // BUG-27: awaited in parallel. Previously fire-and-forget, which Vercel
       // cancels on response — the order-placed mail was lost roughly whenever
@@ -470,7 +467,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       if (buyer_id) {
         mail.push(
           supabase.from("buyers").select("email").eq("id", buyer_id).single().then(({ data: buyer }) =>
-            sendTransactionalEmail(buyer?.email, `${statusLabel} — ${speciesForEmail}`, orderEmailBuyer(emailArgs), "order-buyer")
+            sendTransactionalEmail(buyer?.email, `${statusLabel} — your Relifish order`, orderEmailBuyer(emailArgs), "order-buyer")
           ).catch((err) => console.warn("[orders/create] buyer email lookup failed", { err: err?.message }))
         );
       }

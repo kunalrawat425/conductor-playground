@@ -337,7 +337,7 @@ async function notifyItemRemoved(sb: any, order: any, removed: any, cartRows: an
     const live = cartRows.filter((r) => isLiveRow(r.status));
     // The delivery fee stays with the cart while any item is live, even if the removed item carried it.
     const fee = cartRows.reduce((s, r) => s + (Number(r.delivery_fee) || 0), 0);
-    await sendTransactionalEmail(buyer.email, `Sorry, ${fish} was removed from your order #${short}${refunded}`, orderEmailBuyer({
+    await sendTransactionalEmail(buyer.email, `Sorry, an item was removed from your order #${short}${refunded}`, orderEmailBuyer({
       statusLabel: "Item Removed",
       species: fish,
       quantity: Number(removed.quantity) || 0,
@@ -647,7 +647,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             onTime: deliveredOnTime((data as any).delivery_slot_end),
           }) : null;
           const html = orderEmailBuyer(emailArgs);
-          await sendTransactionalEmail(buyer.email, copy ? copy.subject : `${statusLabel} — ${speciesLabel}`, copy ? withPreview(html, copy.preview) : html);
+          await sendTransactionalEmail(buyer.email, copy ? copy.subject : `${statusLabel} — your Relifish order`, copy ? withPreview(html, copy.preview) : html);
         }
       }
 
