@@ -342,7 +342,7 @@ describe("SMS (MSG91)", () => {
       for (const v of s.vars) expect(cut30(v).length).toBeLessThanOrEqual(30);
     }
     expect(orderSms("cancelled", ord, "kunal", { reason: "x.", refund: "₹285, started today" })).toEqual({ key: "CANCELLED", vars: ["Kunal", "#1B26326F", "x", "₹285"] });
-    expect(orderSms("cancelled", ord, "kunal", { reason: "x", refund: "none needed, nothing was charged" })).toEqual({ key: "CANCELLED_NOPAY", vars: ["Kunal", "#1B26326F", "x"] });
+    expect(orderSms("cancelled", ord, "kunal", { reason: "x", refund: "none needed, nothing was charged" })).toEqual({ key: "CANCELLED_NOPAY", vars: ["Kunal", "#1B26326F"] });
     // No seller or fish name in any order SMS (founder, 1 and 3 Nov).
     expect(orderSms("confirmed", ord, "kunal").vars[0]).toBe("Kunal");
     expect(orderSms("paid", ord, "kunal").vars[1]).toBe("Relifish");
@@ -350,7 +350,7 @@ describe("SMS (MSG91)", () => {
     expect(orderSms("cancelled", ord, "kunal", { reason: "Not available.", refund: "₹285, started today", removedFrom: "aa11bb22-0000" }))
       .toEqual({ key: "CANCELLED", vars: ["Kunal", "#AA11BB22", "an item not available", "₹285"] });
     expect(orderSms("cancelled", ord, "kunal", { reason: "Not available.", removedFrom: "aa11bb22-0000" }))
-      .toEqual({ key: "CANCELLED_NOPAY", vars: ["Kunal", "#AA11BB22", "an item not available"] });
+      .toEqual({ key: "CANCELLED_NOPAY", vars: ["Kunal", "#AA11BB22"] }); // relifish_cancel_nopay_help: no reason variable
     expect(cut30("a".repeat(40))).toHaveLength(30);
   });
   it("rf2_cancelled goes out on Wati as the utility copy rfw_cancelled_u", () => {
