@@ -2,6 +2,8 @@
  * SMS through MSG91 (DLT sender RLFISH): the channel for buyers who aren't opted in to WhatsApp,
  * and the one-time fallback when WhatsApp fails for a reminder or an order update (founder, 30 Oct).
  *
+ * 4 Nov 2026: CART, UNPAID, CONFIRMED, CANCELLED, CANCELLED_NOPAY moved to the "call us" DLT templates (relifish_cart_call,
+ * relifish_unpaid_call, relifish_confirmed_call, relifish_cancel_refund_call, relifish_cancel_nopay_help): no "WhatsApp or".
  * Each SMS is a DLT-approved MSG91 template. Its id is env MSG91_FLOW_<KEY>, and its variables are
  * named var1…varN in MSG91, in the order below. Texts match the Smartping registrations of 1 Nov 2026
  * word for word. Links are fixed, whitelisted static URLs (/shop for reminders, /track for orders):
@@ -27,14 +29,14 @@ export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT"
  */
 export const SMS_TEXT: Record<SmsKey, string> = {
   SIGNUP: "Hi {#var#}, your Relifish account is ready. Fresh fish from {#var#}, cleaned and cut, delivered home. Not sure what to pick? WhatsApp or call us on 9152207607, a real person replies. Menu: https://www.relifish.com/shop - Relifish",
-  CART: "Hi {#var#}, your Relifish order for {#var#} is not placed yet. Stuck anywhere? WhatsApp or call us on 9152207607, we will sort it out. Menu: https://www.relifish.com/shop - Relifish",
-  UNPAID: "Hi {#var#}, your Relifish order for {#var#} is almost done. The payment is pending for your delivery slot {#var#}. Stuck anywhere? WhatsApp or call us on 9152207607, we will sort it out. Your orders: https://www.relifish.com/orders - Relifish",
+  CART: "Hi {#var#}, your Relifish order for {#var#} is not placed yet. Stuck anywhere? Call us on 9152207607, we will sort it out. Menu: https://www.relifish.com/shop - Relifish",
+  UNPAID: "Hi {#var#}, your Relifish order for {#var#} is almost done. The payment is pending for your delivery slot {#var#}. Stuck anywhere? Call us on 9152207607, we will sort it out. Your orders: https://www.relifish.com/orders - Relifish",
   PAID: "Payment received for your Relifish order {#var#} from {#var#}. Delivery: {#var#}. Track: https://www.relifish.com/track - Relifish",
-  CONFIRMED: "Hi {#var#}, your Relifish order {#var#} is confirmed and will reach you {#var#}, cleaned and cut. We will text you when it is on the way. Questions? WhatsApp or call us on 9152207607. - Relifish",
+  CONFIRMED: "Hi {#var#}, your Relifish order {#var#} is confirmed and will reach you {#var#}, cleaned and cut. We will text you when it is on the way. Questions? Call us on 9152207607. - Relifish",
   OUT: "Your Relifish order {#var#} is on the way and should reach you {#var#}. Please keep your phone close for the delivery person. Anything urgent? Call us on 9152207607. - Relifish",
   DELIVERED: "Your Relifish order {#var#} ({#var#}) is delivered. Hope you enjoy it! Rate it: https://www.relifish.com/track - Relifish",
-  CANCELLED: "Sorry {#var#}, your Relifish order {#var#} could not go ahead: {#var#}. Your refund of {#var#} will reach your account in 5-7 working days. Want another fish or slot? WhatsApp or call us on 9152207607. - Relifish",
-  CANCELLED_NOPAY: "Sorry {#var#}, your Relifish order {#var#} could not go ahead: {#var#}. No payment was taken. Want another fish or slot? WhatsApp or call us on 9152207607. - Relifish",
+  CANCELLED: "Sorry {#var#}, your Relifish order {#var#} could not go ahead: {#var#}. Your refund of {#var#} will reach your account in 5-7 working days. Want another fish or slot? Call us on 9152207607. - Relifish",
+  CANCELLED_NOPAY: "Sorry {#var#}, your Relifish order {#var#} could not go ahead. No payment was taken. Want another slot? Call us on 9152207607. - Relifish",
   // Promotional (DLT category Promotional, sent from the numeric promo header MSG91_PROMO_SENDER, 10:00–21:00 only).
   PROMO_NEW: "Hi {#var#}, verified fish sellers delivering near you: {#var#}. Next delivery {#var#}, cleaned and cut. See what's fresh: https://www.relifish.com/shop - Relifish",
   PROMO_CART: "Hi {#var#}, your {#var#} is still in your Relifish cart. The next delivery slot is {#var#}, cleaned and cut. Questions? Call 9152207607. Cart: https://www.relifish.com/shop - Relifish",
