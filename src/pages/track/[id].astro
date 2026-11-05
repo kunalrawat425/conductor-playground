@@ -846,7 +846,8 @@ const { id } = Astro.params;
     if (autoPay) {
       autoPay = false;
       history.replaceState(null, "", location.pathname);
-      if (!info?.eligible) (document.getElementById("v2-rzp-pay-btn") as HTMLButtonElement | null)?.click();
+      // An open pay-on-delivery order: show that alert instead of covering it with Razorpay.
+      if (!info?.eligible && info?.block?.code !== "open_order") (document.getElementById("v2-rzp-pay-btn") as HTMLButtonElement | null)?.click();
     }
   }
 

@@ -6,6 +6,7 @@ import { sellerHearsAbout, pushStatusFor, sellerPushKindFor } from "../../src/li
 import { hasPaymentEvidence } from "../../src/lib/server/reminders";
 import { paymentMethodLabel } from "../../src/lib/order-payment-state";
 import { cancelledByText, cancelReasonText } from "../../src/lib/order-cancel";
+import { resolveBuyerStepper } from "../../src/lib/buyer-order-stepper";
 
 /** Pay on delivery (founder, 6 Nov 2026): paid in the app at the door, never cash. */
 const ok = { payable: true, sellerAccepts: true, total: 800 };
@@ -109,5 +110,16 @@ describe("labels", () => {
   it("an unconfirmed pay-on-delivery order cancelled at slot end says why", () => {
     expect(cancelledByText("system", "buyer", "seller_no_response")).toBe("Cancelled automatically — the seller didn't confirm in time");
     expect(cancelReasonText("seller_no_response")).toBeNull();
+  });
+});
+
+describe("buyer stepper", () => {
+  it("never ticks Paid before the buyer pays at the door", () => {
+    const o = { status: "out_for_delivery", pay_on_delivery: true, razorpay_payment_id: null };
+    const s = resolveBuyerStepper(o, "delivery");
+    expect(s.labels).toEqual(["Placed", "Confirmed", "On the way", "Paid", "Delivered"]);
+    expect(s.step).toBe(2);
+    expect(resolveBuyerStepper({ ...o, razorpay_payment_id: "pay_1" }, "delivery").step).toBe(3);
+    expect(resolveBuyerStepper({ status: "pending_payment", pay_on_delivery: true }, "delivery").step).toBe(0);
   });
 });
