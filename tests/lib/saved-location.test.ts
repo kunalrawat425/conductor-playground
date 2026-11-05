@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { readSavedLocation, loadSavedLocation, saveGpsDefault, saveConfirmedLocation } from "../../src/lib/saved-location";
+import { ensureDefaultLocation, readSavedLocation, loadSavedLocation, saveGpsDefault, saveConfirmedLocation } from "../../src/lib/saved-location";
 
 const from = (o: Record<string, string>) => (k: string) => (k in o ? o[k] : null);
 const mem = new Map<string, string>();
@@ -107,5 +107,17 @@ describe("saveConfirmedLocation", () => {
     await saveConfirmedLocation(thane);
     expect(localStorage.getItem("rlf_buyer_lat")).toBe("19.2183");
     expect(localStorage.getItem("rlf_loc_synced")).toBeNull();
+  });
+
+  it("assumes Thane when nothing is saved; GPS may replace it, the map pick is kept", () => {
+    const o: Record<string, string> = {};
+    const set = (k: string, v: string) => void (o[k] = v);
+    expect(ensureDefaultLocation(from(o), set)).toBe(true);
+    expect(o.rlf_buyer_location).toBe("Thane");
+    expect(o.rlf_loc_default).toBe("1");
+    expect(ensureDefaultLocation(from(o), set)).toBe(false);
+    expect(saveGpsDefault(from(o), set, { lat: 19.12, lng: 72.85, area: "Andheri West" })).toBe(true);
+    expect(o.rlf_buyer_location).toBe("Andheri West");
+    expect(o.rlf_loc_default).toBe("0");
   });
 });

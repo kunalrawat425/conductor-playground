@@ -225,7 +225,7 @@ const categories = [
   import { isPreorderShoppingWindow, isSellerEffectivelyOpen, preorderStatusLabel, todayDayName } from "../lib/order-timing";
   import { closedStatusLabel } from "../lib/cart";
   import { menuBySeller } from "../lib/menu-order";
-  import { readSavedLocation, saveGpsDefault } from "../lib/saved-location";
+  import { ensureDefaultLocation, readSavedLocation, saveGpsDefault } from "../lib/saved-location";
   import type { Seller, FishListing } from "../lib/supabase";
 
   type SellerHue = "sky" | "green" | "orange" | "indigo";
@@ -329,6 +329,9 @@ const categories = [
     const count = document.getElementById("v2-seller-count")!;
     const sticky = document.getElementById("v2-sticky-cluster");
     const sectionHead = document.querySelector(".v2-section-head") as HTMLElement | null;
+
+    // Nothing saved: assume Thane and show sellers straight away, no "Choose area" step (founder, 5 Nov).
+    try { ensureDefaultLocation((k) => localStorage.getItem(k), (k, v) => localStorage.setItem(k, v)); } catch {}
 
     // Update header location label
     const locText = document.querySelector(".v2-loc-text") as HTMLElement | null;

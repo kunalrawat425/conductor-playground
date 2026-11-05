@@ -1396,6 +1396,14 @@ const tags = [
       const c = Cart();
       const items = group.items;
       co$("dl-sub").textContent = `Shipment of ${items.length} item${items.length !== 1 ? "s" : ""} from ${cleanSellerName(group.seller_name) || sellerName}`;
+      // Tapping a line's name or pack size (Clarity dead taps, 3 Nov) closes checkout and shows that fish on
+      // the menu, where size and cut are chosen (founder, 5 Nov).
+      co$("cart-items").onclick = (e) => {
+        const g = e.target.closest("[data-co-goto]"); if (!g) return;
+        const card = document.querySelector(`.v2-item-card[data-listing-id="${CSS.escape(g.dataset.coGoto)}"]`); if (!card) return;
+        window.v2CloseSheet?.(CO);
+        setTimeout(() => { card.scrollIntoView({ block: "center", behavior: "smooth" }); card.style.boxShadow = "0 0 0 3px var(--v2-brand)"; setTimeout(() => { card.style.boxShadow = ""; }, 1500); }, 300);
+      };
       co$("cart-items").innerHTML = items.map((i) => {
         const l = listingOf(i.listing_id);
         const photo = photoOf(l);
@@ -1404,7 +1412,7 @@ const tags = [
         const title = checkoutFishTitle(i);
         return `<div class="v2-co-it">
           ${photo ? `<img src="${escape(photo)}" alt="" width="56" height="56" loading="lazy" />` : `<span class="v2-co-noimg" aria-hidden="true">${speciesEmoji(l?.species)}</span>`}
-          <div class="v2-co-it-x"><b>${title}</b><span>${checkoutLineMeta(i)}</span>${save > 0 && c.isComboListing(l) ? `<br><span class="v2-co-combo">COMBO · you save ${fmtInr(save)}</span>` : ""}</div>
+          <div class="v2-co-it-x" data-co-goto="${escape(i.listing_id || "")}" role="button" tabindex="0" title="Change size or cut"><b>${title}</b><span>${checkoutLineMeta(i)}</span>${save > 0 && c.isComboListing(l) ? `<br><span class="v2-co-combo">COMBO · you save ${fmtInr(save)}</span>` : ""}</div>
           <div class="v2-co-it-q">
             <span class="v2-co-qs" data-key="${escape(c.lineKey(i))}"><button type="button" data-co-dec aria-label="Remove one ${title}">−</button><span>${fmtQty(i.qty / getBundleStep(i))}</span><button type="button" data-co-inc aria-label="Add one more ${title}">+</button></span>
             <div class="v2-co-p">${save > 0 ? `<s>${fmtInr(paid + save)}</s>` : ""}${fmtInr(paid)}</div>

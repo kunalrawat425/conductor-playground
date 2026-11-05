@@ -166,7 +166,7 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
             } else rfArea = '';
           } catch (e) { rfArea = ''; }
           gtag('config', 'G-7MXZDZ1S4N', { content_group: relifishGroup }); // GA4 property 539604989 (relifish), stream 14975067322
-          try { if (rfArea && localStorage.getItem('rlf_ga_area') !== rfArea) { gtag('event', 'location_set', { buyer_area: rfArea }); localStorage.setItem('rlf_ga_area', rfArea); } } catch (e) {}
+          try { if (rfArea && localStorage.getItem('rlf_loc_default') !== '1' && localStorage.getItem('rlf_ga_area') !== rfArea) { gtag('event', 'location_set', { buyer_area: rfArea }); localStorage.setItem('rlf_ga_area', rfArea); } } catch (e) {}
           (function() {
             var p = new URLSearchParams(location.search);
             var src = p.get('utm_source'), med = p.get('utm_medium'), cam = p.get('utm_campaign');
@@ -353,7 +353,7 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
     <!-- Global cart module — exposed on window for inline scripts (define:vars) -->
     <script>
       import * as Cart from "../../lib/cart";
-      import { loadSavedLocation, readSavedLocation, saveConfirmedLocation } from "../../lib/saved-location";
+      import { ensureDefaultLocation, loadSavedLocation, readSavedLocation, saveConfirmedLocation } from "../../lib/saved-location";
       (window as any).RelifishCart = Cart;
       document.dispatchEvent(new CustomEvent("v2-cart-ready"));
       // Fireworks with sound after a tap (checkout, order placed, /diwali). fireworks-js loads only when called.
@@ -367,11 +367,13 @@ const festive = festiveTheme() === "diwali" && !path.startsWith("/dashboard") &&
       };
       // Logged-in buyer with nothing saved on this device (new phone, cleared storage): take the
       // location from their account once per tab session, so the header and seller list use it.
+      // Nothing at all (or no account location): Thane, so no page asks for an area (founder, 5 Nov).
+      const thane = () => { try { if (ensureDefaultLocation((k) => localStorage.getItem(k), (k, v) => localStorage.setItem(k, v))) document.dispatchEvent(new CustomEvent("v2-location-restored")); } catch {} };
       try {
-        if (localStorage.getItem("rlf_buyer_id") && !(window as any).RelifishLocation.peek() && !sessionStorage.getItem("rlf_loc_restore")) {
+        if (localStorage.getItem("rlf_buyer_id") && (!(window as any).RelifishLocation.peek() || localStorage.getItem("rlf_loc_default") === "1") && !sessionStorage.getItem("rlf_loc_restore")) {
           sessionStorage.setItem("rlf_loc_restore", "1");
-          loadSavedLocation().then((loc) => { if (loc) document.dispatchEvent(new CustomEvent("v2-location-restored", { detail: loc })); });
-        }
+          loadSavedLocation().then((loc) => { if (loc) document.dispatchEvent(new CustomEvent("v2-location-restored", { detail: loc })); else thane(); }).catch(thane);
+        } else thane();
       } catch {}
     </script>
     <!-- Keep push alive: re-save the browser's subscription for logged-in buyers/sellers who
