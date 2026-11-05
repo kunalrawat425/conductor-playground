@@ -12,13 +12,6 @@ import Footer from "../components/Footer.astro";
 import DiwaliDecor from "../components/DiwaliDecor.astro";
 import { festiveTheme } from "../lib/festive";
 const SITE = "https://www.relifish.com";
-// Meta ad clicks (fbclid or a Facebook/Instagram utm_source) go straight to /shop with their UTMs: all live ads
-// pointed here and 111 of 190 sessions ended on the homepage (Clarity 3-5 Nov; founder, 5 Nov). Search and
-// direct visitors still get the homepage.
-{
-  const q = Astro.url.searchParams;
-  if (q.has("fbclid") || /^(facebook|instagram|fb|ig|an|msg)/i.test(q.get("utm_source") || "")) return Astro.redirect(`/shop${Astro.url.search}`, 302);
-}
 const enableTracking = import.meta.env.PUBLIC_ENABLE_TRACKING === "true";
 const festive = festiveTheme() === "diwali";
 const homeFaqs = [
