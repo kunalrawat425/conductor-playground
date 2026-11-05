@@ -948,7 +948,7 @@ const { id } = Astro.params;
       rzp.open();
     });
 
-    // Arrived from "Place order & pay" (?pay=1): open Razorpay once, no second tap.
+    // Arrived from "Place Order" (?pay=1): open Razorpay once, no second tap.
     if (autoPay) {
       autoPay = false;
       history.replaceState(null, "", location.pathname);

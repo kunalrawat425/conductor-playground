@@ -2004,7 +2004,7 @@ const tags = [
         track("order_failed", { error: err?.message || "unknown" });
         window.v2Toast?.("error", "Failed", err.message || "Try again");
         btn.disabled = false;
-        btn.textContent = "Place order & pay";
+        btn.textContent = "Place Order";
         // Re-enable back buttons and sheet close on error
         document.querySelectorAll("[data-co-back]").forEach((b) => { b.disabled = false; b.style.opacity = ""; b.style.pointerEvents = ""; });
         document.querySelectorAll(".v2-sheet-close").forEach((b) => { b.disabled = false; b.style.opacity = ""; b.style.pointerEvents = ""; });
