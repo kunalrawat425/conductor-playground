@@ -1283,6 +1283,7 @@ const tags = [
     document.addEventListener("v2-checkout-step2", (e) => {
       if (e.detail?.checkoutId !== "seller-checkout") return;
       seenStep2 = true;
+      ft("checkout_step2");
       const sid = activeCheckoutSellerId;
       if (!sid) return;
       fetchSellerFulfillment(sid).then((f) => {
@@ -1568,6 +1569,7 @@ const tags = [
       const gap = belowMinBy(coGroup());
       if (gap > 0) {
         track("checkout_blocked", { reason: "min_order", checkout_seller_id: activeCheckoutSellerId });
+        ft("checkout_blocked", { reason: "min_order", gap });
         window.v2Toast?.("error", "Below min order", `Add ₹${gap} more to checkout`);
         return;
       }
@@ -1614,12 +1616,14 @@ const tags = [
     // Single-seller checkout. `targetSellerId` is the seller whose cart we're placing.
     // Defaults to this page's sellerId but CartStackSheet may pass any seller_id from
     // the global cart.
+    // Checkout steps into our own funnel log (GA missed some buyers; guards only showed a toast). 3 Nov.
+    const ft = (event, meta) => { try { window.rfTrack?.(event, { seller_id: activeCheckoutSellerId || sellerId, ...(meta || {}) }); } catch {} };
     async function openCheckout(targetSellerId) {
       const c = Cart(); if (!c) return;
       const sid = targetSellerId || sellerId;
       activeCheckoutSellerId = sid;
       track("checkout_tap", { checkout_seller_id: sid });
-      const blocked = (reason) => track("checkout_blocked", { reason, checkout_seller_id: sid });
+      const blocked = (reason) => { track("checkout_blocked", { reason, checkout_seller_id: sid }); ft("checkout_blocked", { reason, step: "open" }); };
 
       if (sellerFullyClosed && sid === sellerId) {
         blocked("closed");
@@ -1893,6 +1897,7 @@ const tags = [
     // Place order — single seller only (the activeCheckoutSellerId)
     document.addEventListener("v2-checkout-place-order", async () => {
       const c = Cart(); if (!c) return;
+      ft("place_order_tap");
       const group = c.groupBySeller().find((g) => g.seller_id === activeCheckoutSellerId);
       if (!group || group.items.length === 0) {
         window.v2Toast?.("error", "Cart empty", "Add items before checkout");
@@ -1902,6 +1907,7 @@ const tags = [
       let buyerId = null, buyerPhone = null;
       try { buyerId = localStorage.getItem("rlf_buyer_id"); buyerPhone = localStorage.getItem("rlf_phone"); } catch {}
       if (!buyerId || !buyerPhone) {
+        ft("checkout_blocked", { reason: "login" });
         markResume(activeCheckoutSellerId || sellerId);
         window.v2CloseSheet?.("seller-checkout"); // else checkout (later in the DOM) paints over the login wall
         openLogin();
@@ -1911,6 +1917,7 @@ const tags = [
       const gap = belowMinBy(group);
       if (gap > 0) {
         track("checkout_blocked", { reason: "min_order", checkout_seller_id: activeCheckoutSellerId });
+        ft("checkout_blocked", { reason: "min_order", gap });
         window.v2Toast?.("error", "Below min order", `Add ₹${gap} more to checkout`);
         return;
       }
@@ -1919,10 +1926,12 @@ const tags = [
       const orderType = methodEl?.value === "delivery" ? "delivery" : "pickup";
       // A checked-but-hidden option means fulfillment didn't load; never guess pickup/delivery.
       if (!methodEl || methodEl.closest("label")?.style.display === "none") {
+        ft("checkout_blocked", { reason: "no_method" });
         window.v2Toast?.("error", "Choose delivery or pickup", "Go back a step and pick one");
         return;
       }
       if (orderType === "delivery" && !selectedAddressId) {
+        ft("checkout_blocked", { reason: "no_address" });
         window.v2Toast?.("error", "Address needed", "Pick a delivery address");
         return;
       }
@@ -1930,11 +1939,13 @@ const tags = [
       const day = orderType === "delivery" && checkoutDays ? chosenDay() : null;
       if (orderType === "delivery" && checkoutDays && !pickedSlot) {
         document.getElementById("seller-checkout-slot-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        ft("checkout_blocked", { reason: checkoutDays.length ? "no_slot" : "no_slots_left" });
         window.v2Toast?.("error", "Pick a delivery time", checkoutDays.length ? "Choose a day and a time" : "No delivery times left for now");
         return;
       }
       if (day && day.kind !== cartMode && (!dayCheck || group.items.some((i) => !("price" in (dayCheck[c.lineKey(i)] || {}))))) {
         document.getElementById("seller-checkout-slot-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        ft("checkout_blocked", { reason: "items_not_on_day" });
         window.v2Toast?.("error", `Not all items are available for ${day.label}`, "Pick another day, or remove those items");
         return;
       }
@@ -1978,6 +1989,7 @@ const tags = [
           if (data.code === "placement_changed" || data.code === "option_changed") setTimeout(() => window.location.reload(), 2500);
           // The picked time just passed: show the times still open.
           if (data.code === "slot_unavailable") fetchSellerFulfillment(activeCheckoutSellerId).then((f) => f && renderCheckoutSlots(f.delivery_days));
+          ft("order_failed", { code: data.code || res.status, error: String(data.error || "").slice(0, 120) });
           throw new Error(data.error || "Failed");
         }
 
@@ -1990,6 +2002,7 @@ const tags = [
           placement_kind: data.placement_kind || "same_day",
           transaction_id: data.orders?.[0]?.id || "",
         });
+        ft("order_created", { value: orderTotal, order_type: orderType });
         c.clearCart({ sellerId: activeCheckoutSellerId });
         window.v2CloseSheet?.("seller-checkout");
 
@@ -2170,7 +2183,7 @@ const tags = [
       history.replaceState(history.state, "", u);
     }
     document.addEventListener("v2-sheet-opened", (e) => { if (e.detail?.id === CO) setCheckoutParam(true); });
-    document.addEventListener("v2-sheet-closed", (e) => { if (e.detail?.id === CO) setCheckoutParam(false); });
+    document.addEventListener("v2-sheet-closed", (e) => { if (e.detail?.id === CO) { setCheckoutParam(false); ft("checkout_closed", { step: seenStep2 ? 2 : 1 }); } });
 
     function resumeCheckout() {
       let m = null, signedIn = false;
