@@ -90,8 +90,17 @@ const MAX_ATTEMPTS = 3;
   });
   // Buyers tapped the title "Log in with your phone…" expecting it to act (Clarity dead clicks,
   // 24 Oct): a tap on the title or the step-1 text puts the cursor in the phone box.
-  const focusPhone = (e) => { if (!e.target.closest("input,button,a,label,select,textarea")) getEl("phone")?.focus(); };
+  // Clarity still saw these as dead taps (3 Nov: 12): focus alone shows nothing, so the box also
+  // scrolls into view and flashes a blue ring (founder, 5 Nov).
+  const focusPhone = (e) => {
+    if (e.target.closest("input,button,a,label,select,textarea")) return;
+    const ph = getEl("phone"); if (!ph) return;
+    ph.focus(); ph.scrollIntoView({ block: "center", behavior: "smooth" });
+    ph.style.boxShadow = "0 0 0 3px var(--v2-brand)";
+    setTimeout(() => { ph.style.boxShadow = ""; }, 1200);
+  };
   getEl("title")?.addEventListener("click", focusPhone);
+  if (getEl("title")) getEl("title").style.cursor = "pointer";
   getEl("step1")?.addEventListener("click", focusPhone);
 
   function showStep(n) {

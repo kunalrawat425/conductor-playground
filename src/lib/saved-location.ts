@@ -48,10 +48,24 @@ export function writeSavedLocation(set: (k: string, v: string) => void, loc: Sav
  * GPS lookup can finish after the buyer picked a spot on the map; it must not overwrite it.
  */
 export function saveGpsDefault(get: Get, set: (k: string, v: string) => void, loc: SavedLocation): boolean {
-  if (readSavedLocation(get)) return false;
+  const isDefault = get(DEFAULT_FLAG) === "1"; // GPS may replace the Thane default
+  if (readSavedLocation(get) && !isDefault) return false;
   set("rlf_buyer_lat", String(loc.lat));
   set("rlf_buyer_lng", String(loc.lng));
   set("rlf_buyer_location", loc.area);
+  if (isDefault) set(DEFAULT_FLAG, "0");
+  return true;
+}
+
+/** Thane station: the area /shop assumes when nothing is saved, so no location prompt (founder, 5 Nov). */
+export const THANE_DEFAULT: SavedLocation = { lat: 19.186, lng: 72.9758, area: "Thane" };
+const DEFAULT_FLAG = "rlf_loc_default";
+
+/** Nothing saved: store Thane (not synced to the account; GPS or the map replace it). True if it did. */
+export function ensureDefaultLocation(get: Get, set: (k: string, v: string) => void): boolean {
+  if (readSavedLocation(get)) return false;
+  writeSavedLocation(set, THANE_DEFAULT);
+  set(DEFAULT_FLAG, "1");
   return true;
 }
 
@@ -67,6 +81,7 @@ export function writeConfirmedLocation(set: (k: string, v: string) => void, remo
   set("rlf_buyer_lng", String(loc.lng));
   set("rlf_buyer_location", loc.area);
   set("rlf_location", JSON.stringify({ lat: loc.lat, lng: loc.lng, name: loc.area }));
+  remove(DEFAULT_FLAG);
   for (const k of OLD_COPIES) remove(k);
 }
 
@@ -80,17 +95,17 @@ export async function loadSavedLocation(): Promise<SavedLocation | null> {
   const store = ls();
   if (!store) return null;
   const local = readSavedLocation((k) => store.getItem(k));
-  if (local) return local;
+  if (local && store.getItem(DEFAULT_FLAG) !== "1") return local;
   const buyerId = store.getItem("rlf_buyer_id");
-  if (!buyerId) return null;
+  if (!buyerId) return local;
   try {
     const res = await fetch(`/api/buyer/profile?buyer_id=${encodeURIComponent(buyerId)}`);
-    if (!res.ok) return null;
+    if (!res.ok) return local;
     const p = (await res.json())?.profile;
     const loc = p ? valid(p.lat, p.lng, p.location_name) : null;
-    if (loc) writeSavedLocation((k, v) => store.setItem(k, v), loc);
-    return loc;
-  } catch { return null; }
+    if (loc) { writeSavedLocation((k, v) => store.setItem(k, v), loc); store.removeItem(DEFAULT_FLAG); }
+    return loc || local;
+  } catch { return local; }
 }
 
 /** Save a map pick on this device and, for a logged-in buyer, on their account right away. */

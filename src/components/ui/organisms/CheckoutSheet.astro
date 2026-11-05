@@ -161,6 +161,9 @@ const diwali = FESTIVE === "diwali";
 </BottomSheet>
 
 <script define:vars={{ id }}>
+  // Whole / Cleaned / Cut: older in-app browsers lack :has(), so the chip never looked picked
+  // (Clarity dead taps, 4 Nov). Mirror the checkbox on the label too.
+  document.querySelectorAll(`input[name="${id}-cut"]`).forEach((i) => i.addEventListener("change", () => i.closest("label")?.classList.toggle("is-on", i.checked)));
   let currentStep = 1;
 
   function showStep(n) {
@@ -225,7 +228,7 @@ const diwali = FESTIVE === "diwali";
   .v2-co-items-head { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px solid var(--v2-border); font: 700 11px Inter; color: var(--v2-ink-3); text-transform: uppercase; letter-spacing: .06em; }
   .v2-co-it { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--v2-bg-3); }
   .v2-co-it img, .v2-co-it .v2-co-noimg { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: var(--v2-brand-l); display: flex; align-items: center; justify-content: center; font-size: 24px; }
-  .v2-co-it-x { flex: 1; min-width: 0; }
+  .v2-co-it-x { flex: 1; min-width: 0; cursor: pointer; }
   .v2-co-it-x b { display: block; font: 600 14px/1.3 Inter; color: var(--v2-ink); }
   .v2-co-it-x span { font: 400 12px Inter; color: var(--v2-ink-3); }
   .v2-co-combo { display: inline-block; margin-top: 4px; font: 700 10px Inter; color: var(--v2-green); background: var(--v2-green-l); border-radius: 5px; padding: 2px 6px; }
@@ -291,7 +294,7 @@ const diwali = FESTIVE === "diwali";
   .v2-co-prefs-title span { font:400 11px Inter; color:var(--v2-ink-3); }
   .v2-co-prefs-opts { display:flex; gap:8px; margin:8px 0 10px; }
   .v2-co-prefs-opts label { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; min-height:44px; padding:6px; border:1.5px solid var(--v2-border); border-radius:999px; font:600 12px Inter; color:var(--v2-ink); cursor:pointer; }
-  .v2-co-prefs-opts label:has(input:checked) { border-color:var(--v2-brand); background:var(--v2-brand-l); color:var(--v2-brand); }
+  .v2-co-prefs-opts label:has(input:checked), .v2-co-prefs-opts label.is-on { border-color:var(--v2-brand); background:var(--v2-brand-l); color:var(--v2-brand); }
   .v2-co-prefs-opts input { position:absolute; opacity:0; pointer-events:none; }
   .v2-co-prefs textarea { width:100%; box-sizing:border-box; padding:10px; border:1.5px solid var(--v2-border); border-radius:var(--v2-radius-sm); font:400 16px Inter; color:var(--v2-ink); background:var(--v2-bg); resize:vertical; }
   .v2-co-steps {
