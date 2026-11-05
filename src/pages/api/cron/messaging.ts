@@ -221,6 +221,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
 
   // ?catchup_cart=<buyer id,…>: the cart reminder now for buyers the founder names (carts left while SMS was off,
   // founder 1 Nov). Skips the timing rules only: never sellers, DND, a buyer who ordered since, or an empty cart.
+  const force = url.searchParams.get("force") === "1";
   const catchup = (url.searchParams.get("catchup_cart") || "").split(",").map((x) => x.trim()).filter(Boolean);
   if (catchup.length) {
     const out: any[] = [];
@@ -236,6 +237,15 @@ async function run({ url }: { url: URL }): Promise<Response> {
       const seller = pickSeller(st, sellers);
       const offer = seller && offerAt(seller, now);
       const d = seller && offer ? cartMessage(now, st, seller, offer) : null;
+      if (force) {
+        // &force=1 (founder, 5 Nov): plain cart SMS even when the cart line left the menu, and past the weekly
+        // cap: its own kind, so the weekly SMS cap trigger (promo/act_*) does not apply. The text names no fish ("fresh fish").
+        const sms = { key: "CART" as const, vars: [st.name, "fresh fish"] };
+        const msg: Dispatch = { dedupe_key: `act_cart_force:${b.id}:${istDate(now)}`, kind: "cart_force", slot_date: istDate(now), buyer_id: b.id, seller_id: null,
+          phone: b.phone, whatsappOk: false, template: "sms:CART", body: [], link_path: "/shop", sms, smsOk: true };
+        out.push(dry ? { buyer: who, sms, channel: "sms", sent: "dry_run" } : { buyer: who, sms, channel: "sms", ...(await dispatch(sb, msg)) });
+        continue;
+      }
       if (!d) { out.push({ buyer: who, skip: "no seller / slot / cart line on the menu" }); continue; }
       const whatsappOk = !!b.whatsapp_opt_in_at && !b.whatsapp_opt_out_at;
       const msg: Dispatch = { dedupe_key: `act_cart_catchup:${b.id}:${istDate(now)}`, kind: "act_cart", slot_date: istDate(now), buyer_id: b.id, seller_id: seller!.id,
