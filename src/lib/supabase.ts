@@ -55,6 +55,7 @@ export interface Seller {
   rating_avg: number;
   total_orders: number;
   has_delivery: boolean;
+  accepts_pay_on_delivery?: boolean;
   /** When false, buyers cannot choose pickup for this seller. Default true in DB. */
   has_pickup?: boolean;
   delivery_rad: number | null;
@@ -141,6 +142,7 @@ export type OrderType = "pickup" | "delivery";
 
 export interface Order {
   id: string;
+  pay_on_delivery?: boolean;
   listing_id: string | null;
   buyer_phone: string;
   buyer_addr: string | null;

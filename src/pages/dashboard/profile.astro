@@ -206,6 +206,13 @@ import { SUPPORT_PHONE_TEL } from "../../lib/brand";
         <div style="font:400 11px Inter;color:var(--v2-ink-3);">Deliver to buyers within your radius</div>
       </div>
     </label>
+    <label style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--v2-bg);border:1px solid var(--v2-border);border-radius:var(--v2-radius-sm);cursor:pointer;margin-bottom:12px;">
+      <input type="checkbox" id="p-pay-on-delivery" />
+      <div>
+        <div style="font:700 13px Inter;color:var(--v2-ink);">Accept pay on delivery 💵</div>
+        <div style="font:400 11px Inter;color:var(--v2-ink-3);">The buyer pays in the Relifish app when the fish arrives, never cash. Orders up to ₹1,200. Hand it over once your dashboard shows Paid.</div>
+      </div>
+    </label>
 
     <div id="p-delivery-settings" style="display:none;margin-left:16px;padding-left:12px;border-left:2px solid var(--v2-border);">
       <Input id="p-delivery-rad" name="delivery_rad" label="Delivery radius (km)" type="number" />
@@ -313,6 +320,7 @@ import { SUPPORT_PHONE_TEL } from "../../lib/brand";
       fillTimings(formFromDb(seller || {}));
       (document.getElementById("p-pickup") as HTMLInputElement).checked = seller?.has_pickup !== false;
       (document.getElementById("p-delivery") as HTMLInputElement).checked = !!seller?.has_delivery;
+      (document.getElementById("p-pay-on-delivery") as HTMLInputElement).checked = !!seller?.accepts_pay_on_delivery;
       (document.getElementById("p-delivery-rad") as HTMLInputElement).value = String(seller?.delivery_rad || 5);
       (document.getElementById("p-delivery-fee-enabled") as HTMLInputElement).checked = !!seller?.delivery_fee_enabled;
       (document.getElementById("p-delivery-fee") as HTMLInputElement).value = String(seller?.delivery_fee_amount || 0);
@@ -388,6 +396,7 @@ import { SUPPORT_PHONE_TEL } from "../../lib/brand";
       min_order_amount: parseInt((document.getElementById("p-min-order") as HTMLInputElement).value) || 0,
       ...dbFromForm(readTimings()),
       has_pickup: (document.getElementById("p-pickup") as HTMLInputElement).checked,
+      accepts_pay_on_delivery: (document.getElementById("p-pay-on-delivery") as HTMLInputElement).checked,
       has_delivery: (document.getElementById("p-delivery") as HTMLInputElement).checked,
       delivery_rad: parseInt((document.getElementById("p-delivery-rad") as HTMLInputElement).value) || 5,
       delivery_fee_enabled: (document.getElementById("p-delivery-fee-enabled") as HTMLInputElement).checked,

@@ -275,6 +275,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
   import { cancelledByText, cancelReasonText } from "../../../lib/order-cancel";
   import { friendlyError } from "../../../lib/friendly-error";
   import { askCancelReason } from "../../../lib/reason-dialog";
+  import { POD_REFUSED_REASON } from "../../../lib/pay-on-delivery";
   import { arrivingByLabel, dateLabelIST, orderDeliveryDateIST, sellerSlotChoices, slotDayLabel, slotTimeLabel } from "../../../lib/delivery-slots";
 
   let sellerId: string | null = null;
@@ -617,7 +618,30 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
         let actionsHtml = "";
         const isDelivery = o.order_type === "delivery";
         const isPaidViaRazorpay = o.payment_method === "razorpay" || !!o.payment_verified_at;
-        if (["pending", "scheduled", "pending_payment", "pre_order"].includes(o.status)) {
+        // Pay on delivery (6 Nov): the buyer pays in the Relifish app at the door, never cash. Hand over only once Paid.
+        const podRows = (cart ? live : [o]).filter((r: any) => r.pay_on_delivery);
+        const podUnpaid = podRows.some((r: any) => !r.razorpay_payment_id);
+        const podPaid = podRows.length > 0 && !podUnpaid;
+        const podAmount = (cart ? live : [o]).reduce((s: number, r: any) => s + (Number(r.pay_on_delivery && r.final_price != null ? r.final_price : r.total_price) || 0) + (Number(r.delivery_fee) || 0), 0);
+        const podBox = podUnpaid
+          ? `<div style="padding:8px 10px;background:#FFFBEB;border:1px solid #FCD34D;border-radius:var(--v2-radius-sm);margin-bottom:6px;font:600 11px Inter;color:#92400E;line-height:1.5;">💵 Pay on delivery · ₹${podAmount.toLocaleString("en-IN")}. The buyer pays in the Relifish app when you deliver. <strong>No cash.</strong> Hand it over once this shows Paid.</div>`
+          : podPaid && !["completed", "picked_up", ...CLOSED].includes(o.status)
+          ? `<div style="padding:8px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:var(--v2-radius-sm);margin-bottom:6px;font:600 11px Inter;color:#15803d;">✅ Paid in the app, hand it over</div>`
+          : "";
+        const podCheckBtn = podUnpaid && o.razorpay_order_id
+          ? `<button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg);color:var(--v2-brand);border:1.5px solid var(--v2-brand);" data-action="reconcile-razorpay" data-order-id="${o.id}">🔄 Check payment</button>`
+          : "";
+        const cancelLabel = podUnpaid ? "Cancel order" : "Cancel order · refund buyer";
+        if (podUnpaid && ["pending", "pending_payment"].includes(o.status)) {
+          actionsHtml = `${podBox}
+            ${slotEditorHtml(o, isPreorder, "accept")}
+            <div class="v2-oc-actions" style="flex-direction:column;gap:6px;">
+              <div style="display:flex;gap:8px;">
+                <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-brand);color:#fff;" data-action="accept" data-order-id="${o.id}">✓ Confirm order</button>
+                <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="decline" data-order-id="${o.id}">Can't fulfill</button>
+              </div>
+            </div>`;
+        } else if (["pending", "scheduled", "pending_payment", "pre_order"].includes(o.status)) {
           // Paid but the row is still in a pre-confirm status (a confirm write was
           // lost). Ready/Out-for-delivery are rejected by the server from here, so
           // the one useful action is to confirm it.
@@ -667,13 +691,13 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
                   : "";
                 return `<div class="v2-oc-actions" style="flex-direction:column;gap:8px;margin-top:8px;">
                   <div style="font:500 11px Inter;color:var(--v2-ink-3);">🌙 Pre-order${deliverLabel ? ` for ${deliverLabel}` : ""}. Set the actual price once you have the fish.</div>
-                  <div style="font:600 12px Inter;color:#7C3AED;">Paid for the fish: ₹${paidAmt}</div>
+                  <div style="font:600 12px Inter;color:#7C3AED;">${podUnpaid ? "The buyer pays the final price in the app on delivery." : `Paid for the fish: ₹${paidAmt}`}</div>
                   ${rangeHtml}
                   <div style="display:flex;gap:8px;align-items:center;">
                     <input type="number" placeholder="Final price (₹)" id="final-price-${o.id}" style="flex:1;padding:8px 10px;border:1.5px solid var(--v2-border);border-radius:var(--v2-radius-sm);font:400 13px Inter;color:var(--v2-ink);background:var(--v2-bg);outline:none;box-sizing:border-box;min-height:36px;" />
                     <button class="v2-btn v2-btn-sm" style="background:#7C3AED;color:#fff;white-space:nowrap;" data-action="set_final_price" data-order-id="${o.id}">Set price</button>
                   </div>
-                  <div style="font:400 11px Inter;color:#D97706;">⚠️ If final &lt; ₹${paidAmt} → the difference is refunded to the buyer automatically via Razorpay. If final &gt; ₹${paidAmt} → buyer pays the difference.</div>
+                  ${podUnpaid ? "" : `<div style="font:400 11px Inter;color:#D97706;">⚠️ If final &lt; ₹${paidAmt} → the difference is refunded to the buyer automatically via Razorpay. If final &gt; ₹${paidAmt} → buyer pays the difference.</div>`}
                   <div style="font:600 11px Inter;color:#7C3AED;">Next step unlocks only after final price is set.</div>
                 </div>`;
               })()
@@ -681,7 +705,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           if (needsFinalPrice) {
             // A cart sets the price on each item line below. Can't get the fish: cancel with a full refund
             // (the per-item remove disappears on the last item, so this is the only way out).
-            actionsHtml = `${cart ? "" : preorderPriceBlock}<button class="v2-btn v2-btn-sm" style="width:100%;margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="seller_cancel" data-order-id="${o.id}">Can't fulfill · refund buyer</button>`;
+            actionsHtml = `${podBox}${cart ? "" : preorderPriceBlock}<button class="v2-btn v2-btn-sm" style="width:100%;margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="seller_cancel" data-order-id="${o.id}">${podUnpaid ? "Can't fulfill" : "Can't fulfill · refund buyer"}</button>`;
           } else {
             const fulfill = isDelivery
               ? `${slotEditorHtml(o, isPreorder, "arrive")}<div class="v2-oc-actions">
@@ -704,15 +728,21 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
                   <div style="font:400 11px Inter;color:var(--v2-ink-3);">Final price came in lower than they paid. The difference is refunded automatically via Razorpay, just fulfil the order as normal.</div>`}
                 </div>`
               : "";
-            actionsHtml = `${owedBlock}${fulfill}<button class="v2-btn v2-btn-sm" style="width:100%;margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="seller_cancel" data-order-id="${o.id}">Cancel order · refund buyer</button>`;
+            actionsHtml = `${podBox}${owedBlock}${fulfill}<button class="v2-btn v2-btn-sm" style="width:100%;margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="seller_cancel" data-order-id="${o.id}">${cancelLabel}</button>`;
           }
-        } else if (o.status === "ready_for_pickup") {
-          actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;">
-            <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-green);color:#fff;" data-action="picked_up" data-order-id="${o.id}">✓ Picked up</button><button class="v2-btn v2-btn-sm" style="width:100%;margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="seller_cancel" data-order-id="${o.id}">Cancel order · refund buyer</button>
-          </div>`;
-        } else if (o.status === "out_for_delivery") {
-          actionsHtml = `<div class="v2-oc-actions" style="flex-direction:column;">
-            <button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-green);color:#fff;" data-action="delivered" data-order-id="${o.id}">✓ Delivered</button><button class="v2-btn v2-btn-sm" style="width:100%;margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="seller_cancel" data-order-id="${o.id}">Cancel order · refund buyer</button>
+        } else if (o.status === "ready_for_pickup" || o.status === "out_for_delivery") {
+          // Pay on delivery, not paid yet: "Delivered" stays locked (the server and DB refuse it too).
+          const doneAction = o.status === "ready_for_pickup" ? "picked_up" : "delivered";
+          const doneLabel = o.status === "ready_for_pickup" ? "✓ Picked up" : "✓ Delivered";
+          const doneBtn = podUnpaid
+            ? `<button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-bg-2);color:var(--v2-ink-3);" disabled>${doneLabel} (after payment)</button>`
+            : `<button class="v2-btn v2-btn-sm" style="flex:1;background:var(--v2-green);color:#fff;" data-action="${doneAction}" data-order-id="${o.id}">${doneLabel}</button>`;
+          const refusedBtn = podUnpaid
+            ? `<button class="v2-btn v2-btn-sm" style="width:100%;margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="pod_refused" data-order-id="${o.id}">Buyer didn't pay</button>`
+            : "";
+          actionsHtml = `${podBox}<div class="v2-oc-actions" style="flex-direction:column;gap:6px;">
+            ${podCheckBtn ? `<div style="display:flex;gap:8px;">${podCheckBtn}</div><div id="reconcile-result-${o.id}" style="font:500 11px Inter;"></div>` : ""}
+            ${doneBtn}${refusedBtn}<button class="v2-btn v2-btn-sm" style="width:100%;margin-top:6px;background:var(--v2-bg);color:var(--v2-red);border:1.5px solid var(--v2-red-l);" data-action="seller_cancel" data-order-id="${o.id}">${cancelLabel}</button>
           </div>`;
         } else if (["cancelled", "declined"].includes(o.status) && wasActuallyPaid(o)) {
           // BUG-42: paid_amount is pre-set at creation, so this used to tell the
@@ -730,7 +760,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           actionsHtml = refundStatusHtml(o, finalAmt > 0 ? Math.max(0, paidAmt - finalAmt) : paidAmt);
         }
         // Cart buttons act on every live item; refunds are shown per item line.
-        if (cart) actionsHtml = live.length ? actionsHtml.replace(/data-action="(accept|decline|ready|out_for_delivery|picked_up|delivered|seller_cancel)"/g, 'data-cart="1" $&') : "";
+        if (cart) actionsHtml = live.length ? actionsHtml.replace(/data-action="(accept|decline|ready|out_for_delivery|picked_up|delivered|seller_cancel|pod_refused)"/g, 'data-cart="1" $&') : "";
         if (["cancelled", "declined"].includes(o.status)) {
           const who = cancelledByText(o.cancelled_by, "seller", o.cancel_reason);
           const why = cancelReasonText(o.cancel_reason);
@@ -778,8 +808,10 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
           ? `https://www.google.com/maps/dir/?api=1&destination=${addrLat},${addrLng}`
           : addrText ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addrText)}` : "";
         let nextStepHint = "";
-        if (["pending", "scheduled", "pending_payment", "pre_order"].includes(o.status)) {
-          nextStepHint = isPaidViaRazorpay ? "Next: Confirm the order." : "Waiting for buyer to complete Razorpay payment.";
+        if (podUnpaid && ["ready_for_pickup", "out_for_delivery"].includes(o.status)) {
+          nextStepHint = "Next: The buyer pays in the app. Hand it over once this shows Paid.";
+        } else if (["pending", "scheduled", "pending_payment", "pre_order"].includes(o.status)) {
+          nextStepHint = podUnpaid ? "Next: Confirm the order. The buyer pays on delivery, in the app." : isPaidViaRazorpay ? "Next: Confirm the order." : "Waiting for buyer to complete Razorpay payment.";
         } else if (o.status === "paid") {
           nextStepHint = "Next: Confirm the order (or decline, the buyer is refunded in full).";
         } else if (o.status === "confirmed" && needsFinalPrice) {
@@ -805,7 +837,8 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
             : "";
         // Determine payment status badge — order matters: most specific first
         let payStatusText = "Payment pending"; // default for new/awaiting orders
-        if (o.status === 'refunded') payStatusText = "Refunded";
+        if (podUnpaid && !CLOSED.includes(o.status)) payStatusText = "Pay on delivery";
+        else if (o.status === 'refunded') payStatusText = "Refunded";
         else if (['declined', 'cancelled'].includes(o.status) && wasActuallyPaid(o)) payStatusText = "Refund pending";
         else if (['declined', 'cancelled'].includes(o.status)) payStatusText = "Unpaid";
         else if (['pending_payment', 'payment_required'].includes(o.status) && !isPaidViaRazorpay) payStatusText = "Payment pending";
@@ -818,7 +851,7 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
               <div class="v2-oc-time">${escape(time)}</div>
             </div>
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
-              <span class="v2-oc-badge" style="background:${payStatusText === 'Paid' ? '#dcfce7' : payStatusText.includes('Refund') ? '#fee2e2' : '#f3f4f6'};color:${payStatusText === 'Paid' ? '#059669' : payStatusText.includes('Refund') ? '#dc2626' : 'var(--v2-ink-3)'};">${payStatusText}</span>
+              <span class="v2-oc-badge" style="background:${payStatusText === 'Paid' ? '#dcfce7' : payStatusText.includes('Refund') ? '#fee2e2' : payStatusText === 'Pay on delivery' ? '#FEF3C7' : '#f3f4f6'};color:${payStatusText === 'Paid' ? '#059669' : payStatusText.includes('Refund') ? '#dc2626' : payStatusText === 'Pay on delivery' ? '#B45309' : 'var(--v2-ink-3)'};">${payStatusText}</span>
               <span class="v2-oc-badge ${badgeCls}">${badgeText}</span>
             </div>
           </div>
@@ -888,9 +921,14 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
       delivered: "completed",
       seller_cancel: "cancelled",
       item_cancel: btn?.dataset.cancelStatus || "cancelled",
+      pod_refused: "cancelled",
     };
     // Decline / cancel / remove: a written reason is required (the buyer reads it).
     let sellerCancelReason = "";
+    if (action === "pod_refused") {
+      if (!confirm("The buyer didn't pay in the app? The order is cancelled, nothing was charged, and pay on delivery is switched off for this buyer.")) return;
+      sellerCancelReason = POD_REFUSED_REASON;
+    }
     if (action === "decline" || action === "seller_cancel" || action === "item_cancel") {
       const ask = {
         decline: { title: "Can't fulfill this order?", note: "The order is declined and the buyer is refunded in full.", confirmText: "Decline · refund buyer" },
@@ -905,12 +943,12 @@ import EmptyState from "../../../components/ui/molecules/EmptyState.astro";
     const loadingLabels: Record<string, string> = {
       accept: "Confirming…", decline: "Declining…", ready: "Updating…",
       out_for_delivery: "Updating…", picked_up: "Completing…", delivered: "Completing…",
-      set_final_price: "Setting…", seller_cancel: "Cancelling…", item_cancel: "Removing…", retry_refund: "Refunding…",
+      set_final_price: "Setting…", seller_cancel: "Cancelling…", item_cancel: "Removing…", retry_refund: "Refunding…", pod_refused: "Cancelling…",
     };
     const successLabels: Record<string, string> = {
       accept: "Confirmed", decline: "Declined", ready: "Marked ready",
       out_for_delivery: "Out for delivery", picked_up: "Completed", delivered: "Delivered",
-      set_final_price: "Price set", seller_cancel: "Cancelled", item_cancel: "Item removed", retry_refund: "Refunded",
+      set_final_price: "Price set", seller_cancel: "Cancelled", item_cancel: "Item removed", retry_refund: "Refunded", pod_refused: "Cancelled",
     };
     if (btn) {
       btn.disabled = true;

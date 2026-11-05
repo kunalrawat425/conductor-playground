@@ -179,7 +179,7 @@ async function transitionRow(
   };
   const { data: currentOrder } = await supabase
     .from("orders")
-    .select("status, order_type, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee, payment_method, payment_verified_at, razorpay_payment_id, razorpay_order_id, is_preorder, placement_kind, pricing_option_id, quantity, quantity_unit, listing:fish_listings(pricing_options)")
+    .select("status, order_type, paid_amount, final_price, payment_screenshot_urls, total_price, delivery_fee, payment_method, payment_verified_at, razorpay_payment_id, razorpay_order_id, is_preorder, placement_kind, pricing_option_id, quantity, quantity_unit, pay_on_delivery, listing:fish_listings(pricing_options)")
     .eq("id", order_id)
     .single();
   const currentStatus = currentOrder?.status;
@@ -187,8 +187,14 @@ async function transitionRow(
   // Razorpay is the only payment method: an order is confirmed only once its
   // payment is captured (settle confirms it automatically; this covers the
   // seller's "Confirm order" for a paid row whose confirm write was lost).
-  if (status === "confirmed" && !(currentOrder as any)?.razorpay_payment_id) {
+  // Pay on delivery (6 Nov) is the exception: confirmed unpaid, paid in the app at the door.
+  const podUnpaid = !!(currentOrder as any)?.pay_on_delivery && !(currentOrder as any)?.razorpay_payment_id;
+  if (status === "confirmed" && !(currentOrder as any)?.razorpay_payment_id && !podUnpaid) {
     return { error: "Confirm only after the buyer has paid. Use “Check Razorpay for payment”.", code: 400 };
+  }
+  // Delivered needs the money on it (the DB checks this too, migration 094).
+  if (podUnpaid && (status === "completed" || status === "picked_up")) {
+    return { error: "The buyer hasn't paid yet. Ask them to pay in the Relifish app, then tap “Check payment”.", code: 400 };
   }
   // A status missing from the map used to skip this check entirely, so
   // `cancelled → confirmed` or `completed → declined` were accepted.
@@ -223,8 +229,8 @@ async function transitionRow(
     // buyer cancel at the same moment) refund twice — harmless when every refund
     // was "everything left", not when an item gets a partial share of a cart payment.
   }
-  // Stamp payment_verified_at if a paid row reached here without it.
-  if (status === "confirmed" && !(currentOrder as any)?.payment_verified_at) {
+  // Stamp payment_verified_at if a paid row reached here without it (never on an unpaid pay-on-delivery row).
+  if (status === "confirmed" && !podUnpaid && !(currentOrder as any)?.payment_verified_at) {
     updates.payment_verified_at = new Date().toISOString();
     updates.payment_verified_by = seller_id;
   }
@@ -380,7 +386,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Verify order belongs to this seller's listings
     const { data: order, error: orderFetchErr } = await supabase
       .from("orders")
-      .select("listing_id, cart_id, buyer_id, buyer_phone, species, status, paid_amount, final_price, refund_amt, refund_sent_at, refund_note, total_price, delivery_fee, payment_screenshot_urls, payment_method, payment_verified_at, razorpay_payment_id, razorpay_order_id")
+      .select("listing_id, cart_id, buyer_id, buyer_phone, species, status, paid_amount, final_price, refund_amt, refund_sent_at, refund_note, total_price, delivery_fee, payment_screenshot_urls, payment_method, payment_verified_at, razorpay_payment_id, razorpay_order_id, pay_on_delivery")
       .eq("id", order_id)
       .single();
 
@@ -414,6 +420,27 @@ export const POST: APIRoute = async ({ request, url }) => {
       const parsedFinal = Number(final_price);
       if (!Number.isFinite(parsedFinal) || parsedFinal <= 0) {
         return new Response(JSON.stringify({ error: "final_price must be a positive number" }), { status: 400 });
+      }
+      // Pay on delivery, not paid yet: the buyer pays the weighed price at the door, so just record it
+      // (no refund of a difference, no balance top-up). paid_amount is what the Pay button will charge.
+      if (order.pay_on_delivery && !order.razorpay_payment_id) {
+        if (order.final_price !== null && order.final_price !== undefined) {
+          return new Response(JSON.stringify({ error: "Final price already set for this order" }), { status: 400 });
+        }
+        if (order.status !== "confirmed") {
+          return new Response(JSON.stringify({ error: "Set final price once the order is confirmed" }), { status: 400 });
+        }
+        const { data: priced, error: priceErr } = await supabase.from("orders")
+          .update({ final_price: parsedFinal, paid_amount: parsedFinal + Number(order.delivery_fee || 0) })
+          .eq("id", order_id).eq("status", "confirmed").is("razorpay_payment_id", null).select().single();
+        if (priceErr || !priced) {
+          return new Response(JSON.stringify({ error: priceErr?.message || "This order was just updated. Refresh and try again." }), { status: priceErr ? 500 : 409 });
+        }
+        if (order.buyer_id || order.buyer_phone) {
+          await sendBuyerOrderPush({ buyer_id: order.buyer_id, buyer_phone: order.buyer_phone, status: "confirmed", species: order.species || "Fish", final_price: parsedFinal, order_id })
+            .catch((err: any) => console.warn("[seller/orders] set_final_price (pay on delivery) buyer push failed", { order_id, err: err?.message }));
+        }
+        return new Response(JSON.stringify({ order: toSellerView(priced), reconciled_status: "confirmed" }), { status: 200 });
       }
       if (order.paid_amount === null || order.paid_amount === undefined || !order.razorpay_payment_id) {
         return new Response(JSON.stringify({ error: "Set the final price once the buyer's payment is in" }), { status: 400 });
@@ -586,10 +613,12 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Notify buyer via push — never fail the order update if push throws
     if (order.buyer_id || order.buyer_phone) {
       try {
+        // Pay on delivery on its way unpaid: remind them to pay in the app at the door.
+        const podDue = status === "out_for_delivery" && moved.some((m) => m.data.pay_on_delivery && !m.data.razorpay_payment_id);
         const pushResult = await sendBuyerOrderPush({
           buyer_id: order.buyer_id,
           buyer_phone: order.buyer_phone,
-          status,
+          status: podDue ? "pod_out_for_delivery" : status,
           species,
           final_price: final_price ?? null,
           order_id: data.id,

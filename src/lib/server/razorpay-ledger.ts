@@ -26,7 +26,7 @@ import { paymentSiblings, refundStateForOrder, CART_PAYABLE, isLiveRow } from ".
 
 export const PAYABLE_STATUSES = ["pending", "pending_payment", "payment_required"];
 const CLOSED_STATUSES = ["cancelled", "declined", "refunded"];
-const ORDER_COLS = "id, buyer_id, status, final_price, paid_amount, razorpay_order_id, razorpay_payment_id, balance_razorpay_payment_id, refund_note, total_price, delivery_fee, created_at, is_test";
+const ORDER_COLS = "id, buyer_id, status, final_price, paid_amount, razorpay_order_id, razorpay_payment_id, balance_razorpay_payment_id, refund_note, total_price, delivery_fee, created_at, is_test, pay_on_delivery";
 
 export type SettleOrder = {
   id: string;
@@ -41,7 +41,23 @@ export type SettleOrder = {
   delivery_fee?: number | string | null;
   /** Test buyer/seller order (migration 071): never reported to GA. */
   is_test?: boolean | null;
+  /** Paid at the door after the seller accepted it (migration 094): settles as a "stamp". */
+  pay_on_delivery?: boolean | null;
 };
+
+/**
+ * A pay-on-delivery order just got its money at the door: tell the seller to hand it over.
+ * The guarded stamp UPDATE succeeds once per payment, so this fires once whichever path won.
+ */
+function notifyPodPaid(rows: SettleOrder[]): void {
+  const pod = rows.filter((r) => r.pay_on_delivery);
+  if (!pod.length) return;
+  afterResponse((async () => {
+    const { notifyOrderParties } = await import("./notify-order-parties");
+    const { siteOriginFromEnv } = await import("./site-origin");
+    await notifyOrderParties({ order_id: pod[0].id, event: "pod_paid", origin: siteOriginFromEnv(), order_ids: pod.map((r) => r.id) });
+  })(), "notify:pod_paid");
+}
 
 export type Settlement = "confirm" | "already" | "stamp" | "refund";
 
@@ -183,6 +199,7 @@ export async function settleCapturedPayment(sb: any, p: SettleInput): Promise<Se
       if (error) throw new Error(`stamp failed: ${error.message}`);
       if (data?.[0]) {
         if (!order.is_test) { afterResponse(gaPurchase(p.razorpay_order_id, { order_id: order.id }), "ga-mp:purchase"); afterResponse(metaPurchase(p.razorpay_order_id, p.meta_client), "meta-capi:purchase"); } // money kept on this order: a purchase too
+        notifyPodPaid(data);
         return { kind: "stamped", order: data[0] };
       }
     } else {
@@ -239,6 +256,7 @@ async function settleCart(sb: any, rows: SettleOrder[], p: SettleInput): Promise
       .in("id", plan.stamp.map((r) => r.id)).is("razorpay_payment_id", null).select(ORDER_COLS);
     if (error) throw new Error(`cart stamp failed: ${error.message}`);
     stamped.push(...(data || []));
+    notifyPodPaid(data || []);
   }
   const first = confirmed[0] || stamped[0];
   if (first && !first.is_test) {

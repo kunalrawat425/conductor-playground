@@ -35,7 +35,11 @@ export type OrderEvent =
   | "cancelled_by_buyer"
   | "cancelled_by_seller"
   | "expired_unpaid"
-  | "refunded";
+  | "refunded"
+  /** The buyer chose pay on delivery: the seller hears about the (unpaid) order now. */
+  | "pay_on_delivery"
+  /** A pay-on-delivery order got paid at the door, after the seller accepted it. */
+  | "pod_paid";
 
 export type NotifyResult = {
   buyer_push: string;
@@ -47,6 +51,8 @@ export type NotifyResult = {
 const BUYER_KIND: Record<OrderEvent, BuyerEmailKind> = {
   payment_confirmed: "placed", cancelled_by_buyer: "buyer_cancelled", cancelled_by_seller: "seller_cancelled",
   expired_unpaid: "expired_unpaid", refunded: "refunded",
+  // Never emailed to the buyer (they're on the order page); listed for the type only.
+  pay_on_delivery: "placed", pod_paid: "placed",
 };
 
 /** Copy per event, per audience; buyerSubject/buyerPreview follow email-subjects (founder, 26 Oct). Exported for unit tests. */
@@ -102,6 +108,24 @@ function copyLines(event: OrderEvent, species: string, orderIdShort: string, amo
         sellerHeading: "Order expired unpaid",
         sellerLine: `The buyer never completed payment for ${fish} order #${orderIdShort}, so it was cancelled automatically. Do not prepare this order. Stock has been released.`,
       };
+    case "pay_on_delivery":
+      return {
+        buyerSubject: `Order placed — ${fish} · #${orderIdShort}`,
+        buyerHeading: "Order placed",
+        buyerLine: `Your Relifish order #${orderIdShort} is with the seller. You'll pay${amt} in the Relifish app when it arrives, no cash. ${help}.`,
+        sellerSubject: `New order · Pay on delivery — please confirm · ${fish} · #${orderIdShort}`,
+        sellerHeading: "New order — the buyer pays on delivery",
+        sellerLine: `The buyer will pay${amt} for ${fish} (order #${orderIdShort}) in the Relifish app when you deliver. No cash. Confirm or decline it in your dashboard, and hand it over once the dashboard shows Paid.`,
+      };
+    case "pod_paid":
+      return {
+        buyerSubject: `Payment received — #${orderIdShort}`,
+        buyerHeading: "Payment received, thank you",
+        buyerLine: `We received your payment${amt} for your Relifish order #${orderIdShort}. ${help}.`,
+        sellerSubject: `Paid ✅ — ${fish} · #${orderIdShort}`,
+        sellerHeading: "The buyer paid",
+        sellerLine: `The buyer paid${amt} for ${fish} (order #${orderIdShort}). Hand it over and mark it delivered.`,
+      };
     case "refunded":
       return {
         buyerSubject: `Refund processed — ${fish} · #${orderIdShort}`,
@@ -126,15 +150,17 @@ function shell(heading: string, line: string, orderId: string, cta: string, item
 
 /** Buyer push status string for each event (maps into buyer-order-push-copy). Exported for unit tests. */
 export function pushStatusFor(event: OrderEvent): string {
-  if (event === "payment_confirmed") return "paid";
+  if (event === "payment_confirmed" || event === "pod_paid") return "paid";
+  if (event === "pay_on_delivery") return "pod_placed";
   if (event === "cancelled_by_buyer" || event === "cancelled_by_seller") return "cancelled";
   if (event === "expired_unpaid") return "expired_unpaid";
   return "refunded";
 }
 
 /** Seller push kind for each event (maps into seller-push-copy). Exported for unit tests. */
-export function sellerPushKindFor(event: OrderEvent): "payment_confirmed" | "cancelled" | "expired_unpaid" | "refunded" {
+export function sellerPushKindFor(event: OrderEvent): "payment_confirmed" | "cancelled" | "expired_unpaid" | "refunded" | "pay_on_delivery" | "pod_paid" {
   if (event === "payment_confirmed") return "payment_confirmed";
+  if (event === "pay_on_delivery" || event === "pod_paid") return event;
   if (event === "cancelled_by_buyer" || event === "cancelled_by_seller") return "cancelled";
   if (event === "expired_unpaid") return "expired_unpaid";
   return "refunded";
@@ -143,11 +169,13 @@ export function sellerPushKindFor(event: OrderEvent): "payment_confirmed" | "can
 /**
  * Sellers only hear about money that was paid (founder, 27 Oct): the payment itself, and a
  * buyer cancel or refund of a paid order. Never an unpaid order expiring or being cancelled,
- * and never their own cancel. Exported for unit tests.
+ * and never their own cancel. Pay on delivery (6 Nov) is the exception: the seller has the order
+ * before any money, so they hear about it, its payment, and a buyer cancel. Exported for unit tests.
  */
-export function sellerHearsAbout(event: OrderEvent, paid: boolean): boolean {
-  if (event === "payment_confirmed") return true;
-  if (event === "cancelled_by_buyer" || event === "refunded") return paid;
+export function sellerHearsAbout(event: OrderEvent, paid: boolean, payOnDelivery = false): boolean {
+  if (event === "payment_confirmed" || event === "pay_on_delivery" || event === "pod_paid") return true;
+  if (event === "cancelled_by_buyer") return paid || payOnDelivery;
+  if (event === "refunded") return paid;
   return false;
 }
 
@@ -180,7 +208,7 @@ export async function notifyOrderParties(opts: {
 
   const { data: order, error } = await sb
     .from("orders")
-    .select("id, cart_id, status, refund_sent_at, buyer_id, buyer_phone, species, is_preorder, created_at, quantity, quantity_unit, total_price, delivery_fee, cancel_reason, payment_method, razorpay_payment_id, listing:fish_listings(species, seller_id, seller:sellers(id, name, email))")
+    .select("id, cart_id, status, refund_sent_at, buyer_id, buyer_phone, species, is_preorder, created_at, quantity, quantity_unit, total_price, delivery_fee, cancel_reason, payment_method, razorpay_payment_id, pay_on_delivery, listing:fish_listings(species, seller_id, seller:sellers(id, name, email))")
     .eq("id", order_id)
     .single();
 
@@ -260,7 +288,9 @@ export async function notifyOrderParties(opts: {
   }
 
   // ---- Buyer email ----
-  if (o.buyer_id) {
+  if (event === "pay_on_delivery" || event === "pod_paid") {
+    out.buyer_email = "skipped: shown on the order page";
+  } else if (o.buyer_id) {
     try {
       const { data: buyer } = await sb.from("buyers").select("email").eq("id", o.buyer_id).single();
       out.buyer_email = buyer?.email
@@ -278,7 +308,7 @@ export async function notifyOrderParties(opts: {
   const sellerId = o.listing?.seller_id || o.listing?.seller?.id;
   const sellerEmail = o.listing?.seller?.email;
 
-  if (!sellerHearsAbout(event, !!o.razorpay_payment_id)) {
+  if (!sellerHearsAbout(event, !!o.razorpay_payment_id, !!o.pay_on_delivery)) {
     const why = event === "cancelled_by_seller" ? "skipped: seller cancelled it" : "skipped: order was never paid";
     out.seller_email = why;
     out.seller_push = why;

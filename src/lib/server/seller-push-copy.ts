@@ -18,7 +18,9 @@ export type SellerPushKind =
   | "cancelled"
   | "expired_unpaid"
   | "refunded"
-  | "preorders_tomorrow";
+  | "preorders_tomorrow"
+  | "pay_on_delivery"
+  | "pod_paid";
 
 const KINDS = new Set<SellerPushKind>([
   "new_order",
@@ -28,6 +30,8 @@ const KINDS = new Set<SellerPushKind>([
   "expired_unpaid",
   "refunded",
   "preorders_tomorrow",
+  "pay_on_delivery",
+  "pod_paid",
 ]);
 
 /** Unknown/missing kinds fall back to new_order (previous behaviour for that value). */
@@ -78,6 +82,18 @@ export function sellerPushNotification(
         body: species
           ? `Buyer paid${amt} for ${species}${idSuffix}${deliver}. Open the dashboard to confirm or decline.`
           : `Buyer paid${amt}${idSuffix}${deliver}. Open the dashboard to confirm or decline.`,
+      };
+
+    case "pay_on_delivery":
+      return {
+        title: "New order · Pay on delivery",
+        body: `${species ? `${species}${idSuffix}` : `New order${idSuffix}`}${amt ? ` ·${amt}` : ""}${deliver}. The buyer pays in the app when you deliver. Confirm or decline.`,
+      };
+
+    case "pod_paid":
+      return {
+        title: "Paid ✅ — hand it over",
+        body: `The buyer paid${amt}${species ? ` for ${species}` : ""}${idSuffix}. Mark it delivered once they have it.`,
       };
 
     case "cancelled": {

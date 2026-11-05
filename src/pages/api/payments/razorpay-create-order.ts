@@ -3,7 +3,7 @@ import { requireBuyer } from "../../../lib/server/session";
 import { createClient } from "@supabase/supabase-js";
 import { gaIdsFromCookies } from "../../../lib/server/ga-mp";
 import { metaNotesFromRequest } from "../../../lib/server/meta-capi";
-import { loadPayableCartRows, rowPaise } from "../../../lib/server/order-cart";
+import { isAwaitingPayment, loadPayableCartRows, rowPaise } from "../../../lib/server/order-cart";
 
 export const prerender = false;
 
@@ -35,7 +35,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Fetch order — verify ownership and status
   const { data: order, error: orderErr } = await supabase
     .from("orders")
-    .select("id, buyer_id, total_price, delivery_fee, status, razorpay_order_id, razorpay_payment_id, final_price, paid_amount, cart_id, created_at")
+    .select("id, buyer_id, total_price, delivery_fee, status, razorpay_order_id, razorpay_payment_id, final_price, paid_amount, cart_id, created_at, pay_on_delivery")
     .eq("id", order_id)
     .single();
 
@@ -50,7 +50,8 @@ export const POST: APIRoute = async ({ request, url }) => {
   // left the buyer with no Razorpay button at all — and the UPI fallback shows
   // no UPI id, because detail.ts strips it whenever Razorpay is enabled. The
   // order was simply unpayable.
-  if (!["pending", "pending_payment", "payment_required"].includes(order.status)) {
+  // Pay on delivery: still payable after the seller accepted it, until the money is on it.
+  if (order.status !== "payment_required" && !isAwaitingPayment(order as any)) {
     return new Response(
       JSON.stringify({ error: `Order status '${order.status}' cannot be paid via Razorpay` }),
       { status: 400 }
@@ -69,7 +70,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // payment (order-cart.ts). A balance top-up stays per item.
   const payRows: any[] = isBalanceDue
     ? [order]
-    : await loadPayableCartRows(supabase, order as any, "id, buyer_id, cart_id, status, total_price, delivery_fee, razorpay_order_id, razorpay_payment_id, created_at");
+    : await loadPayableCartRows(supabase, order as any, "id, buyer_id, cart_id, status, total_price, delivery_fee, razorpay_order_id, razorpay_payment_id, created_at, pay_on_delivery, final_price");
   const payIds = payRows.map((r) => r.id);
   const amountPaise = isBalanceDue
     // final_price is the fish price; paid_amount also holds the delivery fee (migration 080).

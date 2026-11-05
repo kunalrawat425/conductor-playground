@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
+import { UNPAID_EXPIRY_MS } from "../../../lib/pay-on-delivery";
 
 export const prerender = false;
 
@@ -8,14 +9,14 @@ const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY || "";
 const CRON_SECRET = import.meta.env.CRON_SECRET || "";
 
 /**
- * Nightly cron: auto-cancel `pending_payment` orders older than 24h
- * that never got a Razorpay order created (buyer walked away pre-payment).
+ * Auto-cancel unpaid orders after UNPAID_EXPIRY_MS (founder, 6 Nov 2026: 2 hours, was 24h/48h).
+ * Rows with a `razorpay_order_id` ask Razorpay first: captured payments are settled,
+ * a payment still in flight waits, otherwise the order expires too.
  *
- * Rows with `razorpay_order_id` get 48h, then Razorpay is asked: captured
- * payments are settled, otherwise the order expires too.
+ * Pay-on-delivery orders aren't unpaid in that sense: they wait for the seller, and only
+ * expire when the seller never confirmed by the end of the delivery slot.
  *
- * Vercel cron schedule (add to vercel.json):
- *   { "path": "/api/cron/expire-pending-orders", "schedule": "0 3 * * *" }
+ * Runs every 10 minutes from pg_cron (migration 094); the daily Vercel cron stays as a fallback.
  *
  * Auth: `Authorization: Bearer $CRON_SECRET` (Vercel Cron injects this).
  */
@@ -29,12 +30,13 @@ async function run(request: Request, origin: string) {
   }
 
   const sb = createClient(supabaseUrl, supabaseServiceKey);
-  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const cutoff = new Date(Date.now() - UNPAID_EXPIRY_MS).toISOString();
 
   const { data, error } = await sb
     .from("orders")
     .update({ status: "cancelled", cancel_reason: "auto_expired_payment", cancelled_by: "system" })
     .in("status", ["pending", "pending_payment"])
+    .eq("pay_on_delivery", false)
     .is("razorpay_order_id", null)
     .lt("created_at", cutoff)
     .select("id, listing_id, quantity, inventory_deducted");
@@ -45,6 +47,29 @@ async function run(request: Request, origin: string) {
   }
 
   const rows = [...(data ?? [])];
+
+  // Pay on delivery the seller never confirmed: give up once the delivery slot is over
+  // (no slot: a day after ordering). Nothing was paid, so nothing to refund.
+  const now = new Date().toISOString();
+  const { data: podStale } = await sb
+    .from("orders")
+    .select("id, status, delivery_slot_end, created_at")
+    .in("status", ["pending", "pending_payment"])
+    .eq("pay_on_delivery", true)
+    .is("razorpay_payment_id", null)
+    .limit(200);
+  for (const o of podStale ?? []) {
+    const end = (o as any).delivery_slot_end || new Date(new Date((o as any).created_at).getTime() + 24 * 3600_000).toISOString();
+    if (end > now) continue;
+    const { data: gone } = await sb
+      .from("orders")
+      .update({ status: "cancelled", cancel_reason: "seller_no_response", cancelled_by: "system" })
+      .eq("id", (o as any).id)
+      .eq("status", (o as any).status)
+      .is("razorpay_payment_id", null)
+      .select("id, listing_id, quantity, inventory_deducted");
+    if (gone?.[0]) rows.push(gone[0]);
+  }
 
   // Rows WITH a razorpay_order_id were left alone forever: an abandoned
   // checkout stayed `pending_payment` indefinitely (3 on prod). After 48h, ask
@@ -59,8 +84,9 @@ async function run(request: Request, origin: string) {
       .from("orders")
       .select("id, status, razorpay_order_id")
       .in("status", ["pending", "pending_payment"])
+      .eq("pay_on_delivery", false)
       .not("razorpay_order_id", "is", null)
-      .lt("created_at", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
+      .lt("created_at", cutoff)
       .limit(100);
     for (const o of stale ?? []) {
       let items: any[];
@@ -119,7 +145,7 @@ async function run(request: Request, origin: string) {
       .catch((err: any) => console.warn("[cron/expire-pending] notify failed", { order_id: (row as any).id, err: err?.message }));
   }
 
-  console.log(`[cron/expire-pending] expired ${n} orders older than 24h (notified: ${notified})`);
+  console.log(`[cron/expire-pending] expired ${n} orders (notified: ${notified})`);
   return new Response(JSON.stringify({ ok: true, expired: n, notified }), { status: 200 });
 }
 

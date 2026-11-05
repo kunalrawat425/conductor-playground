@@ -202,6 +202,30 @@ const { id } = Astro.params;
       refunded: "Refund processed",
     })[s] || s;
   }
+  // Pay on delivery (6 Nov): paid in the app at the door, never cash. See src/lib/pay-on-delivery.ts.
+  function podDue(o) {
+    return !!o.pay_on_delivery && !o.razorpay_payment_id && !["completed", "picked_up", "cancelled", "declined", "refunded"].includes(o.status);
+  }
+  /** What one Pay press charges now: the cart's unpaid items, or this item (a pay-on-delivery pre-order at its weighed price). */
+  function dueAmount(o) {
+    if (o.cart) return Number(o.cart.payable_total) || 0;
+    const fish = o.pay_on_delivery && o.final_price != null && o.final_price !== "" ? Number(o.final_price) : Number(o.total_price);
+    return fish + Number(o.delivery_fee || 0);
+  }
+  // Eligibility for the "Pay on delivery" choice, asked once per order state (the page re-renders every 15 s).
+  let podInfo: { key: string; data: any } | null = null;
+  async function podEligibility(o) {
+    const key = `${o.id}:${o.status}:${o.pay_on_delivery}`;
+    if (podInfo?.key === key) return podInfo.data;
+    let data: any = null;
+    try {
+      const buyerId = localStorage.getItem("rlf_buyer_id") || "";
+      const res = await fetch(`/api/orders/pay-on-delivery?order_id=${encodeURIComponent(o.id)}&buyer_id=${encodeURIComponent(buyerId)}`);
+      if (res.ok) data = await res.json();
+    } catch { /* offer only Pay now */ }
+    podInfo = { key, data };
+    return data;
+  }
   function billPaymentFootnote(o) {
     return paymentMethodLabel(o) || "Payment pending";
   }
@@ -275,7 +299,8 @@ const { id } = Astro.params;
     document.getElementById("v2-od-loading").style.display = "none";
     document.getElementById("v2-od-content").style.display = "block";
 
-    document.getElementById("v2-od-status").textContent = statusLabel(o.status);
+    document.getElementById("v2-od-status").textContent = o.pay_on_delivery && ["pending", "pending_payment"].includes(o.status)
+      ? "Waiting for the seller" : statusLabel(o.status);
     document.getElementById("v2-od-shortid").textContent = "#" + String(o.id).slice(0,8).toUpperCase();
     document.getElementById("v2-od-time").textContent = new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
     
@@ -285,7 +310,8 @@ const { id } = Astro.params;
     // Never show "Paid" when order is still awaiting payment — statusLabel handles that
     const awaitingPayment = ['pending_payment', 'pending'].includes(o.status);
     let payStatusText = "";
-    if (o.status === 'refunded') payStatusText = "Refunded";
+    if (podDue(o)) payStatusText = "Pay on delivery";
+    else if (o.status === 'refunded') payStatusText = "Refunded";
     else if (['declined', 'cancelled'].includes(o.status) && wasActuallyPaid(o)) payStatusText = "Refund pending";
     else if (!awaitingPayment && (wasActuallyPaid(o) || isPaidViaRazorpay || ['confirmed', 'paid', 'ready_for_pickup', 'out_for_delivery', 'picked_up', 'completed'].includes(o.status))) {
       // BUG-43: a pre-order that priced in cheaper than the buyer paid now stays
@@ -484,7 +510,7 @@ const { id } = Astro.params;
           <div style="background:#F5F3FF;border:1.5px solid #C4B5FD;border-radius:var(--v2-radius-sm);padding:14px;margin-bottom:12px;">
             <div style="font:700 13px Inter;color:#7C3AED;margin-bottom:6px;">🌙 Pre-order${deliverOn ? ` for ${escape(dateLabelIST(deliverOn))}` : ""}</div>
             ${rangeHtml}
-            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;margin-top:6px;">${unpaid ? "Your pre-order is placed once the payment goes through. " : ""}The final price is set when your fish comes in.${amountDue ? ` ${unpaid ? "Amount" : "You paid"}: <strong>${amountDue}</strong>.` : ""}</div>
+            <div style="font:400 12px Inter;color:#6D28D9;line-height:1.6;margin-top:6px;">${unpaid && !o.pay_on_delivery ? "Your pre-order is placed once the payment goes through. " : ""}The final price is set when your fish comes in.${amountDue ? ` ${unpaid ? "Amount" : "You paid"}: <strong>${amountDue}</strong>.` : ""}</div>
             <div style="font:400 11px Inter;color:#8B5CF6;margin-top:6px;line-height:1.5;">Final price <strong>lower</strong> than you paid → the difference is refunded automatically (5–7 working days). <strong>Higher</strong> → you approve the difference.</div>
           </div>`;
         preorderEl.style.display = "block";
@@ -531,7 +557,11 @@ const { id } = Astro.params;
     if (o.status === "pending_payment" || o.status === "pending") {
       // Razorpay pay button — pending_payment is the normal pay-first flow;
       // pending covers legacy orders created before the pending_payment migration.
-      renderPaymentUpload(o, "pending");
+      if (o.pay_on_delivery) renderPodPlaced(o);
+      else {
+        renderPaymentUpload(o, "pending");
+        offerPayOnDelivery(o);
+      }
       const pre = isPreorderCatchFlow(o);
       const cancelLabel = pre ? "Cancel pre-order" : "Cancel order";
       const cancelConfirm = pre ? "Cancel this pre-order?" : "Cancel this order?";
@@ -750,6 +780,18 @@ const { id } = Astro.params;
       actions.innerHTML = "";
     }
 
+    // Pay on delivery after the seller accepted it: the Pay button the buyer uses at the door.
+    if (podDue(o) && ["confirmed", "ready_for_pickup", "out_for_delivery"].includes(o.status) && dueAmount(o) > 0) {
+      const box = document.createElement("div");
+      actions.prepend(box);
+      const onWay = o.status === "out_for_delivery";
+      renderRazorpayButton(o, dueAmount(o), box, {
+        title: onWay ? "🛵 Pay when your fish arrives" : "💵 You pay on delivery",
+        line: `Pay here in the Relifish app (UPI or card) when your fish arrives. No cash accepted.${onWay ? " The delivery person hands it over once it shows Paid." : ""}`,
+        cta: `Pay ₹${dueAmount(o).toLocaleString("en-IN")} →`,
+      });
+    }
+
     function renderPaymentUpload(o, kind) {
       const root = document.getElementById("v2-od-actions");
       if (!root) return;
@@ -757,10 +799,90 @@ const { id } = Astro.params;
       // order is unpayable from the UI.
       const balance = kind === "balance"
         ? Math.max(0, Number(o.final_price || 0) - (Number(o.paid_amount || 0) - Number(o.delivery_fee || 0)))
-        : o.cart ? Number(o.cart.payable_total) || 0 // one payment for every unpaid item in the cart
-        : Number(o.total_price) + Number(o.delivery_fee || 0);
+        : dueAmount(o); // one payment for every unpaid item in the cart
       // Nothing actually owed — render nothing rather than a ₹0 Pay button.
       if (balance > 0) renderRazorpayButton(o, balance, root);
+    }
+  }
+
+  // ── Pay on delivery ─────────────────────────────────────────────────
+
+  /** Chosen pay on delivery, waiting for the seller: say so, keep "Pay now instead". */
+  function renderPodPlaced(o) {
+    const root = document.getElementById("v2-od-actions");
+    if (!root) return;
+    const amount = dueAmount(o);
+    const seller = o.seller?.name ? cleanSellerName(o.seller.name) : "the seller";
+    root.innerHTML = `
+      <div style="background:var(--v2-bg);border:1.5px solid #86EFAC;border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
+        <div style="font:800 14px Inter;color:#059669;margin-bottom:4px;">✅ Order placed</div>
+        <div style="font:400 13px Inter;color:var(--v2-ink-2);line-height:1.5;">Waiting for ${escape(seller)} to confirm. You'll pay <strong>₹${amount.toLocaleString("en-IN")}</strong> here in the Relifish app when your fish arrives. <strong>No cash accepted.</strong></div>
+      </div>
+      <div id="v2-pod-paynow"></div>`;
+    const box = root.querySelector<HTMLElement>("#v2-pod-paynow");
+    if (box && amount > 0) renderRazorpayButton(o, amount, box, { title: "Prefer to pay now?", line: "Pay securely via Razorpay (UPI, cards, netbanking).", cta: `Pay ₹${amount.toLocaleString("en-IN")} now` });
+  }
+
+  /** Unpaid order: offer "Pay on delivery" next to Pay now when this order qualifies. */
+  async function offerPayOnDelivery(o) {
+    const info = await podEligibility(o);
+    const btn = document.getElementById("v2-rzp-pay-btn");
+    if (info?.eligible && btn) {
+      const amount = Number(info.amount) || dueAmount(o);
+      btn.insertAdjacentHTML("afterend", `
+        <div id="v2-pod-choice">
+          <div style="text-align:center;font:600 12px Inter;color:var(--v2-ink-3);margin:10px 0;">or</div>
+          <button type="button" id="v2-pod-btn" class="v2-btn v2-btn-secondary v2-btn-md v2-btn-full">Pay ₹${amount.toLocaleString("en-IN")} on delivery</button>
+          <div style="font:400 11px Inter;color:var(--v2-ink-3);text-align:center;margin-top:6px;">Pay in the Relifish app when your fish arrives. No cash.</div>
+          <div id="v2-pod-err" style="font:500 12px Inter;color:var(--v2-red);margin-top:8px;display:none;"></div>
+        </div>`);
+      document.getElementById("v2-pod-btn")?.addEventListener("click", () => choosePayOnDelivery(o));
+    } else if (info?.block?.code === "open_order" && btn) {
+      btn.insertAdjacentHTML("afterend", podOpenOrderNote(info.block.order_id));
+    } else if (info?.block?.code === "over_limit" && btn) {
+      btn.insertAdjacentHTML("afterend", `<div style="font:400 11px Inter;color:var(--v2-ink-3);text-align:center;margin-top:8px;">${escape(info.block.message)}</div>`);
+    }
+    // Arrived from "Place Order" (?pay=1): open Razorpay straight away only when there's no choice to make.
+    if (autoPay) {
+      autoPay = false;
+      history.replaceState(null, "", location.pathname);
+      if (!info?.eligible) (document.getElementById("v2-rzp-pay-btn") as HTMLButtonElement | null)?.click();
+    }
+  }
+
+  function podOpenOrderNote(openId: string) {
+    return `<div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:var(--v2-radius-sm);padding:10px 12px;margin-top:10px;font:500 12px Inter;color:#92400E;line-height:1.5;">
+      You already have a pay-on-delivery order <strong>#${escape(String(openId).slice(0, 8).toUpperCase())}</strong>. Pay or cancel it to use pay on delivery again.
+      <a href="/track/${encodeURIComponent(openId)}" style="display:inline-block;margin-top:6px;font-weight:700;color:#B45309;">Open that order →</a>
+    </div>`;
+  }
+
+  async function choosePayOnDelivery(o) {
+    const btn = document.getElementById("v2-pod-btn") as HTMLButtonElement | null;
+    const err = document.getElementById("v2-pod-err");
+    if (btn) { btn.disabled = true; btn.textContent = "Placing your order..."; }
+    try {
+      const buyerId = localStorage.getItem("rlf_buyer_id") || "";
+      const res = await fetch("/api/orders/pay-on-delivery", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: o.id, buyer_id: buyerId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (data?.block?.code === "open_order") {
+          document.getElementById("v2-pod-choice")?.insertAdjacentHTML("beforeend", podOpenOrderNote(data.block.order_id));
+          if (btn) btn.style.display = "none";
+          return;
+        }
+        throw new Error(data?.error || "Could not place the order. Please try again.");
+      }
+      try { if (typeof gtag === "function") gtag("event", "pay_on_delivery_chosen", { order_id: o.id, value: Number(data.amount) || dueAmount(o), currency: "INR" }); } catch {}
+      (window as any).v2Toast?.("success", "Order placed", "You'll pay in the app when it arrives.");
+      podInfo = null;
+      load();
+    } catch (e: any) {
+      if (err) { err.textContent = friendlyError(e?.message || e); err.style.display = "block"; }
+      if (btn) { btn.disabled = false; btn.textContent = "Pay on delivery"; }
     }
   }
 
@@ -777,17 +899,18 @@ const { id } = Astro.params;
     });
   }
 
-  function renderRazorpayButton(o: any, balance: number, root: HTMLElement) {
+  function renderRazorpayButton(o: any, balance: number, root: HTMLElement, copy?: { title: string; line: string; cta: string }) {
     const fmt = (n: number) => n.toLocaleString("en-IN");
+    const cta = copy?.cta || `Pay ₹${fmt(balance)} →`;
     root.innerHTML = `
       <div style="background:var(--v2-bg);border:1.5px solid var(--v2-brand);border-radius:var(--v2-radius);padding:16px;margin-top:8px;">
-        <div style="font:800 14px Inter;color:var(--v2-ink);margin-bottom:4px;">💳 One last step: the payment</div>
+        <div style="font:800 14px Inter;color:var(--v2-ink);margin-bottom:4px;">${escape(copy?.title || "💳 One last step: the payment")}</div>
         <div style="font:400 12px Inter;color:var(--v2-ink-2);margin-bottom:12px;">
-          Pay securely via Razorpay (UPI, cards, netbanking), and we'll let you know as soon as your order is confirmed. Stuck? Call us on +91 91522 07607.
+          ${escape(copy?.line || "Pay securely via Razorpay (UPI, cards, netbanking), and we'll let you know as soon as your order is confirmed. Stuck? Call us on +91 91522 07607.")}
         </div>
         <div style="font:900 22px Inter;color:var(--v2-brand);margin-bottom:16px;">₹${fmt(balance)}</div>
         <button type="button" id="v2-rzp-pay-btn" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full">
-          Pay ₹${fmt(balance)} →
+          ${escape(cta)}
         </button>
         <div id="v2-rzp-loading" style="display:none;text-align:center;padding:12px;font:500 12px Inter;color:var(--v2-ink-3);">
           <span class="v2-spinner v2-spinner-sm"></span> Opening payment...
@@ -807,7 +930,7 @@ const { id } = Astro.params;
       errEl.style.display = "block";
       btn.style.display = "block";
       btn.disabled = false;
-      btn.textContent = `Pay ₹${fmt(balance)} →`;
+      btn.textContent = cta;
       loadingEl.style.display = "none";
     }
 
@@ -936,7 +1059,7 @@ const { id } = Astro.params;
             try { (window as any).rfTrack?.("pay_dismissed", { order_id: o.id }); } catch {}
             btn.disabled = false;
             btn.style.display = "block";
-            btn.textContent = `Pay ₹${fmt(balance)} →`;
+            btn.textContent = cta;
             loadingEl.style.display = "none";
           },
         },
@@ -951,8 +1074,9 @@ const { id } = Astro.params;
       rzp.open();
     });
 
-    // Arrived from "Place Order" (?pay=1): open Razorpay once, no second tap.
-    if (autoPay) {
+    // ?pay=1 on a new order is handled by offerPayOnDelivery, which waits to know whether there's a
+    // choice to make. A balance top-up opens Razorpay once, no second tap.
+    if (autoPay && o.status === "payment_required") {
       autoPay = false;
       history.replaceState(null, "", location.pathname);
       btn.click();
