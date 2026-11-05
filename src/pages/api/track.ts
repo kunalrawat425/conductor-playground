@@ -4,7 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 export const prerender = false;
 
 /** Funnel steps the site may log (supabase/migrations/087_funnel_events.sql). */
-const EVENTS = new Set(["landing", "shop_view", "seller_view", "login_shown", "otp_sent", "otp_resend", "otp_failed", "otp_verified", "add_to_cart", "checkout_started"]);
+const EVENTS = new Set(["landing", "shop_view", "seller_view", "login_shown", "otp_sent", "otp_resend", "otp_failed", "otp_verified", "add_to_cart", "checkout_started",
+  "checkout_step2", "checkout_closed", "place_order_tap", "checkout_blocked", "order_created", "order_failed", "pay_opened", "pay_dismissed", "pay_failed"]);
 const UUID = /^[0-9a-f-]{36}$/i;
 const str = (v: unknown, max: number) => (typeof v === "string" && v ? v.slice(0, max) : null);
 
