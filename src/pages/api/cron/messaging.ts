@@ -222,7 +222,34 @@ async function run({ url }: { url: URL }): Promise<Response> {
   // ?catchup_cart=<buyer id,…>: the cart reminder now for buyers the founder names (carts left while SMS was off,
   // founder 1 Nov). Skips the timing rules only: never sellers, DND, a buyer who ordered since, or an empty cart.
   const force = url.searchParams.get("force") === "1";
-  const catchup = (url.searchParams.get("catchup_cart") || "").split(",").map((x) => x.trim()).filter(Boolean);
+  // ?force_sms=SIGNUP|CANCELLED_NOPAY&ids=<buyer id,…> (founder, 5 Nov): that service SMS now to those buyers,
+  // no timing rules or weekly cap (own kind force_<key>); never sellers, test buyers or DND. Once a day each.
+  const forceKey = url.searchParams.get("force_sms");
+  if (forceKey === "SIGNUP" || forceKey === "CANCELLED_NOPAY") {
+    const ids = (url.searchParams.get("ids") || "").split(",").map((x) => x.trim()).filter(Boolean);
+    const out: any[] = [];
+    for (const id of ids) {
+      const b = (buyerRows || []).find((x: any) => x.id === id);
+      const phone = b && waNumber(b.phone);
+      if (!b || b.is_test || skipPhone(phone)) { out.push({ buyer: id, skip: "not a buyer we message" }); continue; }
+      const st = stateOf(b);
+      const who = `…${phone!.slice(-4)}`;
+      if (st.dnd) { out.push({ buyer: who, skip: "dnd" }); continue; }
+      let vars = [st.name, "verified sellers near you"];
+      if (forceKey === "CANCELLED_NOPAY") {
+        const { data: o } = await sb.from("orders").select("id").eq("buyer_id", b.id).is("razorpay_payment_id", null).is("payment_verified_at", null)
+          .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (!o) { out.push({ buyer: who, skip: "no unpaid order" }); continue; }
+        vars = [st.name, `#${String(o.id).slice(0, 8).toUpperCase()}`];
+      }
+      const sms = { key: forceKey, vars };
+      const msg: Dispatch = { dedupe_key: `force_${forceKey.toLowerCase()}:${b.id}:${istDate(now)}`, kind: `force_${forceKey.toLowerCase()}`, slot_date: istDate(now), buyer_id: b.id,
+        seller_id: null, phone: b.phone, whatsappOk: false, template: `sms:${forceKey}`, body: [], link_path: "/shop", sms, smsOk: true };
+      out.push(dry ? { buyer: who, sms, sent: "dry_run" } : { buyer: who, sms, ...(await dispatch(sb, msg)) });
+    }
+    return json({ dry, force_sms: out });
+  }
+  const catchup =(url.searchParams.get("catchup_cart") || "").split(",").map((x) => x.trim()).filter(Boolean);
   if (catchup.length) {
     const out: any[] = [];
     for (const id of catchup) {
