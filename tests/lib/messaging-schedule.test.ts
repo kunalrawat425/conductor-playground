@@ -65,13 +65,13 @@ describe("promos: a cart is only covered by promo slots here (the 1 h cart remin
       expect(["rf2_cart_today", "rf2_cart_preorder"]).not.toContain(r.template);
     }
   });
-  it("a cart is covered by the next slot: rf2_promo_cart (Sat 9:25 for a Fri cart)", () => {
+  it("a cart is covered by the next slot: rf2_promo_cart (Sat 9:15 for a Fri cart)", () => {
     expect(run(T("23", "11:30"), buyer({ cart: cart("ft", T("23", "10:15")) })).skip).toBe("nothing due");
-    expect(run(T("24", "09:25"), buyer({ cart: cart("ft", T("23", "10:15")) }))).toMatchObject({
+    expect(run(T("24", "09:15"), buyer({ cart: cart("ft", T("23", "10:15")) }))).toMatchObject({
       kind: "promo", template: "rf2_promo_cart", personal: true, path: "/s/fishtokri?checkout=1", body: ["Saturday", "Priya", "fresh fish", "Relifish", "today, 10 AM–12 PM"],
     });
     // Nomadic cart on Saturday morning: pre-order slot for Sunday (no B2 to wait for any more).
-    expect(run(T("24", "09:25"), buyer({ cart: cart("nm", T("23", "10:00")) }))).toMatchObject({
+    expect(run(T("24", "09:15"), buyer({ cart: cart("nm", T("23", "10:00")) }))).toMatchObject({
       template: "rf2_promo_cart", when: "Sun 25 Oct, 9–11 AM", path: "/s/the-nomadic-catch?checkout=1",
     });
   });
@@ -80,16 +80,16 @@ describe("promos: a cart is only covered by promo slots here (the 1 h cart remin
   });
   it("old B1/B2 rows in the log still count for the 72 h gap and one-per-day", () => {
     const b = buyer({ cart: cart("ft", T("22", "10:00")) });
-    expect(run(T("23", "09:25"), b, [log("B1", T("22", "11:00"))]).skip).toBe("nothing due");
-    expect(run(T("23", "09:25"), b, [log("B2", T("23", "08:00"))]).skip).toBe("already messaged today");
+    expect(run(T("23", "09:15"), b, [log("B1", T("22", "11:00"))]).skip).toBe("nothing due");
+    expect(run(T("23", "09:15"), b, [log("B2", T("23", "08:00"))]).skip).toBe("already messaged today");
   });
 });
 
-describe("Tue 6 PM + Fri/Sat/Sun 9:25 AM promo, one per buyer by stage", () => {
+describe("Tue 6 PM + Fri/Sat/Sun 9:15 AM promo, one per buyer by stage", () => {
   const old = buyer({ created_at: iso(T("10", "10:00")) }); // signed up 13 days ago
   it("generic catch promos list fish, so they never go on WhatsApp (founder, 3 Nov)", () => {
     expect(run(T("20", "18:00"), old)).toEqual({ skip: NO_NAMES });
-    expect(run(T("24", "09:25"), old)).toEqual({ skip: NO_NAMES });
+    expect(run(T("24", "09:15"), old)).toEqual({ skip: NO_NAMES });
   });
   it("generic Tue evening: tomorrow's pre-order with the seller's fish and cutoff", () => {
     expect(runSms(T("20", "18:00"), old)).toMatchObject({
@@ -100,87 +100,87 @@ describe("Tue 6 PM + Fri/Sat/Sun 9:25 AM promo, one per buyer by stage", () => {
   });
   it("each of the 4 slots fires at its time; never Mon, Wed or Thu", () => {
     expect(runSms(T("27", "18:00"), old)).toMatchObject({ kind: "promo", template: "rf2_catch_preorder" }); // Tue 6 PM
-    expect(runSms(T("23", "09:25"), old)).toMatchObject({ kind: "promo", template: "rf2_catch_prices" });   // Fri 9:25 AM
-    expect(runSms(T("24", "09:25"), old)).toMatchObject({ kind: "promo", template: "rf2_catch_prices" });   // Sat 9:25 AM
-    expect(runSms(T("25", "09:25"), old)).toMatchObject({ kind: "promo", template: "rf2_catch_prices" });   // Sun 9:25 AM (inside DAY_START 8:00)
+    expect(runSms(T("23", "09:15"), old)).toMatchObject({ kind: "promo", template: "rf2_catch_prices" });   // Fri 9:15 AM
+    expect(runSms(T("24", "09:15"), old)).toMatchObject({ kind: "promo", template: "rf2_catch_prices" });   // Sat 9:15 AM
+    expect(runSms(T("25", "09:15"), old)).toMatchObject({ kind: "promo", template: "rf2_catch_prices" });   // Sun 9:15 AM (inside DAY_START 8:00)
     expect(runSms(T("27", "17:30"), old).skip).toBe("nothing due"); // not before 6 PM
-    expect(runSms(T("24", "08:00"), old).skip).toBe("nothing due"); // not before 9:25
-    expect(runSms(T("23", "08:00"), old).skip).toBe("nothing due"); // Fri: not before 9:25
+    expect(runSms(T("24", "08:00"), old).skip).toBe("nothing due"); // not before 9:15
+    expect(runSms(T("23", "08:00"), old).skip).toBe("nothing due"); // Fri: not before 9:15
     expect(runSms(T("23", "18:00"), old).skip).toBe("nothing due"); // Fri/Sat/Sun slots are mornings only
     expect(runSms(T("24", "18:00"), old).skip).toBe("nothing due");
-    expect(runSms(T("27", "09:25"), old).skip).toBe("nothing due"); // Tue slot is evening only
-    for (const d of ["26", "21", "22"]) for (const hm of ["09:25", "18:00", "19:30"]) expect(runSms(T(d, hm), old).skip, `${d} ${hm}`).toBe("nothing due");
+    expect(runSms(T("27", "09:15"), old).skip).toBe("nothing due"); // Tue slot is evening only
+    for (const d of ["26", "21", "22"]) for (const hm of ["09:15", "18:00", "19:30"]) expect(runSms(T(d, hm), old).skip, `${d} ${hm}`).toBe("nothing due");
     expect(runSms(T("27", "19:45"), old)).toMatchObject({ kind: "promo" }); // job late, still inside the 2 h window
   });
   it("Fri/Sat/Sun morning generic with a Today slot → rf2_catch_prices: today's menu, order-by (last Today slot end − 2 h), delivery today", () => {
-    const d = runSms(T("24", "09:25"), old);
+    const d = runSms(T("24", "09:15"), old);
     expect(d).toMatchObject({
       kind: "promo", template: "rf2_catch_prices", mode: "today", path: "/shop", personal: false,
       body: ["Priya", "Saturday", "Surmai · Pomfret · Bombil", "4 PM", "today"],
     });
     expect(d.body).toHaveLength(5);
-    expect(runSms(T("23", "09:25"), old).body).toEqual(["Priya", "Friday", "Surmai · Pomfret · Bombil", "4 PM", "today"]);
-    expect(runSms(T("25", "09:25"), old).body).toEqual(["Priya", "Sunday", "Surmai · Pomfret · Bombil", "4 PM", "today"]);
+    expect(runSms(T("23", "09:15"), old).body).toEqual(["Priya", "Friday", "Surmai · Pomfret · Bombil", "4 PM", "today"]);
+    expect(runSms(T("25", "09:15"), old).body).toEqual(["Priya", "Sunday", "Surmai · Pomfret · Bombil", "4 PM", "today"]);
     // A shop closing at 8 PM: last Today slot 6–8 PM, bookable until 6 PM.
-    expect(runSms(T("24", "09:25"), old, [], [{ ...FISHTOKRI, closes_at: "20:00:00" } as MsgSeller]).body[3]).toBe("6 PM");
+    expect(runSms(T("24", "09:15"), old, [], [{ ...FISHTOKRI, closes_at: "20:00:00" } as MsgSeller]).body[3]).toBe("6 PM");
   });
   it("rf2_catch_prices lists only fish available today, never pre-order-only ones", () => {
-    expect(runSms(T("24", "09:25"), old, [], [{ ...FISHTOKRI, menu: "Surmai · Pomfret · Bombil", todayMenu: "Bombil" } as MsgSeller]).body[2]).toBe("Bombil");
-    expect(runSms(T("24", "09:25"), old, [], [{ ...FISHTOKRI, todayMenu: "" } as MsgSeller]).skip).toBe("nothing due");
+    expect(runSms(T("24", "09:15"), old, [], [{ ...FISHTOKRI, menu: "Surmai · Pomfret · Bombil", todayMenu: "Bombil" } as MsgSeller]).body[2]).toBe("Bombil");
+    expect(runSms(T("24", "09:15"), old, [], [{ ...FISHTOKRI, todayMenu: "" } as MsgSeller]).skip).toBe("nothing due");
   });
   it("Fri/Sat/Sun morning with pre-order only → rf2_catch_preorder; neither fits → none", () => {
     // Nomadic (no same-day) delivers Sunday: Saturday gets the pre-order for tomorrow.
-    expect(runSms(T("24", "09:25"), old, [], [NOMADIC])).toMatchObject({
+    expect(runSms(T("24", "09:15"), old, [], [NOMADIC])).toMatchObject({
       template: "rf2_catch_preorder", mode: "preorder", body: ["Priya", "Saturday", "Halwa · Surmai", "2 AM", "Sun 25 Oct, 9–11 AM"],
     });
-    expect(runSms(T("25", "09:25"), old, [], [NOMADIC]).skip).toBe("nothing due"); // Sunday: next delivery is Wed, not tomorrow
+    expect(runSms(T("25", "09:15"), old, [], [NOMADIC]).skip).toBe("nothing due"); // Sunday: next delivery is Wed, not tomorrow
   });
   it("evenings never use rf2_catch_prices, even with a Today slot still open", () => {
     const late = { ...FISHTOKRI, closes_at: "23:59:00" } as MsgSeller; // Today slots until midnight
     expect(run(T("27", "18:00"), old, [], [late]).skip).toBe("nothing due"); // as before: an evening generic needs tomorrow's pre-order
   });
   it("generic needs a pre-order for tomorrow (Nomadic delivers Wed/Sun only)", () => {
-    expect(run(T("23", "09:25"), old, [], [NOMADIC]).skip).toBe("nothing due"); // Fri: next delivery is Sun, not tomorrow
+    expect(run(T("23", "09:15"), old, [], [NOMADIC]).skip).toBe("nothing due"); // Fri: next delivery is Sun, not tomorrow
   });
   it("cart → rf2_promo_cart, naming neither the fish nor the seller (founder, 3 Nov)", () => {
     const b = buyer({ created_at: iso(T("10", "10:00")), cart: [{ seller_id: "ft", name: "Baby Rawas", on_menu: true, updated_at: iso(T("17", "10:00")) }] });
-    expect(run(T("23", "09:25"), b)).toMatchObject({
+    expect(run(T("23", "09:15"), b)).toMatchObject({
       kind: "promo", template: "rf2_promo_cart", path: "/s/fishtokri?checkout=1",
       body: ["Friday", "Priya", "fresh fish", "Relifish", "today, 10 AM–12 PM"],
     });
   });
   it("unpaid order → rf2_promo_unpaid with that order's seller slot, link to its pay page", () => {
     const b = buyer({ created_at: iso(T("10", "10:00")), last_order_at: iso(T("22", "11:00")), unpaid: { id: "o1", seller_id: "nm", name: "Surmai" } });
-    expect(run(T("23", "09:25"), b)).toMatchObject({
+    expect(run(T("23", "09:15"), b)).toMatchObject({
       kind: "promo", template: "rf2_promo_unpaid", path: "/track/o1", body: ["Friday", "Priya", "fresh fish", "Sun 25 Oct, 9–11 AM"],
     });
   });
   it("delivered before → rf2_order_again from the same seller", () => {
     const b = buyer({ created_at: iso(T("10", "10:00")), last_order_at: iso(T("15", "10:00")), last_delivered_at: iso(T("16", "10:00")),
       delivered: { id: "o2", seller_id: "ft", name: "Pomfret" } });
-    expect(run(T("23", "09:25"), b)).toMatchObject({
+    expect(run(T("23", "09:15"), b)).toMatchObject({
       kind: "promo", template: "rf2_order_again", path: "/s/fishtokri", body: ["Priya", "fresh fish", "Relifish", "today, 10 AM–12 PM"],
     });
   });
   it("paid and awaiting delivery → none; none within 3 days of a delivery", () => {
-    expect(run(T("23", "09:25"), { ...old, open_order: true }).skip).toBe("open order");
-    expect(run(T("23", "09:25"), { ...old, last_order_at: iso(T("21", "10:00")), last_delivered_at: iso(T("22", "10:00")) }).skip).toBe("nothing due");
+    expect(run(T("23", "09:15"), { ...old, open_order: true }).skip).toBe("open order");
+    expect(run(T("23", "09:15"), { ...old, last_order_at: iso(T("21", "10:00")), last_delivered_at: iso(T("22", "10:00")) }).skip).toBe("nothing due");
   });
   it("72 h gap since the last marketing message", () => {
-    // Tue 6 PM → Fri 9:25 AM is 62.5 h: a Tuesday recipient is skipped on Friday.
-    expect(runSms(T("23", "09:25"), old, [log("promo", T("20", "18:00"))]).skip).toBe("nothing due");
+    // Tue 6 PM → Fri 9:15 AM is 62.5 h: a Tuesday recipient is skipped on Friday.
+    expect(runSms(T("23", "09:15"), old, [log("promo", T("20", "18:00"))]).skip).toBe("nothing due");
     // Exactly 72 h is allowed; 71 h 59 min is not.
-    expect(runSms(T("23", "09:25"), old, [log("B1", T("20", "09:25"))])).toMatchObject({ kind: "promo" });
-    expect(runSms(T("23", "09:25"), old, [log("B1", T("20", "09:26"))]).skip).toBe("nothing due");
-    // A Fri 9:25 AM send blocks Sat and Sun 9:25 AM; next Tue 6 PM (105.5 h) goes.
-    const fri = [log("promo", T("23", "09:25"))];
-    expect(runSms(T("24", "09:25"), old, fri).skip).toBe("nothing due");
-    expect(runSms(T("25", "09:25"), old, fri).skip).toBe("nothing due");
+    expect(runSms(T("23", "09:15"), old, [log("B1", T("20", "09:15"))])).toMatchObject({ kind: "promo" });
+    expect(runSms(T("23", "09:15"), old, [log("B1", T("20", "09:16"))]).skip).toBe("nothing due");
+    // A Fri 9:15 AM send blocks Sat and Sun 9:15 AM; next Tue 6 PM (105.5 h) goes.
+    const fri = [log("promo", T("23", "09:15"))];
+    expect(runSms(T("24", "09:15"), old, fri).skip).toBe("nothing due");
+    expect(runSms(T("25", "09:15"), old, fri).skip).toBe("nothing due");
     expect(runSms(T("27", "18:00"), old, fri)).toMatchObject({ kind: "promo" });
     // Old B1/B2 rows count too: a Thu B2 blocks Fri. A Sat send blocks Sun; Tue (81.5 h later) is allowed.
-    expect(runSms(T("23", "09:25"), old, [log("B2", T("22", "19:00"))]).skip).toBe("nothing due");
-    expect(runSms(T("25", "09:25"), old, [log("promo", T("24", "09:25"))]).skip).toBe("nothing due");
-    expect(runSms(T("27", "18:00"), old, [log("promo", T("24", "09:25"))])).toMatchObject({ kind: "promo" });
+    expect(runSms(T("23", "09:15"), old, [log("B2", T("22", "19:00"))]).skip).toBe("nothing due");
+    expect(runSms(T("25", "09:15"), old, [log("promo", T("24", "09:15"))]).skip).toBe("nothing due");
+    expect(runSms(T("27", "18:00"), old, [log("promo", T("24", "09:15"))])).toMatchObject({ kind: "promo" });
   });
   it("one marketing message a day; inactive buyers get none", () => {
     expect(run(T("27", "18:00"), old, [log("B1", T("27", "10:00"))]).skip).toBe("already messaged today");
@@ -189,8 +189,8 @@ describe("Tue 6 PM + Fri/Sat/Sun 9:25 AM promo, one per buyer by stage", () => {
   it("a job up to 2 h late still sends; later it doesn't", () => {
     expect(runSms(T("27", "19:59"), old)).toMatchObject({ kind: "promo" });
     expect(runSms(T("27", "20:00"), old).skip).toBe("nothing due");
-    expect(runSms(T("24", "11:24"), old)).toMatchObject({ kind: "promo" });
-    expect(runSms(T("24", "11:25"), old).skip).toBe("nothing due");
+    expect(runSms(T("24", "11:14"), old)).toMatchObject({ kind: "promo" });
+    expect(runSms(T("24", "11:15"), old).skip).toBe("nothing due");
   });
 });
 
@@ -222,7 +222,7 @@ describe("rf2_cart_swap: the cart's fish is off the seller's menu (founder, 30 O
   });
   it("a newer off-menu line of another seller doesn't hide the on-menu line's promo", () => {
     const b = buyer({ ...old, cart: [line("Halwa", "halwa", 700, true, T("22", "10:00"), "nm"), line("Silver Pomfret Combo", "silver pomfret combo", 1230, false, T("23", "10:00"))] });
-    expect(run(T("24", "09:25"), b, [], [FT, NOMADIC])).toMatchObject({ template: "rf2_promo_cart", path: "/s/the-nomadic-catch?checkout=1", body: ["Saturday", "Priya", "fresh fish", "Relifish", "Sun 25 Oct, 9–11 AM"] });
+    expect(run(T("24", "09:15"), b, [], [FT, NOMADIC])).toMatchObject({ template: "rf2_promo_cart", path: "/s/the-nomadic-catch?checkout=1", body: ["Saturday", "Priya", "fresh fish", "Relifish", "Sun 25 Oct, 9–11 AM"] });
   });
   it("any line still on the menu → rf2_promo_cart, not the swap", () => {
     const b = buyer({ ...old, cart: [line("Rawas", "rawas", 990, false, T("23", "10:00")), line("Bombil", "bombil", 240, true, T("22", "10:00"))] });
@@ -282,9 +282,9 @@ describe("header photo for cart and order messages (founder, 30 Oct)", () => {
   it("order messages use the order line's photo (null when its listing has none); generic with no menu photos has none", () => {
     const offer = { mode: "preorder" as const, date: "2026-10-24", when: "Sat 24 Oct, 8–10 AM" };
     const b = buyer({ unpaid: { id: "o1", seller_id: "ft", name: "Surmai", photo: "https://x/s.jpg" }, delivered: { id: "o2", seller_id: "ft", name: "Pomfret" } });
-    expect(compose("promo", "unpaid", T("23", "09:25"), b, FISHTOKRI, offer)?.photo).toBe("https://x/s.jpg");
-    expect(compose("promo", "again", T("23", "09:25"), b, FISHTOKRI, offer)?.photo).toBeNull();
-    expect(compose("promo", "generic", T("23", "09:25"), b, FISHTOKRI, offer)?.photo).toBeNull();
+    expect(compose("promo", "unpaid", T("23", "09:15"), b, FISHTOKRI, offer)?.photo).toBe("https://x/s.jpg");
+    expect(compose("promo", "again", T("23", "09:15"), b, FISHTOKRI, offer)?.photo).toBeNull();
+    expect(compose("promo", "generic", T("23", "09:15"), b, FISHTOKRI, offer)?.photo).toBeNull();
   });
 });
 
@@ -306,7 +306,7 @@ describe("generic catch promos: the seller's own photo, never stock (founder, 30
     expect(runSms(T("27", "18:00"), old, [], [FT])).toMatchObject({ template: "rf2_catch_preorder", photo: "https://x/pomfret.jpg" });
   });
   it("rf2_catch_prices: the costliest live item with a photo", () => {
-    expect(runSms(T("24", "09:25"), old, [], [FT])).toMatchObject({ template: "rf2_catch_prices", photo: "https://x/surmai.jpg" });
+    expect(runSms(T("24", "09:15"), old, [], [FT])).toMatchObject({ template: "rf2_catch_prices", photo: "https://x/surmai.jpg" });
   });
   it("skips items without a photo; none has one → null", () => {
     const noPhotos = { ...FT, live: LIVE.map((m) => ({ ...m, photo: null })) } as MsgSeller;
@@ -329,7 +329,7 @@ describe("generic catch promos: the seller's own photo, never stock (founder, 30
   it("another seller's cart line never lends its photo", () => {
     const offer = { mode: "preorder" as const, date: "2026-10-24", when: "Sat 24 Oct, 8–10 AM" };
     const b = buyer({ ...old, cart: [cartLine("Halwa", 2200, "https://x/nomadic-halwa.jpg", true, "nm")] });
-    expect(compose("promo", "generic", T("23", "09:25"), b, FT, offer)?.photo).toBe("https://x/pomfret.jpg");
+    expect(compose("promo", "generic", T("23", "09:15"), b, FT, offer)?.photo).toBe("https://x/pomfret.jpg");
   });
   it("no stock URL in any decision, all week, any stage", () => {
     const buyers = [
@@ -340,7 +340,7 @@ describe("generic catch promos: the seller's own photo, never stock (founder, 30
       buyer({ ...old, last_order_at: iso(T("10", "11:00")), delivered: { id: "o2", seller_id: "ft", name: "Rawas", species: "rawas", photo: null }, last_delivered_at: iso(T("10", "12:00")) }),
     ];
     let seen = 0;
-    for (const b of buyers) for (const d of ["20", "23", "24", "25", "27"]) for (const hm of ["09:25", "18:00"]) {
+    for (const b of buyers) for (const d of ["20", "23", "24", "25", "27"]) for (const hm of ["09:15", "18:00"]) {
       for (const sellers of [[FT, NOMADIC], [{ ...FT, live: [] } as MsgSeller, NOMADIC]]) {
         const r = run(T(d, hm), b, [], sellers);
         if (r.skip) continue;
@@ -418,12 +418,12 @@ describe("activity reminders (founder, 30 Oct): unpaid 30 min, cart 1 h, sign-up
   });
   it("a promo today caps the cart reminder; a Meta block holds cart / sign-up reminders 72 h, never the unpaid one", () => {
     const b = buyer({ created_at: iso(T("22", "09:00")), cart: cart(T("24", "10:00")) });
-    expect(act(T("24", "11:00"), b, [{ ...log("promo", T("24", "09:25")), status: "delivered" }]).skip).toBe("cart already reminded");
-    const blocked = { ...log("promo", T("23", "09:25")), status: "failed", error: "Meta has restricted it for higher quality messaging" };
+    expect(act(T("24", "11:00"), b, [{ ...log("promo", T("24", "09:15")), status: "delivered" }]).skip).toBe("cart already reminded");
+    const blocked = { ...log("promo", T("23", "09:15")), status: "failed", error: "Meta has restricted it for higher quality messaging" };
     expect(act(T("24", "11:00"), b, [blocked]).skip).toBe("meta limit: waiting");
     expect(act(T("23", "11:00"), buyer({ created_at: iso(T("23", "10:00")) }), [{ ...blocked, kind: "act_signup", created_at: iso(T("23", "09:00")) }]).skip).toBe("meta limit: waiting");
     expect(act(T("24", "10:31"), buyer({ unpaid: unpaid(T("24", "10:00"), T("25", "08:00")), last_order_at: iso(T("24", "10:00")) }), [blocked]).kind).toBe("act_unpaid");
-    expect(run(T("24", "09:25"), buyer({ created_at: iso(T("10", "10:00")) }), [{ ...blocked, kind: "act_cart" }]).skip).toBe("meta limit: waiting");
+    expect(run(T("24", "09:15"), buyer({ created_at: iso(T("10", "10:00")) }), [{ ...blocked, kind: "act_cart" }]).skip).toBe("meta limit: waiting");
   });
   it("night: an action after 8 PM is reminded 8–9 AM next day if still true; never 9 PM–8 AM", () => {
     const b = buyer({ created_at: iso(T("22", "09:00")), cart: cart(T("23", "20:30")) });
@@ -463,24 +463,24 @@ describe("activity reminders (founder, 30 Oct): unpaid 30 min, cart 1 h, sign-up
 describe("promo spacing (founder, 30 Oct)", () => {
   const b = () => buyer({ created_at: iso(T("10", "10:00")), cart: [{ seller_id: "ft", name: "Baby Rawas", on_menu: true, updated_at: iso(T("22", "10:00")) }] });
   it("no promo within 48 h of an activity reminder; allowed after", () => {
-    expect(run(T("24", "09:25"), b(), [{ ...log("act_cart", T("22", "11:00")), status: "sent" }]).skip).toBe("activity reminder <48h");
-    expect(run(T("25", "09:25"), b(), [{ ...log("act_cart", T("22", "11:00")), status: "sent" }]).template).toBe("rf2_promo_cart");
+    expect(run(T("24", "09:15"), b(), [{ ...log("act_cart", T("22", "11:00")), status: "sent" }]).skip).toBe("activity reminder <48h");
+    expect(run(T("25", "09:15"), b(), [{ ...log("act_cart", T("22", "11:00")), status: "sent" }]).template).toBe("rf2_promo_cart");
   });
   it("a failed reminder doesn't block a promo", () => {
-    expect(run(T("24", "09:25"), b(), [{ ...log("act_cart", T("23", "11:00")), status: "failed", error: "Message undeliverable" }]).template).toBe("rf2_promo_cart");
+    expect(run(T("24", "09:15"), b(), [{ ...log("act_cart", T("23", "11:00")), status: "failed", error: "Message undeliverable" }]).template).toBe("rf2_promo_cart");
   });
   it("Meta blocked a promo → no promo to that buyer for 3 days (wait, don't retry)", () => {
-    const blocked = { ...log("promo", T("23", "09:25")), status: "failed", error: "Message undeliverable as Meta has restricted it for higher quality messaging - retry again in a few days" };
-    expect(run(T("24", "09:25"), b(), [blocked]).skip).toBe("meta limit: waiting");
-    expect(run(T("25", "09:25"), b(), [blocked]).skip).toBe("meta limit: waiting");
+    const blocked = { ...log("promo", T("23", "09:15")), status: "failed", error: "Message undeliverable as Meta has restricted it for higher quality messaging - retry again in a few days" };
+    expect(run(T("24", "09:15"), b(), [blocked]).skip).toBe("meta limit: waiting");
+    expect(run(T("25", "09:15"), b(), [blocked]).skip).toBe("meta limit: waiting");
     expect(run(T("27", "18:00"), b(), [blocked]).template).toBe("rf2_promo_cart");
   });
   it("Meta's experiment hold-out (130472) is a block too", () => {
-    const exp = { ...log("promo", T("23", "09:25")), status: "failed", error: "Message failed to send because it is part of an experiment (130472)" };
-    expect(run(T("24", "09:25"), b(), [exp]).skip).toBe("meta limit: waiting");
+    const exp = { ...log("promo", T("23", "09:15")), status: "failed", error: "Message failed to send because it is part of an experiment (130472)" };
+    expect(run(T("24", "09:15"), b(), [exp]).skip).toBe("meta limit: waiting");
   });
   it("DND gets no promo", () => {
-    expect(run(T("24", "09:25"), { ...b(), dnd: true }).skip).toBe("do not message");
+    expect(run(T("24", "09:15"), { ...b(), dnd: true }).skip).toBe("do not message");
   });
 });
 
@@ -490,7 +490,7 @@ describe("promo now (founder's extra run)", () => {
     expect(decide(T("23", "19:40"), b, SELLERS, []).skip).toBe("nothing due");
     expect(decide(T("23", "19:40"), b, SELLERS, [], true)).toEqual({ skip: NO_NAMES }); // WhatsApp: no fish list
     expect(decide(T("23", "19:40"), b, SELLERS, [], true, false, 0, true)).toMatchObject({ kind: "promo", template: "rf2_catch_preorder" });
-    expect((decide(T("23", "19:40"), b, SELLERS, [{ ...log("promo", T("23", "09:25")), status: "read" }], true) as any).skip).toBe("already messaged today");
+    expect((decide(T("23", "19:40"), b, SELLERS, [{ ...log("promo", T("23", "09:15")), status: "read" }], true) as any).skip).toBe("already messaged today");
     expect((decide(T("23", "21:10"), b, SELLERS, [], true) as any).skip).toBe("quiet hours");
   });
 });
@@ -503,7 +503,7 @@ describe("send to all (founder's one-off)", () => {
     expect(decide(T("24", "09:15"), b, SELLERS, [blocked], true).skip).toBeTruthy();
     expect(decide(T("24", "09:15"), b, SELLERS, [blocked], true, true, 0, true)).toMatchObject({ kind: "promo" });
     expect(decide(T("24", "09:15"), b, SELLERS, [yesterday], true, true, 0, true)).toMatchObject({ kind: "promo" });
-    expect((decide(T("24", "09:15"), b, SELLERS, [{ ...log("promo", T("24", "09:25")), status: "read" }], true, true) as any).skip).toBe("already messaged today");
+    expect((decide(T("24", "09:15"), b, SELLERS, [{ ...log("promo", T("24", "09:15")), status: "read" }], true, true) as any).skip).toBe("already messaged today");
     expect((decide(T("24", "09:15"), { ...b, dnd: true }, SELLERS, [], true, true) as any).skip).toBe("do not message");
     expect((decide(T("24", "09:15"), { ...b, opted_out: true }, SELLERS, [], true, true) as any).skip).toBe("opted out");
   });
@@ -518,14 +518,14 @@ describe("promotional SMS (founder, 1 Nov): same promo rules, 10:00–21:00, one
     const d = decide(now, b, S, h, false, false, PROMO_SMS_START, true) as any;
     return d.skip ? d : { d, s: promoSms(d, b, now) };
   };
-  it("SMS promos go from 9:25 on Fri/Sat/Sun (founder, 5 Nov); Tue 6 PM is unchanged", () => {
-    expect(sms(T("24", "09:20"), old).skip).toBe("nothing due");
-    expect(sms(T("24", "09:25"), old).s).toMatchObject({ key: "PROMO_NEW", vars: ["Priya", "Relifish", expect.any(String)] });
+  it("SMS promos go from 9:15 on Fri/Sat/Sun (founder, 5 Nov); Tue 6 PM is unchanged", () => {
+    expect(sms(T("24", "09:10"), old).skip).toBe("nothing due");
+    expect(sms(T("24", "09:15"), old).s).toMatchObject({ key: "PROMO_NEW", vars: ["Priya", "Relifish", expect.any(String)] });
     expect(sms(T("27", "18:00"), old).s).toMatchObject({ key: "PROMO_NEW" });
-    // notBefore 0 keeps 9:25.
-    expect(decide(T("24", "09:25"), old, S, [], false, false, 0, true)).toMatchObject({ kind: "promo" });
+    // notBefore 0 keeps 9:15.
+    expect(decide(T("24", "09:15"), old, S, [], false, false, 0, true)).toMatchObject({ kind: "promo" });
   });
-  it("never outside 9:25–21:00, even for an ad-hoc promo run", () => {
+  it("never outside 9:15–21:00, even for an ad-hoc promo run", () => {
     const d = decide(T("24", "09:00"), old, S, [], true, false, 0, true) as any;
     expect(d.kind).toBe("promo");
     expect(promoSms(d, old, T("24", "09:00"))).toBeNull();
