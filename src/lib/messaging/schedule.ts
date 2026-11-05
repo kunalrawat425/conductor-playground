@@ -2,7 +2,7 @@
  * WhatsApp / push promo scheduler (founder rules, 24 Oct 2026). Pure: no I/O, all times IST.
  *
  * Journeys, rf2 templates:
- *  P  Tue 6:00 PM; Fri, Sat and Sun 9:25 AM (founder, 5 Nov): one promo chosen by stage.
+ *  P  Tue 6:00 PM; Fri, Sat and Sun 9:15 AM (founder, 5 Nov): one promo chosen by stage.
  *     Cart → rf2_promo_cart, cart with only off-menu fish → rf2_cart_swap (a substitute from that
  *     seller's live menu), unpaid order → rf2_promo_unpaid, delivered before → rf2_order_again,
  *     else generic: Tue evening rf2_catch_preorder (pre-order for tomorrow); Fri/Sat/Sun mornings
@@ -36,7 +36,7 @@ export const DAY_START = 8 * 60;        // no promos before 8:00
 export const DAY_END = 21 * 60;         // quiet from 21:00
 export const DUE_WINDOW_MIN = 120;      // a due message is still sent if the job runs up to 2 h late
 /** IST weekday (0 Sun … 6 Sat) → promo send minute (founder, 30 Oct). */
-export const PROMO_SLOTS: Record<number, number> = { 0: 9 * 60 + 25, 2: 18 * 60, 5: 9 * 60 + 25, 6: 9 * 60 + 25 }; // Tue 6 PM; Fri, Sat, Sun 9:25 AM (founder, 5 Nov; was 8:30)
+export const PROMO_SLOTS: Record<number, number> = { 0: 9 * 60 + 15, 2: 18 * 60, 5: 9 * 60 + 15, 6: 9 * 60 + 15 }; // Tue 6 PM; Fri, Sat, Sun 9:15 AM (founder, 5 Nov; was 8:30)
 export const PROMO_GAP_MS = 72 * 3_600_000; // ≥ 3 days since the buyer's last B1/B2/promo
 const WEEKDAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const DAY_MS = 86_400_000;
@@ -230,7 +230,7 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
   }
   if (stage === "unpaid") return { ...m, template: "rf2_promo_unpaid", body: [day, b.name, "fresh fish", offer.when], path: `/track/${b.unpaid!.id}` };
   if (stage === "again") return { ...m, template: "rf2_order_again", body: [b.name, "fresh fish", "Relifish", offer.when] };
-  // Morning slot (Fri/Sat/Sun 9:25) with a Today slot bookable: "Today's fresh catch is in … Order by 4 PM for delivery today"
+  // Morning slot (Fri/Sat/Sun 9:15) with a Today slot bookable: "Today's fresh catch is in … Order by 4 PM for delivery today"
   // (not the first slot: someone ordering at 3 PM gets 4–6 PM).
   if (offer.mode === "today" && offer.by && seller.todayMenu && istMin(due) < 12 * 60) {
     return { ...m, template: "rf2_catch_prices", photo: catchPhoto(b, seller, false), body: [b.name, day, seller.todayMenu, offer.by, "today"], path: "/shop" };
@@ -245,7 +245,7 @@ export function compose(kind: Kind, stage: Stage, due: number, b: BuyerState, se
  *  slot; every other rule (opt-in, 1 a day, 72 h, 48 h, Meta hold, DND, open order, inactive) still applies. */
 /** `all` (founder's one-off "send to all", 30 Oct): also skips the 72 h / 48 h gaps, the Meta hold and the
  *  inactive / just-delivered rules. Opt-in, STOP, DND, open order, quiet hours and 1 a day still apply. */
-/** `notBefore` (IST minute): promos sent by SMS pass PROMO_SMS_START, so an SMS promo never goes before 9:25. */
+/** `notBefore` (IST minute): promos sent by SMS pass PROMO_SMS_START, so an SMS promo never goes before 9:15. */
 /** `bySms`: the promo goes as SMS, where the generic catch promo becomes PROMO_NEW (no fish list, see promoSms). */
 export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history: SentLog[], sendNow = false, all = false, notBefore = 0, bySms = false): Decision | Skip {
   if (b.dnd) return { skip: "do not message" };
@@ -273,7 +273,7 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
   const seller = orderSeller ? sellers.find((s) => s.id === orderSeller) ?? null : pickSeller(stage === "cart" ? { ...b, cart: onMenuLines(b) } : b, sellers);
   if (!seller) return { skip: "no seller delivers to them" };
 
-  // ── P: Tue 6 PM, Fri/Sat/Sun 9:25 AM, one promo by stage ──
+  // ── P: Tue 6 PM, Fri/Sat/Sun 9:15 AM, one promo by stage ──
   const lastActive = Math.max(Date.parse(b.created_at), cartMs, orderMs);
   const deliveredMs = b.last_delivered_at ? Date.parse(b.last_delivered_at) : 0;
   // No spam (founder 30 Oct): ≥ 72 h since the last marketing message (old B1/B2 rows count too).
@@ -295,8 +295,8 @@ export function decide(now: number, b: BuyerState, sellers: MsgSeller[], history
 }
 
 // ── Promotional SMS (founder, 1 Nov) ──
-/** Promotional SMS may go 9:25–21:00 IST only (TRAI window 9 AM–9 PM; founder 5 Nov: morning promo at 9:25), never in quiet hours. */
-export const PROMO_SMS_START = 9 * 60 + 25;
+/** Promotional SMS may go 9:15–21:00 IST only (TRAI window 9 AM–9 PM; founder 5 Nov: morning promo at 9:15), never in quiet hours. */
+export const PROMO_SMS_START = 9 * 60 + 15;
 export const PROMO_SMS_END = 21 * 60;
 export type PromoSmsKey = "PROMO_NEW" | "PROMO_CART" | "PROMO_AGAIN";
 
