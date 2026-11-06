@@ -135,3 +135,13 @@ describe("on-the-way SMS", () => {
     delete process.env.MSG91_FLOW_OUT_POD;
   });
 });
+
+import { orderMessage } from "../../src/lib/server/notify-order-whatsapp";
+describe("on-the-way WhatsApp", () => {
+  it("pay on delivery adds how to pay; paid or normal orders keep rf2_out", () => {
+    const ord = { id: "abcdef12-0000", status: "out_for_delivery", pay_on_delivery: true, razorpay_payment_id: null, total_price: 180, delivery_fee: 13 };
+    expect(orderMessage("out_for_delivery", ord, "Asha")).toMatchObject({ template: "rf2_out_pod", body: ["#ABCDEF12", "soon", "₹193"] });
+    expect(orderMessage("out_for_delivery", { ...ord, razorpay_payment_id: "pay_1" }, "Asha").template).toBe("rf2_out");
+    expect(orderMessage("out_for_delivery", { ...ord, pay_on_delivery: false }, "Asha").template).toBe("rf2_out");
+  });
+});

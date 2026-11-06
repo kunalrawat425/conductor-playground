@@ -82,6 +82,10 @@ export const TEMPLATES: TemplateDef[] = [
   { name: "rf2_out", category: "UTILITY",
     body: "Your fish is on the way 🛵 Order {{1}} should reach you by {{2}}.\nPlease keep your phone close for the delivery person. Anything urgent? Send us a Hi, we've got you covered.",
     examples: ["#EEB0F7AC", "2 PM"], buttons: [{ type: "URL", text: "Track my delivery" }, { type: "QUICK_REPLY", text: "Chat with us" }] },
+  // Pay on delivery on its way (6 Nov 2026): Wati rfw_out_pod, submitted 6 Nov.
+  { name: "rf2_out_pod", category: "UTILITY",
+    body: "Your fish is on the way 🛵 Order {{1}} should reach you by {{2}}.\nYou chose pay on delivery: when it reaches you, please pay {{3}} in the Relifish app before the handover. No cash needed.\nAnything urgent? Send us a Hi, we've got you covered.",
+    examples: ["#EEB0F7AC", "2 PM", "₹193"], buttons: [{ type: "URL", text: "Pay for my order" }, { type: "QUICK_REPLY", text: "Chat with us" }] },
   { name: "rf2_delivered", category: "UTILITY", header: "IMAGE",
     body: "Delivered! 😊 Hope the {{1}} turns out just the way you like it, {{2}}.\nHow was it, the fish, the cut, the delivery? Two taps to tell us; it helps {{3}} and families near you.\nSomething not right? Send us a Hi and we'll make it right 🙏",
     examples: ["Bombil", "Manoj", "Fishtokri"], buttons: [{ type: "URL", text: "Rate my fish" }, { type: "QUICK_REPLY", text: "Something's not right" }] },
