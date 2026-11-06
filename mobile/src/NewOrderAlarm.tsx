@@ -6,6 +6,7 @@ import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from "expo-aud
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api, getSession } from "./api";
 import { CLOSED, planFor, qtyLabel, sellerPost } from "./partner";
+import { stopRings } from "./ring";
 import { useTheme } from "./theme";
 import { Button, Text } from "./ui";
 
@@ -35,6 +36,7 @@ export function NewOrderAlarm() {
     player.current?.remove();
     player.current = null;
     Vibration.cancel();
+    stopRings();
     if (cap.current) clearTimeout(cap.current);
   }, []);
   const close = useCallback(() => { silence(); setOrder(null); }, [silence]);
@@ -65,6 +67,7 @@ export function NewOrderAlarm() {
   }, [ring, silence]);
 
   useEffect(() => {
+    stopRings(); // the app is open: the in-app alarm takes over from a lock-screen ring
     check();
     const timer = setInterval(check, POLL_MS);
     const app = AppState.addEventListener("change", (s) => s === "active" && check());

@@ -16,6 +16,8 @@ export const supabase = createClient(
 );
 
 /** "buyer" = Relifish, "partner" = Relifish Partner (sellers); one codebase, APP_VARIANT picks it (app.config.ts). */
+/** Stage QA builds only: stage.relifish.com sits behind Vercel protection (key from .env.local, never committed). */
+export const STAGE_HEADERS: Record<string, string> = process.env.EXPO_PUBLIC_VERCEL_BYPASS ? { "x-vercel-protection-bypass": process.env.EXPO_PUBLIC_VERCEL_BYPASS } : {};
 export const VARIANT: "buyer" | "partner" = (process.env.EXPO_PUBLIC_APP_VARIANT || extra.variant) === "partner" ? "partner" : "buyer";
 export const ROLE: "buyer" | "seller" = VARIANT === "partner" ? "seller" : "buyer";
 
@@ -42,7 +44,7 @@ export async function api<T = any>(path: string, body?: unknown, method?: string
   const s = await getSession();
   const res = await fetch(API + path, {
     method: method || (body ? "POST" : "GET"),
-    headers: { "Content-Type": "application/json", ...(s ? { [`x-rlf-${ROLE}`]: s.token } : {}) },
+    headers: { "Content-Type": "application/json", ...STAGE_HEADERS, ...(s ? { [`x-rlf-${ROLE}`]: s.token } : {}) },
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));

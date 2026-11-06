@@ -15,10 +15,13 @@ const config: ExpoConfig = {
   android: {
     package: partner ? "com.relifish.partner" : "com.relifish.app",
     adaptiveIcon: { foregroundImage: "./assets/adaptive-icon.png", backgroundColor: "#0066FF" },
-    permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+    permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "POST_NOTIFICATIONS", "USE_FULL_SCREEN_INTENT", "VIBRATE", "WAKE_LOCK"],
+    // Firebase project "relifish" (relifishstore@gmail.com); files are git-ignored, kept in mobile/firebase/.
+    googleServicesFile: partner ? "./firebase/google-services-partner.json" : "./firebase/google-services-buyer.json",
   },
   plugins: [
     "expo-router",
+    "./plugins/with-notifee",
     "expo-secure-store",
     ["expo-splash-screen", { image: "./assets/splash.png", imageWidth: 220, backgroundColor: "#0066FF" }],
     ["expo-notifications", { color: "#0066FF", sounds: ["./assets/sounds/new_order.wav"] }],

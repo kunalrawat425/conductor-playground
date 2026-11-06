@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { Platform, useColorScheme } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import { API } from "../api";
+import { API, STAGE_HEADERS } from "../api";
 import { tokens } from "./tokens";
 import { festiveFor } from "../../../src/lib/festive-window";
 
@@ -45,7 +45,7 @@ export async function loadFestive() {
   const saved = await read().catch(() => null);
   if (saved) setFestive(saved === "diwali");
   try {
-    const r = await fetch(`${API}/api/theme`);
+    const r = await fetch(`${API}/api/theme`, { headers: STAGE_HEADERS });
     if (!r.ok) return;
     const { festive: f } = await r.json();
     setFestive(f === "diwali");
