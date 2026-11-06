@@ -91,7 +91,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
     // A reminder must still be true: the order still unpaid, no order since the cart reminder.
     const stillTrue = async (row: any) => {
       if (row.kind === "act_unpaid") {
-        const { data: o } = await sb.from("orders").select("status, razorpay_payment_id, payment_verified_at, payment_screenshot_urls").eq("id", row.order_id).maybeSingle();
+        const { data: o } = await sb.from("orders").select("status, razorpay_payment_id, payment_verified_at, payment_screenshot_urls, pay_on_delivery").eq("id", row.order_id).maybeSingle();
         return !!o && o.status === "pending_payment" && !hasPaymentEvidence(o);
       }
       if (row.kind === "act_cart") {
@@ -114,7 +114,7 @@ async function run({ url }: { url: URL }): Promise<Response> {
       all(() => sb.from("sellers").select(`id, name, phone, lat, lng, delivery_rad, is_test, is_active, ${SLOT_SELLER_COLUMNS}`).order("id")),
       all(() => sb.from("buyers").select("id, phone, first_name, created_at, lat, lng, is_test, whatsapp_opt_in_at, whatsapp_opt_out_at, dnd_at").order("id")),
       all(() => sb.from("buyer_cart").select("id, buyer_id, pricing_option_id, placement_kind, qty, updated_at, listing:fish_listings(seller_id, species, description, photo_url, pricing_options, is_available, is_preorder_enabled, is_order_paused, weight_avail, deleted_at)").order("id")),
-      all(() => sb.from("orders").select(`${ORDER_SELECT}, total_price, status, created_at, updated_at, cart_id, razorpay_payment_id, payment_verified_at, payment_screenshot_urls`).gte("created_at", since(60)).order("id")),
+      all(() => sb.from("orders").select(`${ORDER_SELECT}, total_price, status, created_at, updated_at, cart_id, razorpay_payment_id, payment_verified_at, payment_screenshot_urls, pay_on_delivery`).gte("created_at", since(60)).order("id")),
       // Last 8 days, any status: gaps (≤ 72 h) and caps count real sends only; "already reminded" counts failed ones too.
       all(() => sb.from("message_log").select("id, buyer_id, kind, slot_date, created_at, status, channel, error, dedupe_key").not("buyer_id", "is", null).gte("created_at", since(8)).order("id")),
       // Live listings only (available or pre-order): the pre-order menu and rf2_cart_swap substitutes.

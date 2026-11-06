@@ -7,7 +7,7 @@
  * - `preorder` — 5 steps: Pre-ordered → Paid → Price set → Confirmed → …
  */
 
-export type BuyerStepperVariant = "simple" | "payment" | "preorder";
+export type BuyerStepperVariant = "simple" | "payment" | "preorder" | "pod";
 
 export type BuyerStepperOrder = {
   status: string;
@@ -18,6 +18,9 @@ export type BuyerStepperOrder = {
   delivery_fee?: unknown;
   payment_screenshot_urls?: unknown;
   payment_verified_at?: unknown;
+  /** Pay on delivery (6 Nov): paid in the app at the door, so "Paid" comes after "On the way". */
+  pay_on_delivery?: boolean | null;
+  razorpay_payment_id?: string | null;
   listing?: { is_preorder_enabled?: boolean | null } | null;
 };
 
@@ -99,6 +102,8 @@ export function usesSameDayPaymentStepper(o: BuyerStepperOrder): boolean {
 
 export function getBuyerStepperVariant(o: BuyerStepperOrder): BuyerStepperVariant {
   if (["declined", "cancelled"].includes(o.status)) return "simple";
+  // Paid before the seller accepted it: an ordinary paid order from here on.
+  if (o.pay_on_delivery && !(o.status === "paid" && o.razorpay_payment_id)) return "pod";
   if (isPreorderCatchFlow(o)) return "preorder";
   return "payment";
 }
@@ -112,6 +117,11 @@ export function getBuyerStepperLabels(
     return orderType === "delivery"
       ? ["Placed", "Confirmed", "On the way", "Delivered"]
       : ["Placed", "Confirmed", "Ready", last];
+  }
+  if (variant === "pod") {
+    return orderType === "delivery"
+      ? ["Placed", "Confirmed", "On the way", "Paid", last]
+      : ["Placed", "Confirmed", "Ready", "Paid", last];
   }
   if (variant === "payment") {
     return orderType === "delivery"
@@ -180,6 +190,14 @@ function paymentTrackStep(
   return m[status] ?? 0;
 }
 
+/** Placed → Confirmed → On the way / Ready → Paid → Delivered. */
+function podTrackStep(o: BuyerStepperOrder): number {
+  if (["completed", "picked_up"].includes(o.status)) return 4;
+  if (["out_for_delivery", "ready_for_pickup"].includes(o.status)) return o.razorpay_payment_id ? 3 : 2;
+  if (o.status === "confirmed") return 1;
+  return 0;
+}
+
 function preorderTrackStep(o: BuyerStepperOrder, hasPaymentProof: boolean): number {
   const status = o.status;
   const m: Record<string, number> = {
@@ -207,6 +225,7 @@ export function getBuyerStepperStep(o: BuyerStepperOrder, orderType: "pickup" | 
     Array.isArray(o.payment_screenshot_urls) && o.payment_screenshot_urls.length > 0;
   if (variant === "simple") return simpleStatusStep(o.status, orderType);
   if (variant === "payment") return paymentTrackStep(o.status, hasPaymentProof, orderType);
+  if (variant === "pod") return podTrackStep(o);
   return preorderTrackStep(o, hasPaymentProof);
 }
 

@@ -9,8 +9,16 @@
  * notes.order_id so it can be found (and never repeated) per row.
  */
 
+import { POD_PAYABLE_AFTER_ACCEPT } from "../pay-on-delivery";
+
 /** Statuses a cart row can be paid from in one go. Balance top-ups (payment_required) stay per row. */
 export const CART_PAYABLE = ["pending", "pending_payment"];
+
+/** A row awaiting payment: unpaid, or pay on delivery still unpaid after the seller accepted it. */
+export function isAwaitingPayment(r: { status: string; pay_on_delivery?: boolean | null; razorpay_payment_id?: string | null }): boolean {
+  if (r.razorpay_payment_id) return false;
+  return CART_PAYABLE.includes(r.status) || (!!r.pay_on_delivery && POD_PAYABLE_AFTER_ACCEPT.includes(r.status));
+}
 const CLOSED = ["cancelled", "declined", "refunded"];
 
 export type CartRow = {
@@ -23,11 +31,17 @@ export type CartRow = {
   razorpay_order_id?: string | null;
   razorpay_payment_id?: string | null;
   created_at?: string;
+  pay_on_delivery?: boolean | null;
+  final_price?: number | string | null;
 };
 
-/** What a row costs upfront, in paise: item total plus the delivery fee it carries. */
-export function rowPaise(r: Pick<CartRow, "total_price" | "delivery_fee">): number {
-  return Math.round((Number(r.total_price) + Number(r.delivery_fee || 0)) * 100);
+/**
+ * What a row costs upfront, in paise: item total plus the delivery fee it carries.
+ * A pay-on-delivery pre-order is paid at the door, so its weighed final price counts once set.
+ */
+export function rowPaise(r: Pick<CartRow, "total_price" | "delivery_fee" | "pay_on_delivery" | "final_price">): number {
+  const fish = r.pay_on_delivery && r.final_price != null ? Number(r.final_price) : Number(r.total_price);
+  return Math.round((fish + Number(r.delivery_fee || 0)) * 100);
 }
 
 /**
@@ -40,8 +54,7 @@ export function pickPayableCartRows<T extends CartRow>(order: T, siblings: T[]):
   const rows = siblings.filter((r) =>
     r.cart_id === order.cart_id &&
     r.buyer_id === order.buyer_id &&
-    CART_PAYABLE.includes(r.status) &&
-    !r.razorpay_payment_id &&
+    isAwaitingPayment(r) &&
     (!r.razorpay_order_id || r.razorpay_order_id === order.razorpay_order_id)
   );
   if (!rows.some((r) => r.id === order.id)) rows.unshift(order);

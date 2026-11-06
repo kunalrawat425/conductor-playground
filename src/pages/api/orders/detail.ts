@@ -85,7 +85,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     if ((order as any).cart_id) {
       const { data: items } = await sb
         .from("orders")
-        .select("id, cart_id, buyer_id, species, quantity, quantity_unit, pricing_label, total_price, delivery_fee, paid_amount, status, created_at, cancelled_by, cancel_reason, refund_amt, refund_sent_at, razorpay_order_id, razorpay_payment_id, payment_method, final_price, listing:fish_listings(species)")
+        .select("id, cart_id, buyer_id, species, quantity, quantity_unit, pricing_label, total_price, delivery_fee, paid_amount, status, created_at, cancelled_by, cancel_reason, refund_amt, refund_sent_at, razorpay_order_id, razorpay_payment_id, payment_method, final_price, pay_on_delivery, listing:fish_listings(species)")
         .eq("cart_id", (order as any).cart_id)
         .eq("buyer_id", (order as any).buyer_id)
         .order("created_at", { ascending: true });

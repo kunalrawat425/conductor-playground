@@ -7,7 +7,9 @@ import { refundLine } from "./order-payment-state";
 
 export type BuyerEmailKind =
   | "placed" | "confirmed" | "out_for_delivery" | "delivered"
-  | "seller_cancelled" | "buyer_cancelled" | "expired_unpaid" | "refunded";
+  | "seller_cancelled" | "buyer_cancelled" | "expired_unpaid" | "refunded"
+  // Pay on delivery (6 Nov): paid in the Relifish app when the fish arrives, never cash.
+  | "pod_placed" | "pod_paid";
 
 export type BuyerEmailCtx = {
   fish?: string;               // accepted from callers but never shown (founder, 3 Nov: no fish names to buyers)
@@ -42,6 +44,10 @@ export function buyerEmailCopy(kind: BuyerEmailKind, c: BuyerEmailCtx): { subjec
       return { subject: "Your Relifish order is cancelled", preview: c.amount ? "Refund details inside." : "No payment was taken." };
     case "expired_unpaid":
       return { subject: "Your Relifish order didn't go through", preview: "No payment was taken. Got stuck? Call us on +91 91522 07607." };
+    case "pod_placed":
+      return { subject: "Your Relifish order is placed ✅", preview: "You chose pay on delivery. Pay in the Relifish app when your fish reaches you, no cash needed." };
+    case "pod_paid":
+      return { subject: "Payment received for your Relifish order", preview: `Thank you${c.amount ? `, ${rs(c.amount)} received` : ""}. Enjoy your fish!` };
     case "refunded":
       return { subject: "Your Relifish refund is on its way", preview: `${c.amount ? rs(c.amount) : "Your money"} refunded to your original payment method.` };
   }

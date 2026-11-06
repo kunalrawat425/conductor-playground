@@ -93,6 +93,11 @@ export function buyerOrderPushNotification(
       body: species ? `Your ${species} order is waiting for confirmation` : "Your order is waiting for confirmation",
     },
     pending_payment: almostDone,
+    // The buyer chose pay on delivery: in the app when the fish arrives, never cash (founder, 6 Nov).
+    pod_placed: {
+      title: "Order placed ✅",
+      body: `Your ${species ? `${species} ` : ""}order is with the seller. You'll pay in the Relifish app when it arrives, no cash.`,
+    },
     payment_required: {
       title: "Your order's final price is in",
       body: `The final price of your ${species ? `${species} ` : ""}order came out a little higher. Tap to see it. Questions? Call us on +91 91522 07607.`,
@@ -105,13 +110,17 @@ export function buyerOrderPushNotification(
       title: "Out for delivery",
       body: species ? `Your ${species} order is on the way` : "Your order is out for delivery",
     },
+    pod_out_for_delivery: {
+      title: "On the way · pay in the app",
+      body: `Your ${species ? `${species} ` : ""}order is on the way. Pay in the Relifish app when it arrives, no cash`,
+    },
     scheduled: {
       title: "Order Scheduled! 🗓️",
       body: species ? `Your ${species} order is scheduled. We'll notify you when it's time.` : "Your order is scheduled. We'll remind you!",
     },
   };
 
-  if (slot?.when && (status === "confirmed" || status === "out_for_delivery")) {
+  if (slot?.when && (status === "confirmed" || status === "out_for_delivery" || status === "pod_out_for_delivery")) {
     const m = messages[status];
     const changed = slot.changed ? " (new delivery time)" : "";
     return status === "confirmed"

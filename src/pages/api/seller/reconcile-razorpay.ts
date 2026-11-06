@@ -42,7 +42,7 @@ export const POST: APIRoute = async ({ request }) => {
   // Fetch order + verify seller owns it
   const { data: order, error: orderErr } = await sb
     .from("orders")
-    .select("id, status, razorpay_order_id, listing:fish_listings(seller_id)")
+    .select("id, status, razorpay_order_id, razorpay_payment_id, pay_on_delivery, listing:fish_listings(seller_id)")
     .eq("id", order_id)
     .single();
 
@@ -58,7 +58,8 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ ok: false, reason: "No Razorpay order on this row, buyer hasn't clicked Pay yet" }), { status: 200 });
   }
 
-  if (order.status === "confirmed") {
+  // Confirmed normally means paid; a pay-on-delivery order is confirmed before the buyer pays at the door.
+  if (order.status === "confirmed" && (!(order as any).pay_on_delivery || (order as any).razorpay_payment_id)) {
     return new Response(JSON.stringify({ ok: true, already_confirmed: true }), { status: 200 });
   }
 

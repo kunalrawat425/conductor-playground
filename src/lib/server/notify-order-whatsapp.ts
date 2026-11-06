@@ -13,12 +13,13 @@ import { arrivingByLabel, slotLabel } from "../delivery-slots";
 import { firstName, fishList, fishName } from "../messaging/templates";
 import { costliestPhoto, istDate } from "../messaging/schedule";
 import { dispatch, type SmsPart } from "./messaging";
+import { smsReady } from "./sms";
 
 export type OrderWaEvent = "unpaid" | "paid" | "confirmed" | "out_for_delivery" | "completed" | "cancelled";
 const env = (k: string) => (import.meta as any).env?.[k] || process.env[k] || "";
 
 export const ORDER_SELECT = "id, buyer_id, buyer_phone, species, is_test, is_preorder, delivery_slot_start, delivery_slot_end, listing:fish_listings(species, description, photo_url, seller_id, is_available, is_preorder_enabled, deleted_at, seller:sellers(name))";
-const CHECKOUT_SELECT = `${ORDER_SELECT}, cart_id, total_price, status`;
+const CHECKOUT_SELECT = `${ORDER_SELECT}, cart_id, total_price, status, pay_on_delivery, razorpay_payment_id, final_price, delivery_fee`;
 const REMOVED = ["declined", "cancelled", "refunded"];
 /** Order updates the buyer gets (founder 31 Oct): seller confirmed, out for delivery, and cancelled / refund; WhatsApp or SMS. */
 export const BUYER_ORDER_EVENTS: OrderWaEvent[] = ["confirmed", "out_for_delivery", "cancelled"];
@@ -115,7 +116,15 @@ export function orderSms(event: OrderWaEvent, ord: any, buyerName: string | null
     case "unpaid": return { key: "UNPAID", vars: [name, "fresh fish", slot] };
     case "paid": return { key: "PAID", vars: [short, "Relifish", slot] };
     case "confirmed": return { key: "CONFIRMED", vars: [name, short, slotAhead(ord, nowMs) || !ord.delivery_slot_end ? slot : "soon"] };
-    case "out_for_delivery": return { key: "OUT", vars: [short, slotAhead(ord, nowMs) ? arrivingByLabel(ord.delivery_slot_end) : "soon"] };
+    case "out_for_delivery": {
+      // Pay on delivery, not paid yet: say how to pay (in the app, before handover), once that template is approved.
+      const due = (checkout?.length ? checkout : [ord]).filter((r: any) => r.pay_on_delivery && !r.razorpay_payment_id && !REMOVED.includes(r.status));
+      if (due.length && smsReady("OUT_POD")) {
+        const amt = due.reduce((n: number, r: any) => n + Number(r.final_price ?? r.total_price ?? 0) + Number(r.delivery_fee || 0), 0);
+        return { key: "OUT_POD", vars: [name, short, `Rs.${Math.round(amt)}`] };
+      }
+      return { key: "OUT", vars: [short, slotAhead(ord, nowMs) ? arrivingByLabel(ord.delivery_slot_end) : "soon"] };
+    }
     case "completed": return { key: "DELIVERED", vars: [short, "fresh fish"] };
     case "cancelled": {
       // Refund only when money was taken; otherwise "No payment was taken" (founder, 1 Nov).

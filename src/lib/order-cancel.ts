@@ -73,6 +73,7 @@ export type CancelActor = "buyer" | "seller" | "system" | "admin" | "unknown" | 
 
 /** "Who cancelled" in words, from the point of view of the person reading it. */
 export function cancelledByText(by: CancelActor, viewer: "buyer" | "seller", cancelReason?: string | null): string {
+  if (cancelReason === "seller_no_response") return "Cancelled automatically — the seller didn't confirm in time";
   if (cancelReason === "auto_expired_payment" || by === "system") return "Cancelled automatically — payment was not completed in time";
   const late = isLateCancel(cancelReason) ? " — order was late" : "";
   if (by === "buyer") return (viewer === "buyer" ? "Cancelled by you" : "Cancelled by the buyer") + late;
@@ -84,6 +85,6 @@ export function cancelledByText(by: CancelActor, viewer: "buyer" | "seller", can
 /** The human reason, or null for system codes / empty. */
 export function cancelReasonText(reason?: string | null): string | null {
   const r = String(reason || "").replace(/^late\|/, "").trim();
-  if (!r || r === "auto_expired_payment" || r.startsWith("e2e:")) return null;
+  if (!r || r === "auto_expired_payment" || r === "seller_no_response" || r.startsWith("e2e:")) return null;
   return r.slice(0, 200);
 }

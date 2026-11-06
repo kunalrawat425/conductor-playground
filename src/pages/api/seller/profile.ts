@@ -20,7 +20,7 @@ const SELLER_EDITABLE = [
   "name", "location", "location_name", "first_name", "last_name", "email",
   "opens_at", "closes_at", "open_days", "accepts_preorder", "preorder_days", "preorder_cutoff_time",
   "preorder_opens_at", "delivery_days",
-  "has_pickup", "has_delivery", "delivery_rad", "min_order_amount",
+  "has_pickup", "has_delivery", "delivery_rad", "min_order_amount", "accepts_pay_on_delivery",
   "delivery_fee_enabled", "delivery_fee_amount", "delivery_fee_type", "delivery_fee_per_km", "free_delivery_above",
   "lat", "lng", "push_subscription", "push_enabled", "schedule_pickup_slots",
   "delivery_slots_enabled", "delivery_slot_minutes", "preorder_delivery_start", "preorder_delivery_end", "preorder_days_ahead",
