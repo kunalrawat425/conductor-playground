@@ -4,7 +4,7 @@ import { loadWebPush, PUSH_SEND_OPTIONS } from "../../lib/server/load-web-push";
 import { logPush } from "../../lib/server/push-log";
 import { absoluteUrl } from "../../lib/server/site-origin";
 import { normalizeVapidKeyForWebPush, trimVapidKey } from "../../lib/server/vapid-env";
-import { normalizeSellerPushKind, sellerPushNotification } from "../../lib/server/seller-push-copy";
+import { normalizeSellerPushKind, orderSmsRecipients, sellerPushNotification } from "../../lib/server/seller-push-copy";
 import { slotLabel } from "../../lib/delivery-slots";
 
 export const prerender = false;
@@ -101,15 +101,18 @@ export const POST: APIRoute = async ({ request }) => {
 
     // A new order to act on also goes by SMS (founder, 6 Nov): pushes are often off on sellers' phones.
     // Once per order; nothing is sent until the SELLER_ORDER DLT template is in MSG91 (MSG91_FLOW_SELLER_ORDER).
-    if ((kind === "payment_confirmed" || kind === "pay_on_delivery") && typeof order_id === "string" && seller?.phone) {
+    // ORDER_COPY_PHONES (comma list): the founder gets a copy of every one (founder, 6 Nov).
+    if ((kind === "payment_confirmed" || kind === "pay_on_delivery") && typeof order_id === "string") {
       const { dispatch } = await import("../../lib/server/messaging");
       const { sellerOrderSms } = await import("../../lib/server/seller-push-copy");
       const { istDate } = await import("../../lib/messaging/schedule");
-      await dispatch(supabase, {
-        dedupe_key: `seller_order:${order_id}`, kind: "seller_order", slot_date: istDate(Date.now()), seller_id, order_id,
-        phone: seller.phone, whatsappOk: false, template: "", body: [], link_path: "/dashboard/orders",
-        sms: sellerOrderSms(kind, order_id, typeof body.amount === "number" ? body.amount : null, slot),
-      }).catch((err: any) => console.warn("[notify-seller] seller SMS failed", { order_id, err: err?.message }));
+      const sms = sellerOrderSms(kind, order_id, typeof body.amount === "number" ? body.amount : null, slot);
+      for (const [phone, key] of orderSmsRecipients(seller?.phone, import.meta.env.ORDER_COPY_PHONES || "", order_id)) {
+        await dispatch(supabase, {
+          dedupe_key: key, kind: "seller_order", slot_date: istDate(Date.now()), seller_id, order_id,
+          phone, whatsappOk: false, template: "", body: [], link_path: "/dashboard/orders", sms,
+        }).catch((err: any) => console.warn("[notify-seller] order SMS failed", { order_id, key, err: err?.message }));
+      }
     }
 
     const subscription = normalizePushSubscription(seller?.push_subscription);
