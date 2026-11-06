@@ -16,6 +16,8 @@ export type SellerTimingInput = {
   delivery_days?: string[] | null;
   /** Delivery times on (lib/delivery-slots): labels name the real delivery day. */
   delivery_slots_enabled?: boolean | null;
+  /** IST dates (YYYY-MM-DD) the seller takes no orders or deliveries (holidays; founder, 6 Nov 2026). */
+  closed_dates?: string[] | null;
 };
 
 export type PlacementKind = "same_day" | "preorder";
@@ -85,7 +87,14 @@ export function isPastPreorderCutoffIST(
 // got today's real weekday with the passed time-of-day.
 const dayAt = (nowMs?: number) => todayDayName(nowMs == null ? undefined : new Date(nowMs));
 
+/** A date the seller has marked closed: no same-day orders that day, and never offered as a delivery day. */
+export function isClosedDateMs(seller: SellerTimingInput, ms = Date.now()): boolean {
+  const dates = seller.closed_dates;
+  return Array.isArray(dates) && dates.length > 0 && dates.includes(new Date(ms + 5.5 * 3_600_000).toISOString().slice(0, 10));
+}
+
 export function isSellerEffectivelyOpen(seller: SellerTimingInput, nowMs?: number): boolean {
+  if (isClosedDateMs(seller, nowMs)) return false;
   return (
     isTodayOrderDay(seller, dayAt(nowMs)) &&
     isSellerOpenByClock(seller.opens_at ?? null, seller.closes_at ?? null, nowMs)
@@ -102,6 +111,7 @@ export function isAfterCloseTimeIST(seller: SellerTimingInput, nowMs?: number): 
 
 /** Seller still sells same-day today: an order day and not yet past closes_at (before opening counts). */
 export function hasSameDayToday(seller: SellerTimingInput, nowMs?: number): boolean {
+  if (isClosedDateMs(seller, nowMs)) return false;
   return isSellerEffectivelyOpen(seller, nowMs) || (isTodayOrderDay(seller, dayAt(nowMs)) && !isAfterCloseTimeIST(seller, nowMs));
 }
 
@@ -205,6 +215,7 @@ export function preorderDeliveryDateIST(seller: SellerTimingInput, nowMs = Date.
 
 /** Delivery mornings the seller runs: delivery_days when set, else the morning after each pre-order day. */
 export function isDeliveryDayMs(seller: SellerTimingInput, ms: number): boolean {
+  if (isClosedDateMs(seller, ms)) return false;
   const dd = seller.delivery_days;
   if (Array.isArray(dd) && dd.length) return dd.includes(dayAt(ms));
   return isTodayPreorderDay(seller, dayAt(ms - DAY_MS));

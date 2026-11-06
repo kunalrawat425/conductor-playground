@@ -85,6 +85,7 @@ export interface Seller {
   preorder_opens_at?: string | null;
   /** Weekdays pre-orders are delivered (migration 083). Null = next morning. */
   delivery_days?: string[] | null;
+  closed_dates?: string[] | null;
   /** UPI ID shown to buyers on payment-pending orders. */
   upi_id?: string | null;
   /** Store cover photo URL (wide banner). */

@@ -604,7 +604,7 @@ const tags = [
   deliveryFor, nextSlotText,
   pageMode: isEffectivelyOpen ? "same_day" : isPreorderMode ? "preorder" : "closed",
   serverNowMs: nowIST.getTime() - 5.5 * 3600 * 1000,
-  sellerHours: { opens_at: seller?.opens_at ?? null, closes_at: seller?.closes_at ?? null, open_days: seller?.open_days ?? null, preorder_days: seller?.preorder_days ?? null, preorder_cutoff_time: seller?.preorder_cutoff_time ?? null, preorder_opens_at: seller?.preorder_opens_at ?? null, delivery_days: seller?.delivery_days ?? null, accepts_preorder: !!seller?.accepts_preorder } }}>
+  sellerHours: { opens_at: seller?.opens_at ?? null, closes_at: seller?.closes_at ?? null, open_days: seller?.open_days ?? null, preorder_days: seller?.preorder_days ?? null, preorder_cutoff_time: seller?.preorder_cutoff_time ?? null, preorder_opens_at: seller?.preorder_opens_at ?? null, delivery_days: seller?.delivery_days ?? null, closed_dates: seller?.closed_dates ?? null, accepts_preorder: !!seller?.accepts_preorder } }}>
   // Expose current seller image so CartStackSheet can use fresh DB value even when localStorage is stale
   window.__sellerPageData = { id: sellerId, imageUrl: sellerImageUrl, mode: cartMode };
 
