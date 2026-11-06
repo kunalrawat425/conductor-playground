@@ -25,7 +25,7 @@ export type DeliverySlot = { start: string; end: string };
 
 /** Sellers columns the slot logic reads (timing + slot settings). */
 export const SLOT_SELLER_COLUMNS =
-  "opens_at, closes_at, accepts_preorder, open_days, preorder_days, preorder_cutoff_time, preorder_opens_at, delivery_days, delivery_slots_enabled, delivery_slot_minutes, preorder_delivery_start, preorder_delivery_end, preorder_days_ahead";
+  "opens_at, closes_at, accepts_preorder, open_days, preorder_days, preorder_cutoff_time, preorder_opens_at, delivery_days, delivery_slots_enabled, delivery_slot_minutes, preorder_delivery_start, preorder_delivery_end, preorder_days_ahead, closed_dates";
 
 /** A slot is offered while it ends at least this long after the order (Today 4–6 PM: until 4 PM). */
 export const SLOT_LEAD_MINUTES = 120;

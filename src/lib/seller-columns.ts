@@ -9,4 +9,4 @@ export const SELLER_PUBLIC_COLUMNS =
   "delivery_fee_enabled, delivery_fee_amount, delivery_fee_type, delivery_fee_per_km, free_delivery_above, " +
   "opens_at, closes_at, open_days, accepts_preorder, preorder_days, preorder_cutoff_time, preorder_opens_at, delivery_days, " +
   "schedule_pickup_slots, delivery_slots_enabled, delivery_slot_minutes, preorder_delivery_start, preorder_delivery_end, " +
-  "preorder_days_ahead, store_image_url, logo_url";
+  "preorder_days_ahead, store_image_url, logo_url, closed_dates";

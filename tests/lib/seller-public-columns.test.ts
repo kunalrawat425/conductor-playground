@@ -10,10 +10,11 @@ describe("seller columns the public key may read", () => {
     for (const c of PRIVATE) expect(cols(SELLER_PUBLIC_COLUMNS)).not.toContain(c);
   });
 
-  it("match the grant in migration 085", () => {
+  it("match the grant in migration 085 plus later column grants", () => {
     const sql = readFileSync("supabase/migrations/085_seller_contact_private.sql", "utf8");
     const grant = sql.match(/grant select \(([\s\S]*?)\) on public\.sellers/)![1];
-    expect(cols(grant)).toEqual(cols(SELLER_PUBLIC_COLUMNS));
+    const later = readFileSync("supabase/migrations/095_seller_closed_dates.sql", "utf8").match(/grant select \(([\s\S]*?)\) on public\.sellers/)![1];
+    expect(cols(`${grant}, ${later}`)).toEqual(cols(SELLER_PUBLIC_COLUMNS));
   });
 
   it("no public page reads every seller column", () => {
