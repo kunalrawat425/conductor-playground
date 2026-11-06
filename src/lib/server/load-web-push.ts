@@ -48,6 +48,8 @@ export async function loadWebPush(): Promise<WebPushApi> {
  * so push-error-classify clears it exactly like an expired browser subscription.
  */
 export const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+/** notify-seller tags (`seller-<kind>-<ts>`) for an order the seller has to act on. */
+export const RINGING_TAG = /^seller-(new_order|payment_confirmed|pay_on_delivery)-/;
 
 export function withExpo(api: WebPushApi, fetchImpl: typeof fetch = fetch): WebPushApi {
   return {
@@ -58,11 +60,14 @@ export function withExpo(api: WebPushApi, fetchImpl: typeof fetch = fetch): WebP
       let msg: Record<string, any> = {};
       try { msg = typeof payload === "string" ? JSON.parse(payload) : {}; } catch { msg = { body: String(payload) }; }
       const { title, body, url, image, tag } = msg;
+      // A new order for a seller rings like a call: the Partner app's "orders" channel and bundled ringtone.
+      const ring = typeof tag === "string" && RINGING_TAG.test(tag);
       const res = await fetchImpl(EXPO_PUSH_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
-          to: token, title, body, sound: "default", priority: "high", channelId: "orders",
+          to: token, title, body, priority: "high",
+          ...(ring ? { channelId: "orders", sound: "new_order.wav" } : { channelId: "default", sound: "default" }),
           ttl: (options as { TTL?: number } | undefined)?.TTL ?? PUSH_SEND_OPTIONS.TTL,
           data: { url, tag, ...(image ? { image } : {}) },
           ...(image ? { richContent: { image } } : {}),

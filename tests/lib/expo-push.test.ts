@@ -21,7 +21,17 @@ describe("withExpo", () => {
     const [url, init] = (f as any).mock.calls[0];
     const sent = JSON.parse(init.body);
     expect(url).toBe(EXPO_PUSH_URL);
-    expect(sent).toMatchObject({ to: "ExponentPushToken[abc]", title: "New order", body: "Surmai 1 kg", priority: "high", ttl: 86400, data: { url: "https://www.relifish.com/dashboard/orders", tag: "t1" } });
+    expect(sent).toMatchObject({ to: "ExponentPushToken[abc]", title: "New order", body: "Surmai 1 kg", priority: "high", ttl: 86400, channelId: "default", sound: "default", data: { url: "https://www.relifish.com/dashboard/orders", tag: "t1" } });
+  });
+
+  it("rings the seller's orders channel for a new order", async () => {
+    const f = reply(200, { data: { status: "ok" } });
+    for (const kind of ["new_order", "payment_confirmed", "pay_on_delivery"]) {
+      await withExpo(webPush(), f).sendNotification(expoSub, JSON.stringify({ title: "New order", tag: `seller-${kind}-1` }));
+      expect(JSON.parse((f as any).mock.calls.at(-1)[1].body)).toMatchObject({ channelId: "orders", sound: "new_order.wav", priority: "high" });
+    }
+    await withExpo(webPush(), f).sendNotification(expoSub, JSON.stringify({ title: "Open soon", tag: "seller-reminder-60min-x-1" }));
+    expect(JSON.parse((f as any).mock.calls.at(-1)[1].body)).toMatchObject({ channelId: "default", sound: "default" });
   });
 
   it("maps DeviceNotRegistered to 410 so the dead token is cleared", async () => {
