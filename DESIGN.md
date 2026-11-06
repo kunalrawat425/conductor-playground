@@ -189,3 +189,16 @@ Implementation: **`src/lib/email-templates.ts`** (Resend sends HTML from these b
 - **Seller:** `POST /api/notify-seller` — **`new_order`** or **`kind: "payment_proof"`**. Payload **`url`** is absolute **`…/v2/dashboard/orders`** or **`…/v2/dashboard/orders?order={uuid}`** when `order_id` is sent (seller taps notification → orders page runs search + scroll highlight for that card).
 - **Service worker:** `public/sw.js` resolves click targets with `new URL(…, self.location.origin)` so relative fallbacks still work; prefers server-sent absolute URLs.
 - Subscriptions live on `buyers` / `sellers`; VAPID keys must be set server-side.
+
+---
+
+## 9) Mobile apps (mobile/)
+
+Two Android/iOS apps from one Expo codebase (`APP_VARIANT` in `mobile/app.config.ts`): **Relifish** (buyers, `com.relifish.app`) and **Relifish Partner** (sellers, `com.relifish.partner`). The website is the single source of truth for design and business rules.
+
+- **Tokens:** `npm run tokens` (in `mobile/`) generates `mobile/src/theme/tokens.ts` from `src/styles/tokens.css` (light + dark) and `festive.css`. Never hard-code a colour in a screen; the one exception is the site's own literal for the BEST VALUE ribbon (`#16A34A`), kept in `mobile/src/ui/index.tsx`.
+- **Type:** Inter at the site's weights. React Native needs one family per weight, so `Text` in `mobile/src/ui` picks `Inter_<weight>` from `fontWeight`.
+- **Components** (`mobile/src/ui/index.tsx`) mirror the site classes: `Button` (`.v2-btn` sm/md/lg), `Card`, `Badge` (`.v2-item-cut`, `.v2-pop`, `.v2-off`, `.v2-oc-badge`), `PriceRow`, `AddButton` (`.v2-item-add`), `TierRow` (`.v2-item-tier`), `ItemCard` (`.v2-item-card`), `CartBar` (`.v2-cart-bubble`), `HeaderBackground` (`.v2-header`; Diwali gradient on buyer screens while `festiveFor()` says so, plain blue in the seller app like `/dashboard`).
+- **Business rules** come straight from `src/lib` (Metro `watchFolders`): pricing, timing, delivery slots, species names, pay on delivery. Modules the app imports must not use `import.meta` (Hermes can't parse it); see `src/lib/festive-window.ts`.
+- **Parity check:** `/tmp/pw/parity.js` (buyer) and `/tmp/pw/partner.js` (seller) compare computed styles and same-content crops of the app's web build against stage, writing `.context/parity/REPORT.md`.
+- **Push:** the apps save `{ endpoint: "https://exp.host/--/api/v2/push/send", expo: "ExponentPushToken[…]" }` as the push subscription; `loadWebPush()` sends those through Expo (see §8), so every web-push sender reaches the app.
