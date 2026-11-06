@@ -88,7 +88,11 @@ export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | 
       ? { template: "rf2_paid_evening", body: [short, name, slot, seller] }
       : { template: "rf2_paid", body: [short, name, seller] };
     case "confirmed": return { template: "rf2_confirmed", body: [seller, short, slotAhead(ord, nowMs) || !ord.delivery_slot_end ? slot : "soon"], image };
-    case "out_for_delivery": return { template: "rf2_out", body: [short, arriving] };
+    case "out_for_delivery": {
+      // Pay on delivery, not paid yet (6 Nov): the same message plus how to pay, in the app before handover.
+      const due = podDue(ord, checkout);
+      return due ? { template: "rf2_out_pod", body: [short, arriving, `₹${due.toLocaleString("en-IN")}`] } : { template: "rf2_out", body: [short, arriving] };
+    }
     case "completed": return { template: "rf2_delivered", body: [fish, name, seller], image };
     case "cancelled": {
       const why = cancel?.reason?.replace(/\.+$/, "") || "the seller couldn't take it";
@@ -101,6 +105,12 @@ export function orderMessage(event: OrderWaEvent, ord: any, buyerName: string | 
       return { template: "rf2_cancelled", body: [name, short, why, refund] };
     }
   }
+}
+
+/** Rupees still to pay at the door on a pay-on-delivery checkout, or 0 (paid, or not pay on delivery). */
+function podDue(ord: any, checkout?: any[]): number {
+  const rows = (checkout?.length ? checkout : [ord]).filter((r: any) => r.pay_on_delivery && !r.razorpay_payment_id && !REMOVED.includes(r.status));
+  return Math.round(rows.reduce((n: number, r: any) => n + Number(r.final_price ?? r.total_price ?? 0) + Number(r.delivery_fee || 0), 0));
 }
 
 /** The slot hasn't ended yet: a late confirm / out-for-delivery says "soon", never a time already past. */
@@ -118,11 +128,8 @@ export function orderSms(event: OrderWaEvent, ord: any, buyerName: string | null
     case "confirmed": return { key: "CONFIRMED", vars: [name, short, slotAhead(ord, nowMs) || !ord.delivery_slot_end ? slot : "soon"] };
     case "out_for_delivery": {
       // Pay on delivery, not paid yet: say how to pay (in the app, before handover), once that template is approved.
-      const due = (checkout?.length ? checkout : [ord]).filter((r: any) => r.pay_on_delivery && !r.razorpay_payment_id && !REMOVED.includes(r.status));
-      if (due.length && smsReady("OUT_POD")) {
-        const amt = due.reduce((n: number, r: any) => n + Number(r.final_price ?? r.total_price ?? 0) + Number(r.delivery_fee || 0), 0);
-        return { key: "OUT_POD", vars: [name, short, `Rs.${Math.round(amt)}`] };
-      }
+      const amt = podDue(ord, checkout);
+      if (amt && smsReady("OUT_POD")) return { key: "OUT_POD", vars: [name, short, `Rs.${amt}`] };
       return { key: "OUT", vars: [short, slotAhead(ord, nowMs) ? arrivingByLabel(ord.delivery_slot_end) : "soon"] };
     }
     case "completed": return { key: "DELIVERED", vars: [short, "fresh fish"] };

@@ -12,6 +12,7 @@ import { DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy"
  * name → [category, image header?, body variable count].
  */
 const APPROVED: Record<string, [string, boolean, number]> = {
+  rf2_out_pod: ["UTILITY", false, 3], // Wati rfw_out_pod, pay on delivery on its way (6 Nov 2026)
   rf2_welcome: ["MARKETING", true, 3], rf2_welcome_search: ["MARKETING", true, 3],
   rf2_cart_today: ["MARKETING", true, 4], rf2_cart_preorder: ["MARKETING", true, 4],
   rf2_promo_cart: ["MARKETING", true, 5], rf2_promo_unpaid: ["MARKETING", true, 4],
