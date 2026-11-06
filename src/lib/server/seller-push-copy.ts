@@ -148,3 +148,12 @@ export function sellerPushNotification(
     }
   }
 }
+
+/** The seller's SMS for a new order to act on (DLT template SELLER_ORDER, lib/server/sms.ts). Pure. */
+export function sellerOrderSms(kind: SellerPushKind, orderId: string, amount: number | null, slot: string | null): { key: "SELLER_ORDER"; vars: string[] } {
+  const rs = amount != null ? `Rs.${Math.round(amount)}` : "Amount in dashboard";
+  return {
+    key: "SELLER_ORDER",
+    vars: [`#${orderId.slice(0, 8).toUpperCase()}`, kind === "pay_on_delivery" ? `${rs}, pays on delivery` : `${rs} paid`, slot || "as agreed"],
+  };
+}

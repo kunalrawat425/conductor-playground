@@ -322,7 +322,7 @@ describe("SMS (MSG91)", () => {
   it("every DLT text ends in \" - Relifish\", links only to a whitelisted static URL, has 1–4 variables and no seller name", () => {
     for (const [k, t] of Object.entries(SMS_TEXT)) {
       expect(t, k).toMatch(/ - Relifish$/);
-      for (const u of t.match(/https?:\/\/\S+/g) || []) expect(u, k).toMatch(/^https:\/\/www\.relifish\.com\/(shop|track|orders)$/);
+      for (const u of t.match(/https?:\/\/\S+/g) || []) expect(u, k).toMatch(/^https:\/\/www\.relifish\.com\/(shop|track|orders|dashboard\/orders)$/);
       expect(t, k).not.toMatch(/Fishtokri|Nomadic/);
       expect(smsVarCount(k as any), k).toBeGreaterThanOrEqual(1);
       expect(smsVarCount(k as any), k).toBeLessThanOrEqual(4);

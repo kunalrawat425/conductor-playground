@@ -66,7 +66,7 @@ export const POST: APIRoute = async ({ request }) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { data: seller } = await supabase
       .from("sellers")
-      .select("push_subscription, push_enabled, name")
+      .select("push_subscription, push_enabled, name, phone")
       .eq("id", seller_id)
       .single();
 
@@ -98,6 +98,19 @@ export const POST: APIRoute = async ({ request }) => {
 
     const log = (status: "success" | "failed" | "skipped", error_message: string | null = null) =>
       logPush(supabase, { seller_id, title, body: pushBody, url: dashboardUrl, status, error_message });
+
+    // A new order to act on also goes by SMS (founder, 6 Nov): pushes are often off on sellers' phones.
+    // Once per order; nothing is sent until the SELLER_ORDER DLT template is in MSG91 (MSG91_FLOW_SELLER_ORDER).
+    if ((kind === "payment_confirmed" || kind === "pay_on_delivery") && typeof order_id === "string" && seller?.phone) {
+      const { dispatch } = await import("../../lib/server/messaging");
+      const { sellerOrderSms } = await import("../../lib/server/seller-push-copy");
+      const { istDate } = await import("../../lib/messaging/schedule");
+      await dispatch(supabase, {
+        dedupe_key: `seller_order:${order_id}`, kind: "seller_order", slot_date: istDate(Date.now()), seller_id, order_id,
+        phone: seller.phone, whatsappOk: false, template: "", body: [], link_path: "/dashboard/orders",
+        sms: sellerOrderSms(kind, order_id, typeof body.amount === "number" ? body.amount : null, slot),
+      }).catch((err: any) => console.warn("[notify-seller] seller SMS failed", { order_id, err: err?.message }));
+    }
 
     const subscription = normalizePushSubscription(seller?.push_subscription);
     if (!subscription?.endpoint) {
