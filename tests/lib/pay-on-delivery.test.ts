@@ -145,3 +145,11 @@ describe("on-the-way WhatsApp", () => {
     expect(orderMessage("out_for_delivery", { ...ord, pay_on_delivery: false }, "Asha").template).toBe("rf2_out");
   });
 });
+
+import { sellerOrderSms } from "../../src/lib/server/seller-push-copy";
+describe("seller order SMS", () => {
+  it("says paid or pay on delivery, with the order and delivery time", () => {
+    expect(sellerOrderSms("payment_confirmed", "ce259725-f599", 1411, "Fri 6 Nov, 2–4 PM")).toEqual({ key: "SELLER_ORDER", vars: ["#CE259725", "Rs.1411 paid", "Fri 6 Nov, 2–4 PM"] });
+    expect(sellerOrderSms("pay_on_delivery", "ce259725-f599", 193, null).vars).toEqual(["#CE259725", "Rs.193, pays on delivery", "as agreed"]);
+  });
+});

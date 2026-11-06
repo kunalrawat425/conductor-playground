@@ -17,7 +17,7 @@ import type { SendResult } from "./whatsapp";
 
 const env = (k: string) => ((import.meta as any).env?.[k] ?? process.env[k] ?? "") as string;
 
-export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT" | "OUT_POD" | "DELIVERED" | "CANCELLED" | "CANCELLED_NOPAY"
+export type SmsKey = "SIGNUP" | "CART" | "UNPAID" | "PAID" | "CONFIRMED" | "OUT" | "OUT_POD" | "SELLER_ORDER" | "DELIVERED" | "CANCELLED" | "CANCELLED_NOPAY"
   | "PROMO_NEW" | "PROMO_CART" | "PROMO_AGAIN";
 
 /**
@@ -37,6 +37,8 @@ export const SMS_TEXT: Record<SmsKey, string> = {
   DELIVERED: "Your Relifish order {#var#} ({#var#}) is delivered. Hope you enjoy it! Rate it: https://www.relifish.com/track - Relifish",
   CANCELLED: "Sorry {#var#}, your Relifish order {#var#} could not go ahead: {#var#}. Your refund of {#var#} will reach your account in 5-7 working days. Want another fish or slot? Call us on 9152207607. - Relifish",
   CANCELLED_NOPAY: "Sorry {#var#}, your Relifish order {#var#} could not go ahead. No payment was taken. Want another slot? Call us on 9152207607. - Relifish",
+  // To the SELLER on a new order to act on (founder, 6 Nov): order, "Rs.1411 paid" / "Rs.193, pays on delivery", delivery time.
+  SELLER_ORDER: "You have received a new Relifish order {#var#} ({#var#}). Delivery: {#var#}. Please check and confirm it on your Relifish dashboard: https://www.relifish.com/dashboard/orders Questions? Call us on 9152207607. - Relifish",
   // Pay on delivery on its way (6 Nov): name, order, amount. Sent only once its DLT template is set up (MSG91_FLOW_OUT_POD); until then OUT goes.
   OUT_POD: "Hi {#var#}, your Relifish order {#var#} is on the way. You chose pay on delivery, so you can pay {#var#} in the Relifish app or at https://www.relifish.com/orders when it reaches you, before handover. Questions? Call us on 9152207607. - Relifish",
   // Promotional (DLT category Promotional, sent from the numeric promo header MSG91_PROMO_SENDER, 10:00–21:00 only).
