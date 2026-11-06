@@ -17,11 +17,15 @@ export const CRM_STAGES = {
   5: { name: "5 Delivered - review", goal: "review + repeat + referral. Ask fish quality, cut, delivery time, price; ask for a photo; next order; society/neighbours." },
 } as const;
 
-/** Furthest stage the buyer reached; cancelled/refunded orders don't count as paid. */
+/** Closed orders: the money (if any) went back, so they never count as paid (a seller decline refunds too). */
+const CLOSED = ["cancelled", "declined", "refunded"];
+const livePaid = (x: CrmOrder) => x.paid && !CLOSED.includes(x.status);
+
+/** Furthest stage the buyer reached; cancelled/declined/refunded orders don't count as paid. */
 export function crmStage(b: Pick<CrmBuyer, "cart" | "orders">): 1 | 2 | 3 | 4 | 5 {
   const o = b.orders || [];
   if (o.some((x) => x.paid && x.status === "completed")) return 5;
-  if (o.some((x) => x.paid && x.status !== "cancelled" && x.status !== "refunded")) return 4;
+  if (o.some(livePaid)) return 4;
   if (o.length) return 3;
   if (b.cart.length) return 2;
   return 1;
@@ -50,7 +54,7 @@ export function lastActivity(b: CrmBuyer): string {
 /** One row per buyer, keyed by the sheet's column headers (grey columns only). */
 export function crmRow(b: CrmBuyer): Record<string, string | number> {
   const k = crmStage(b);
-  const paid = b.orders.filter((x) => x.paid && x.status !== "cancelled" && x.status !== "refunded").reduce((s, x) => s + x.amount, 0);
+  const paid = b.orders.filter(livePaid).reduce((s, x) => s + x.amount, 0);
   return {
     "Stage": CRM_STAGES[k].name,
     "Call goal": CRM_STAGES[k].goal,
