@@ -38,3 +38,11 @@ describe("crm sheet rows", () => {
     expect(isJunkWaitlist("9004561446", "Tagore Nagar group no 5 Vikhroli east 400083")).toBe(false);
   });
 });
+
+describe("seller-declined paid order", () => {
+  it("is not 'Paid - delivery due' and not counted as paid (refunded on decline)", () => {
+    const b: any = { ...base, orders: [{ id: "CE259725", species: "Surmai Combo", status: "declined", paid: true, amount: 1411, created_at: "2026-11-06T06:43:00Z", seller: "Fishtokri", source: "" }] };
+    expect(crmStage(b)).toBe(3);
+    expect(crmRow(b)["Paid total (Rs)"]).toBe("");
+  });
+});
