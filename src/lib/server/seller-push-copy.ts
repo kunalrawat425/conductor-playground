@@ -157,3 +157,17 @@ export function sellerOrderSms(kind: SellerPushKind, orderId: string, amount: nu
     vars: [`#${orderId.slice(0, 8).toUpperCase()}`, kind === "pay_on_delivery" ? `${rs}, pays on delivery` : `${rs} paid`, slot || "as agreed"],
   };
 }
+
+/**
+ * Who gets the new-order SMS: the seller, plus a copy to each ORDER_COPY_PHONES number
+ * (comma list). Each has its own dedupe key; a copy number that is the seller's own is skipped.
+ */
+export function orderSmsRecipients(sellerPhone: string | null | undefined, copyPhones: string, orderId: string): [string, string][] {
+  const ten = (p: string) => String(p || "").replace(/\D/g, "").slice(-10);
+  const out: [string, string][] = sellerPhone ? [[sellerPhone, `seller_order:${orderId}`]] : [];
+  for (const p of copyPhones.split(",").map(ten).filter((p) => p.length === 10)) {
+    if (out.some(([q]) => ten(q) === p)) continue;
+    out.push([p, `seller_order:${orderId}:copy:${p}`]);
+  }
+  return out;
+}
