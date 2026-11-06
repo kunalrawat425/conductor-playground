@@ -8,6 +8,9 @@
  *
  * WA_PROVIDER=wati sends through Wati (a Meta partner) instead: WATI_API_URL
  * (https://live-mt-server.wati.io/<tenantId>) and WATI_API_KEY. Same dry-run / test-only gates.
+ *
+ * WA_PROVIDER=aisensy sends through AiSensy's campaign API with AISENSY_API_KEY. Each template needs a
+ * Live "API campaign" in AiSensy named exactly like the template (watiTemplate names: rfw_/rfw2_/rfwt_).
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { istDate } from "../messaging/schedule";
@@ -52,6 +55,8 @@ export function templatePayload(t: TemplateSend) {
 export type SendResult = { status: "sent" | "dry_run" | "failed"; id?: string; error?: string };
 
 const useWati = () => env("WA_PROVIDER") === "wati";
+const useAisensy = () => env("WA_PROVIDER") === "aisensy";
+export const AISENSY_URL = "https://backend.aisensy.com/campaign/t1/api/v2";
 
 /** Wati template for an rf2 template (created in Wati, 30 Oct 2026): rfw2_* takes the buyer's fish photo
  * as {{image_url}}, rfwt_* is the same text with no photo (listing has none), rfw_* is a template without a header.
@@ -93,9 +98,36 @@ export function metaTemplate(t: TemplateSend): string {
   return watiTemplate(t).replace(/^rfw/, "rs");
 }
 
+/** AiSensy campaign API body (pure; tested). Campaign = the rs_/rs2_/rst_ template name (metaTemplate).
+ * ponytail: the URL-button shape is Meta's (AiSensy docs don't spell it out); confirm on the first test send. */
+export function aisensyPayload(t: TemplateSend, apiKey = env("AISENSY_API_KEY")) {
+  const img = IMAGE_TEMPLATES.has(t.name) && t.headerImage;
+  return {
+    apiKey, campaignName: metaTemplate(t), destination: t.to, userName: "Relifish buyer", source: "relifish",
+    templateParams: (t.body ?? []).map(String),
+    ...(img ? { media: { url: t.headerImage, filename: "relifish.jpg" } } : {}),
+    ...(t.urlSuffix ? { buttons: [{ type: "button", sub_type: "url", index: 0, parameters: [{ type: "text", text: t.urlSuffix }] }] } : {}),
+  };
+}
+
+/** "sent" only on HTTP 2xx with success true; anything else is "failed" so dispatch falls back to SMS.
+ * ponytail: response shape unconfirmed (AiSensy docs don't show it); check it on the first test send. */
+async function sendAisensy(t: TemplateSend): Promise<SendResult> {
+  try {
+    const res = await fetch(AISENSY_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(aisensyPayload(t)) });
+    const j: any = await res.json().catch(() => ({}));
+    if (!res.ok || !(j?.success === true || j?.success === "true")) return { status: "failed", error: `aisensy ${res.status} ${j?.message || j?.errorMessage || ""}`.trim().slice(0, 300) };
+    return { status: "sent", id: j?.submitted_message_id ?? j?.messageId };
+  } catch (err: any) {
+    return { status: "failed", error: String(err?.message || err).slice(0, 300) };
+  }
+}
+
 /** Live only when configured, not WA_DRY_RUN, and (if WA_TEST_ONLY is set) the number is on it. */
 export function isLiveFor(to: string): boolean {
-  if (useWati() ? !env("WATI_API_URL") || !env("WATI_API_KEY") : !env("WA_PHONE_NUMBER_ID") || !env("WA_TOKEN")) return false;
+  const configured = useAisensy() ? !!env("AISENSY_API_KEY")
+    : useWati() ? !!env("WATI_API_URL") && !!env("WATI_API_KEY") : !!env("WA_PHONE_NUMBER_ID") && !!env("WA_TOKEN");
+  if (!configured) return false;
   if (env("WA_DRY_RUN") === "true") return false;
   const allow = env("WA_TEST_ONLY").split(",").map((s) => waNumber(s.trim())).filter(Boolean);
   return allow.length === 0 || allow.includes(to);
@@ -103,6 +135,7 @@ export function isLiveFor(to: string): boolean {
 
 export async function sendTemplate(t: TemplateSend): Promise<SendResult> {
   if (!isLiveFor(t.to)) return { status: "dry_run" };
+  if (useAisensy()) return sendAisensy(t);
   if (useWati()) return sendWati(t);
   try {
     const res = await fetch(`${GRAPH}/${env("WA_PHONE_NUMBER_ID")}/messages`, {
@@ -122,7 +155,7 @@ export async function sendTemplate(t: TemplateSend): Promise<SendResult> {
 export async function sendText(to: string, text: string): Promise<SendResult> {
   if (!isLiveFor(to)) return { status: "dry_run" };
   // ponytail: Wati v3 free-text endpoint not confirmed yet; the STOP reply is skipped on Wati until it is.
-  if (useWati()) return { status: "failed", error: "wati text: not wired yet" };
+  if (useWati() || useAisensy()) return { status: "failed", error: `${env("WA_PROVIDER")} text: not wired yet` };
   const res = await fetch(`${GRAPH}/${env("WA_PHONE_NUMBER_ID")}/messages`, {
     method: "POST",
     headers: { Authorization: `Bearer ${env("WA_TOKEN")}`, "Content-Type": "application/json" },
