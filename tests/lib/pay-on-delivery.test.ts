@@ -123,3 +123,15 @@ describe("buyer stepper", () => {
     expect(resolveBuyerStepper({ status: "pending_payment", pay_on_delivery: true }, "delivery").step).toBe(0);
   });
 });
+
+import { orderSms } from "../../src/lib/server/notify-order-whatsapp";
+describe("on-the-way SMS", () => {
+  const ord = { id: "abcdef12-0000", status: "out_for_delivery", pay_on_delivery: true, razorpay_payment_id: null, total_price: 180, delivery_fee: 13, delivery_slot_start: null, delivery_slot_end: null };
+  it("uses the pay-on-delivery text once its template is set up, else the normal one", () => {
+    expect(orderSms("out_for_delivery", ord, "Asha").key).toBe("OUT");
+    process.env.MSG91_FLOW_OUT_POD = "flow_test";
+    expect(orderSms("out_for_delivery", ord, "Asha")).toEqual({ key: "OUT_POD", vars: ["Asha", "#ABCDEF12", "Rs.193"] });
+    expect(orderSms("out_for_delivery", { ...ord, razorpay_payment_id: "pay_1" }, "Asha").key).toBe("OUT");
+    delete process.env.MSG91_FLOW_OUT_POD;
+  });
+});

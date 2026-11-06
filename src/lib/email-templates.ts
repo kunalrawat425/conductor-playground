@@ -251,9 +251,10 @@ export function orderEmailBuyer(args: OrderEmailArgs): string {
     ${orderIntro(
       // Founder, 3 Nov: the buyer's heading never names the fish (the seller's still does).
       args.isPreorder ? "Your Relifish pre-order" : "Your Relifish order update",
-      args.isPreorder
-        ? "Your pre-order has been placed. The final price is set on your delivery day — you will only be charged up to the max estimate shown."
-        : args.note || "Here's the latest on your order. You can see it any time in Your orders. Questions? Call us on +91 91522 07607."
+      args.note
+        || (args.isPreorder
+          ? "Your pre-order has been placed. The final price is set on your delivery day — you will only be charged up to the max estimate shown."
+          : "Here's the latest on your order. You can see it any time in Your orders. Questions? Call us on +91 91522 07607.")
     )}
     ${slotBox(args)}${orderSummaryTable(rows)}
     ${notes ? calloutBox(notes, "warning") : ""}

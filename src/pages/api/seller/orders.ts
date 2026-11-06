@@ -675,7 +675,13 @@ export const POST: APIRoute = async ({ request, url }) => {
             fish: speciesLabel, slot: slotText?.value || null, by: status === "out_for_delivery" ? slotText?.value || null : null,
             onTime: deliveredOnTime((data as any).delivery_slot_end),
           }) : null;
-          const html = orderEmailBuyer(emailArgs);
+          // Pay on delivery, not paid yet: say how and when to pay (in the app, before handover, no cash).
+          const podDueRows = moved.filter((m) => m.data.pay_on_delivery && !m.data.razorpay_payment_id);
+          const podAmount = podDueRows.reduce((n, m) => n + Number(m.data.final_price ?? m.data.total_price ?? 0) + Number(m.data.delivery_fee || 0), 0);
+          const podNote = podDueRows.length && (status === "confirmed" || status === "out_for_delivery")
+            ? `You chose pay on delivery. ${status === "out_for_delivery" ? "Your fish is on the way: when" : "When"} it reaches you, pay ₹${podAmount.toLocaleString("en-IN")} in the Relifish app or at relifish.com/orders, before the handover. No cash needed. Questions? Call us on +91 91522 07607.`
+            : null;
+          const html = orderEmailBuyer(podNote ? { ...emailArgs, note: podNote } : emailArgs);
           await sendTransactionalEmail(buyer.email, copy ? copy.subject : `${statusLabel} — your Relifish order`, copy ? withPreview(html, copy.preview) : html);
         }
       }

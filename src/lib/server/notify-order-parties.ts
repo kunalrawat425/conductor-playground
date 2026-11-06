@@ -51,8 +51,7 @@ export type NotifyResult = {
 const BUYER_KIND: Record<OrderEvent, BuyerEmailKind> = {
   payment_confirmed: "placed", cancelled_by_buyer: "buyer_cancelled", cancelled_by_seller: "seller_cancelled",
   expired_unpaid: "expired_unpaid", refunded: "refunded",
-  // Never emailed to the buyer (they're on the order page); listed for the type only.
-  pay_on_delivery: "placed", pod_paid: "placed",
+  pay_on_delivery: "pod_placed", pod_paid: "pod_paid",
 };
 
 /** Copy per event, per audience; buyerSubject/buyerPreview follow email-subjects (founder, 26 Oct). Exported for unit tests. */
@@ -112,7 +111,7 @@ function copyLines(event: OrderEvent, species: string, orderIdShort: string, amo
       return {
         buyerSubject: `Order placed — ${fish} · #${orderIdShort}`,
         buyerHeading: "Order placed",
-        buyerLine: `Your Relifish order #${orderIdShort} is with the seller. You'll pay${amt} in the Relifish app when it arrives, no cash. ${help}.`,
+        buyerLine: `Your Relifish order #${orderIdShort} is with the seller, and we'll let you know once it's confirmed. You chose pay on delivery: pay${amt} in the Relifish app or at relifish.com/orders when your fish reaches you. No cash needed. ${help}.`,
         sellerSubject: `New order · Pay on delivery — please confirm · ${fish} · #${orderIdShort}`,
         sellerHeading: "New order — the buyer pays on delivery",
         sellerLine: `The buyer will pay${amt} for ${fish} (order #${orderIdShort}) in the Relifish app when you deliver. No cash. Confirm or decline it in your dashboard, and hand it over once the dashboard shows Paid.`,
@@ -121,7 +120,7 @@ function copyLines(event: OrderEvent, species: string, orderIdShort: string, amo
       return {
         buyerSubject: `Payment received — #${orderIdShort}`,
         buyerHeading: "Payment received, thank you",
-        buyerLine: `We received your payment${amt} for your Relifish order #${orderIdShort}. ${help}.`,
+        buyerLine: `We received your payment${amt} for your Relifish order #${orderIdShort}, thank you. Enjoy your fish! ${help}.`,
         sellerSubject: `Paid ✅ — ${fish} · #${orderIdShort}`,
         sellerHeading: "The buyer paid",
         sellerLine: `The buyer paid${amt} for ${fish} (order #${orderIdShort}). Hand it over and mark it delivered.`,
@@ -288,9 +287,7 @@ export async function notifyOrderParties(opts: {
   }
 
   // ---- Buyer email ----
-  if (event === "pay_on_delivery" || event === "pod_paid") {
-    out.buyer_email = "skipped: shown on the order page";
-  } else if (o.buyer_id) {
+  if (o.buyer_id) {
     try {
       const { data: buyer } = await sb.from("buyers").select("email").eq("id", o.buyer_id).single();
       out.buyer_email = buyer?.email
