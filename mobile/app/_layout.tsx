@@ -6,7 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold, Inter_900Black } from "@expo-google-fonts/inter";
 import { VARIANT } from "../src/api";
 import { CartProvider } from "../src/cart";
-import { useTheme } from "../src/theme";
+import { loadFestive, useTheme } from "../src/theme";
 import { HeaderBackground, headerTitleStyle, Loading } from "../src/ui";
 
 export default function Root() {
@@ -14,6 +14,7 @@ export default function Root() {
   // Inter, like the site; render nothing styled until it's loaded (a missing font family crashes some Android builds).
   const [loaded, error] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold, Inter_900Black });
   // Push: real builds only (Expo Go dropped remote push on Android), loaded lazily so Expo Go never imports it.
+  useEffect(() => { loadFestive(); }, []);
   useEffect(() => {
     if (Constants.executionEnvironment === "storeClient") return;
     let sub: { remove(): void } | undefined;

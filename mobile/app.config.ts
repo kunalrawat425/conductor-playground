@@ -21,7 +21,7 @@ const config: ExpoConfig = {
     "expo-router",
     "expo-secure-store",
     ["expo-splash-screen", { image: "./assets/splash.png", imageWidth: 220, backgroundColor: "#0066FF" }],
-    ["expo-notifications", { color: "#0066FF" }],
+    ["expo-notifications", { color: "#0066FF", sounds: ["./assets/sounds/new_order.wav"] }],
     ["expo-location", { locationWhenInUsePermission: "Relifish uses your location to show fish sellers who deliver to you." }],
   ],
   experiments: { typedRoutes: false },

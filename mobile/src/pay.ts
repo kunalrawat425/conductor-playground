@@ -1,5 +1,5 @@
-import { Linking, NativeModules } from "react-native";
-import { api, getSession } from "./api";
+import { Linking, NativeModules, Platform } from "react-native";
+import { API, api, getSession } from "./api";
 
 /**
  * Native Razorpay checkout (UPI apps open directly), then the same server checks the website uses:
@@ -16,22 +16,32 @@ export async function payOrder(orderId: string): Promise<"paid" | "cancelled" | 
     if (e.status === 409 && e.data?.error_code === "already_paid") return "already";
     throw e;
   }
+  const opts = {
+    key: created.key_id, order_id: created.razorpay_order_id, amount: created.amount, currency: created.currency || "INR",
+    name: "Relifish", description: `Order #${orderId.slice(0, 8).toUpperCase()}`, theme: { color: "#0066FF" },
+    prefill: { contact: me.phone },
+  };
+  const verify = (r: any) => api("/api/payments/razorpay-verify", {
+    razorpay_order_id: r.razorpay_order_id, razorpay_payment_id: r.razorpay_payment_id, razorpay_signature: r.razorpay_signature,
+    order_id: orderId, buyer_id: me.buyer_id,
+  });
+  // Browser preview: Razorpay's web checkout, same order and the same verify as the native sheet.
+  if (Platform.OS === "web") {
+    const w = globalThis as any;
+    if (!w.Razorpay) await new Promise((ok, fail) => { const el = document.createElement("script"); el.src = "https://checkout.razorpay.com/v1/checkout.js"; el.onload = ok; el.onerror = fail; document.body.appendChild(el); });
+    return new Promise((resolve, reject) => {
+      new w.Razorpay({ ...opts, handler: (r: any) => verify(r).then(() => resolve("paid"), reject), modal: { ondismiss: () => resolve("cancelled") } }).open();
+    });
+  }
   // Expo Go has no Razorpay native module: pay on the website for that preview; the installed app pays natively.
   if (!NativeModules.RNRazorpayCheckout) {
-    await Linking.openURL(`https://www.relifish.com/track/${orderId}?pay=1`);
+    await Linking.openURL(`${API}/track/${orderId}?pay=1`);
     return "cancelled";
   }
   const RazorpayCheckout = require("react-native-razorpay").default;
   try {
-    const r: any = await RazorpayCheckout.open({
-      key: created.key_id, order_id: created.razorpay_order_id, amount: created.amount, currency: created.currency || "INR",
-      name: "Relifish", description: `Order #${orderId.slice(0, 8).toUpperCase()}`, theme: { color: "#0066FF" },
-      prefill: { contact: me.phone },
-    });
-    await api("/api/payments/razorpay-verify", {
-      razorpay_order_id: r.razorpay_order_id, razorpay_payment_id: r.razorpay_payment_id, razorpay_signature: r.razorpay_signature,
-      order_id: orderId, buyer_id: me.buyer_id,
-    });
+    const r: any = await RazorpayCheckout.open(opts);
+    await verify(r);
     return "paid";
   } catch (e: any) {
     // Closed, or a UPI app took over and never came back: ask the server if the money is in.

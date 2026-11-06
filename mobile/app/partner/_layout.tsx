@@ -3,6 +3,7 @@ import { Redirect, Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getSession } from "../../src/api";
+import { NewOrderAlarm } from "../../src/NewOrderAlarm";
 import { useTheme } from "../../src/theme";
 import { HeaderBackground, headerTitleStyle, Loading, Text } from "../../src/ui";
 
@@ -17,6 +18,8 @@ export default function PartnerLayout() {
   const icon = (name: keyof typeof Ionicons.glyphMap) => ({ color }: { color: any }) => <Ionicons name={name} color={color} size={22} />;
   const label = (text: string) => ({ focused, color }: { focused: boolean; color: any }) => <Text style={{ fontSize: 12, lineHeight: 12, letterSpacing: 0.12, color, fontWeight: focused ? "700" : "500" }}>{text}</Text>;
   return (
+    <>
+    <NewOrderAlarm />
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: t.brand,
@@ -32,5 +35,6 @@ export default function PartnerLayout() {
       <Tabs.Screen name="inventory" options={{ title: "My inventory", tabBarLabel: label("Inventory"), tabBarIcon: icon("fish") }} />
       <Tabs.Screen name="profile" options={{ title: "My profile", tabBarLabel: label("Profile"), tabBarIcon: icon("storefront") }} />
     </Tabs>
+    </>
   );
 }

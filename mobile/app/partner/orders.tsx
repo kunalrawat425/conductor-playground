@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Alert, FlatList, Linking, Modal, Pressable, RefreshControl, TextInput, View } from "react-native";
+import { Alert, FlatList, Linking, Modal, Platform, Pressable, RefreshControl, TextInput, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -35,7 +35,8 @@ export default function PartnerOrders() {
     const r = await api(`/api/seller/orders?seller_id=${me?.seller_id}&tab=${which}`).catch((e) => { Alert.alert("Couldn't load orders", e.message); return null; });
     if (r) setData(r);
   }, [tab]);
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  // Fresh on focus and every 20 s while open (the alarm in the layout rings for new ones).
+  useFocusEffect(useCallback(() => { load(); const id = setInterval(() => load(), 20_000); return () => clearInterval(id); }, [load]));
 
   async function run(o: any, act: Act, cancel_reason?: string) {
     const isCart = !!o.cart_items;
@@ -59,6 +60,9 @@ export default function PartnerOrders() {
   function press(o: any, act: Act) {
     if (ASK[act.action]) { setReason(""); setAsk({ o, act }); return; }
     if (act.action === "pod_refused") {
+      const msg = "The order is cancelled, nothing was charged, and pay on delivery is switched off for this buyer.";
+      // React Native Web has no Alert: the browser's confirm there.
+      if (Platform.OS === "web") { if (globalThis.confirm?.(`Buyer didn't pay?\n${msg}`)) run(o, act, POD_REFUSED_REASON); return; }
       Alert.alert("Buyer didn't pay?", "The order is cancelled, nothing was charged, and pay on delivery is switched off for this buyer.", [
         { text: "Back", style: "cancel" }, { text: "Cancel order", style: "destructive", onPress: () => run(o, act, POD_REFUSED_REASON) },
       ]);
@@ -108,7 +112,7 @@ export default function PartnerOrders() {
       <FlatList
         data={data.orders}
         keyExtractor={(o) => o.id}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingTop: 12, paddingBottom: 24 }}
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => load()} />}
         ListEmptyComponent={<Card><Text style={{ color: t.ink2 }}>{tab === "pending" ? "No new orders right now. Pull down to refresh." : "Nothing here yet."}</Text></Card>}
         renderItem={({ item: o }) => {
@@ -122,7 +126,8 @@ export default function PartnerOrders() {
           const where = addr ? [addr.flat, addr.building, addr.landmark, addr.location_name].filter(Boolean).join(", ") : area ? [area.name, area.km != null ? `~${area.km} km away` : ""].filter(Boolean).join(" · ") : "";
           const tone = { green: [t.greenBg, t.green], amber: [t.amberSoft, t.amber], purple: [t.purpleSoft, t.purple], grey: [t.bg3, t.ink2] } as const;
           return (
-            <Card>
+            // .v2-seller-order inside #v2-orders-list (8 px list padding on the 16 px page gutter)
+            <Card testID={`order-${o.id}`} style={{ marginHorizontal: 24, marginTop: 0, marginBottom: 12, shadowColor: "#0F172A", shadowOffset: { width: 0, height: 8 }, shadowRadius: 18, shadowOpacity: 0.06 }}>
               <View style={[s.row, { justifyContent: "space-between" }]}>
                 <Text style={{ fontSize: 12, fontWeight: "700", color: t.ink3 }}>#{String(o.id).slice(0, 8).toUpperCase()} · {new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</Text>
                 <Badge text={bt} kind={bk} />
@@ -154,8 +159,8 @@ export default function PartnerOrders() {
                 </View>
               ) : null}
               {plan.acts.length ? (
-                <View style={{ gap: 8, marginTop: 10 }}>
-                  {plan.acts.map((a) => <Button key={a.action} title={a.label} size="sm" kind={kind[a.kind]} disabled={a.disabled} loading={busy === o.id + a.action} onPress={() => press(o, a)} style={a.kind === "success" && !a.disabled ? { backgroundColor: t.green, borderColor: t.green } : undefined} />)}
+                <View style={{ gap: 8, marginTop: 10, flexDirection: plan.row ? "row" : "column" }}>
+                  {plan.acts.map((a) => <Button key={a.action} title={a.label} size="sm" kind={kind[a.kind]} disabled={a.disabled} loading={busy === o.id + a.action} onPress={() => press(o, a)} style={{ ...(plan.row ? { flex: 1 } : {}), ...(a.kind === "success" && !a.disabled ? { backgroundColor: t.green, borderColor: t.green } : {}) }} />)}
                 </View>
               ) : null}
             </Card>

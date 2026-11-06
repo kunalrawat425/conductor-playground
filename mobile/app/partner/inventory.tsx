@@ -41,7 +41,7 @@ export default function Inventory() {
         <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
           {/* ponytail: new listings (species picker, photo upload) open the website's form for now. */}
           <Button title="+ Add new listing" onPress={() => Linking.openURL("https://www.relifish.com/dashboard/listings/new")} />
-          <Text style={{ fontSize: 12, color: t.ink3, marginTop: 12, lineHeight: 17 }}>Use the up and down arrows to set the order buyers see on your menu.</Text>
+          <Text style={{ fontSize: 12, color: t.ink3, marginTop: 12, marginBottom: 12, lineHeight: 17 }}>Use the up and down arrows to set the order buyers see on your menu.</Text>
         </View>
       }
       ListEmptyComponent={<Card><Text style={{ color: t.ink2 }}>No fish yet. Tap “+ Add fish” to list your first catch.</Text></Card>}
@@ -63,21 +63,22 @@ export default function Inventory() {
           </Pressable>
         );
         return (
-          <Card style={{ padding: 0, overflow: "hidden", opacity: l.is_available ? 1 : 0.75 }}>
-            <View style={[s.row, { padding: 12, gap: 12 }]}>
-              <View style={{ gap: 2 }}>
-                <Pressable accessibilityLabel="Move up" disabled={index === 0 || !!busy} onPress={() => act(l.id + "up", { action: "move", listing_id: l.id, direction: "up" })} style={{ opacity: index === 0 ? 0.3 : 1, padding: 2 }}><Ionicons name="chevron-up" size={18} color={t.ink3} /></Pressable>
-                <Pressable accessibilityLabel="Move down" disabled={index === rows.length - 1 || !!busy} onPress={() => act(l.id + "down", { action: "move", listing_id: l.id, direction: "down" })} style={{ opacity: index === rows.length - 1 ? 0.3 : 1, padding: 2 }}><Ionicons name="chevron-down" size={18} color={t.ink3} /></Pressable>
+          <Card style={{ padding: 0, overflow: "hidden", marginTop: 0, marginBottom: 12, shadowOpacity: 0, elevation: 0, boxShadow: undefined } as any}>
+            {/* .v2-lc-top: 10/12/10/4 padding, 32×40 move buttons, 60 px photo, info column with 4 px gaps */}
+            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 4, paddingTop: 10, paddingBottom: 10, paddingRight: 12, paddingLeft: 4 }}>
+              <View>
+                <Pressable accessibilityLabel="Move up" disabled={index === 0 || !!busy} onPress={() => act(l.id + "up", { action: "move", listing_id: l.id, direction: "up" })} style={{ width: 32, height: 40, alignItems: "center", justifyContent: "center", opacity: index === 0 ? 0.25 : 1 }}><Ionicons name="chevron-up" size={18} color={t.ink2} /></Pressable>
+                <Pressable accessibilityLabel="Move down" disabled={index === rows.length - 1 || !!busy} onPress={() => act(l.id + "down", { action: "move", listing_id: l.id, direction: "down" })} style={{ width: 32, height: 40, alignItems: "center", justifyContent: "center", opacity: index === rows.length - 1 ? 0.25 : 1 }}><Ionicons name="chevron-down" size={18} color={t.ink2} /></Pressable>
               </View>
-              <Pressable onPress={() => router.push(`/listing/${l.id}`)} style={[s.row, { flex: 1, gap: 12 }]}>
-                <View style={{ width: 64, height: 64, borderRadius: radius.sm, backgroundColor: t.bg2, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
-                  {l.photo_url ? <Image source={{ uri: l.photo_url }} style={{ width: 64, height: 64 }} /> : <Text style={{ fontSize: 30 }}>{(l.species || "").includes("prawn") ? "🦐" : (l.species || "").includes("crab") ? "🦀" : (l.species || "").includes("squid") ? "🦑" : "🐟"}</Text>}
+              <Pressable onPress={() => router.push(`/listing/${l.id}`)} style={{ flex: 1, flexDirection: "row", alignItems: "flex-start", gap: 12, opacity: l.is_available ? 1 : 0.6 }}>
+                <View style={{ width: 60, height: 60, borderRadius: radius.base, backgroundColor: t.bg3, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
+                  {l.photo_url ? <Image source={{ uri: l.photo_url }} style={{ width: 60, height: 60 }} /> : <Text style={{ fontSize: 26 }}>{(l.species || "").includes("prawn") ? "🦐" : (l.species || "").includes("crab") ? "🦀" : (l.species || "").includes("squid") ? "🦑" : "🐟"}</Text>}
                 </View>
-                <View style={{ flex: 1, gap: 3 }}>
-                  <Text style={{ fontSize: 14, fontWeight: "700" }} numberOfLines={1}>{getSpeciesDisplay(l.species)}</Text>
-                  {l.size_label ? <Text style={{ fontSize: 11, color: t.ink3 }} numberOfLines={1}>{l.size_label}</Text> : null}
-                  <Text style={{ fontSize: 14, fontWeight: "800" }}>{head ? `₹${Number(head.price) || 0} / ${packSize(head)}` : "No price set"}</Text>
-                  <View style={[s.row, { gap: 6, flexWrap: "wrap", marginTop: 2 }]}>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Text style={{ fontSize: 15, lineHeight: 19.5, fontWeight: "700" }} numberOfLines={2}>{getSpeciesDisplay(l.species)}</Text>
+                  {l.size_label ? <Text style={{ fontSize: 12, lineHeight: 16.2, fontWeight: "500", color: t.ink3 }} numberOfLines={2}>{l.size_label}</Text> : null}
+                  <Text style={{ fontSize: 14, lineHeight: 18.2, fontWeight: "700", marginTop: 2 }}>{head ? `₹${Number(head.price) || 0} / ${packSize(head)}` : "No price set"}</Text>
+                  <View style={[s.row, { gap: 6, flexWrap: "wrap" }]}>
                     {pill(...status)}
                     {l.is_preorder_enabled ? pill("Pre-order", t.indigo, t.indigoL) : null}
                     {pill(`${stock} ${unit === "kg" ? "kg" : "pc"} in stock`, stock <= 0 ? t.red : t.ink2, "", true)}

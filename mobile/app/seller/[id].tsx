@@ -78,15 +78,23 @@ export default function SellerMenu() {
         {listings.map((l) => {
           const opts = getListingPriceOptions(l as any);
           const best = bestValueIndex(opts as any);
+          // The site's menu rules (seller/[id].astro): in pre-order mode only pre-order fish can be added, at the
+          // pre-order price (a min–max range when the seller set one); otherwise only fish in stock.
+          const pre = seller.placement === "preorder" && l.is_preorder_enabled === true;
+          const inStock = l.is_available === true && !l.is_order_paused && (l.weight_avail == null || Number(l.weight_avail) > 0);
+          const canAdd = canOrder && (seller.placement === "preorder" ? pre : inStock);
           return (
-            <ItemCard key={l.id} photo={l.photo_url} name={getSpeciesDisplay(l.species)} size={sizeLine(l)} desc={l.description} limit={limitText(l, opts[0])} preorder={seller.placement === "preorder"} popular={opts.some((o: any) => o.ribbon === "popular")}>
+            <ItemCard key={l.id} photo={l.photo_url} name={getSpeciesDisplay(l.species)} size={sizeLine(l)} desc={l.description} limit={limitText(l, opts[0])} preorder={pre} popular={opts.some((o: any) => o.ribbon === "popular")}>
               {opts.map((o: any, i: number) => {
                 const oid = o.id || `opt_${i}`;
-                const line = { listing_id: l.id, species: l.species, option_id: oid, option_label: o.label || formatOptionMenuLabel(o), unit: o.unit || "kg", bundle: optionBundleAmount(o), price: Number(o.price) || 0 };
+                const lo = Number(o.preorder_price_min) || 0, hi = Number(o.preorder_price_max) || 0;
+                const price = pre ? hi || lo || Number(o.price) || 0 : Number(o.price) || 0;
+                const range = pre && lo && hi && lo !== hi ? `₹${lo.toLocaleString("en-IN")}–₹${hi.toLocaleString("en-IN")}` : undefined;
+                const line = { listing_id: l.id, species: l.species, option_id: oid, option_label: o.label || formatOptionMenuLabel(o), unit: o.unit || "kg", bundle: optionBundleAmount(o), price };
                 // Site tier chip: label plus the pack size, e.g. "½ kg (500g)".
                 const b = Number(o.bundle_size);
                 const size = b && b !== 1 ? ` (${o.unit === "kg" && b < 1 ? `${Math.round(b * 1000)}g` : `${b}${o.unit === "kg" ? "kg" : "pc"}`})` : "";
-                return <TierRow key={oid} best={i === best} label={`${o.label || o.unit_label || o.unit || "unit"}${size}`} option={o} count={packsOf(l.id, oid)} disabled={!canOrder} onChange={(n) => cart.setPacks({ id: seller.id, name: seller.name }, line, Math.max(0, n))} />;
+                return <TierRow key={oid} best={i === best} label={`${o.label || o.unit_label || o.unit || "unit"}${size}`} option={{ price, compare_at_price: range ? null : o.compare_at_price }} priceText={range} count={packsOf(l.id, oid)} disabled={!canAdd} onChange={(n) => cart.setPacks({ id: seller.id, name: seller.name }, line, Math.max(0, n))} />;
               })}
             </ItemCard>
           );

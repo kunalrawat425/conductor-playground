@@ -21,7 +21,8 @@ export const STATUS_FOR: Record<string, string> = {
   picked_up: "completed", delivered: "completed", seller_cancel: "cancelled", pod_refused: "cancelled",
 };
 export type Act = { action: string; label: string; kind: "primary" | "danger" | "secondary" | "success"; disabled?: boolean };
-export type Plan = { note?: { text: string; tone: "green" | "amber" | "purple" | "grey" }; hint?: string; finalPrice?: boolean; acts: Act[] };
+/** row: the first two buttons sit side by side (the dashboard's Confirm / Can't fulfill pair). */
+export type Plan = { note?: { text: string; tone: "green" | "amber" | "purple" | "grey" }; hint?: string; finalPrice?: boolean; row?: boolean; acts: Act[] };
 
 /** Which note and buttons an order card gets: the dashboard's renderSingleOrder, without the HTML. */
 export function planFor(o: any, cartRows?: any[]): Plan {
@@ -38,7 +39,7 @@ export function planFor(o: any, cartRows?: any[]): Plan {
   const s = o.status;
 
   if (podUnpaid && ["pending", "pending_payment"].includes(s))
-    return { note: podNote, hint: "Next: Confirm the order. The buyer pays on delivery, in the app.", acts: [{ action: "accept", label: "✓ Confirm order", kind: "primary" }, { action: "decline", label: "Can't fulfill", kind: "danger" }] };
+    return { note: podNote, hint: "Next: Confirm the order. The buyer pays on delivery, in the app.", row: true, acts: [{ action: "accept", label: "✓ Confirm order", kind: "primary" }, { action: "decline", label: "Can't fulfill", kind: "danger" }] };
   if (["pending", "scheduled", "pending_payment", "pre_order"].includes(s)) {
     if (paidRzp) return { note: { text: "✅ Payment received, confirm to start preparing", tone: "green" }, hint: "Next: Confirm the order.", acts: [{ action: "accept", label: "✓ Confirm order", kind: "primary" }] };
     return {
@@ -46,7 +47,7 @@ export function planFor(o: any, cartRows?: any[]): Plan {
       acts: [...(o.razorpay_order_id ? [{ action: "reconcile", label: "🔄 Check Razorpay for payment", kind: "secondary" as const }] : []), { action: "decline", label: "Can't fulfill", kind: "danger" }],
     };
   }
-  if (s === "paid") return { note: { text: "✅ Buyer paid, confirm to accept the order", tone: "green" }, hint: "Next: Confirm the order (or decline, the buyer is refunded in full).", acts: [{ action: "accept", label: "✓ Confirm order", kind: "primary" }, { action: "decline", label: "Can't fulfill", kind: "danger" }] };
+  if (s === "paid") return { note: { text: "✅ Buyer paid, confirm to accept the order", tone: "green" }, hint: "Next: Confirm the order (or decline, the buyer is refunded in full).", row: true, acts: [{ action: "accept", label: "✓ Confirm order", kind: "primary" }, { action: "decline", label: "Can't fulfill", kind: "danger" }] };
   if (s === "confirmed") {
     // A cart sets the price per item on the website; the app only offers it on a single order.
     if (needsPrice) return { note: podNote, hint: "Next: Set final price before delivery or pickup.", finalPrice: !cartRows, acts: [cancel] };

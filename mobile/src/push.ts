@@ -13,16 +13,37 @@ Notifications.setNotificationHandler({
 });
 
 /**
+ * Android channels, created at launch: "orders" rings like a call for a seller's new order (MAX importance, the
+ * bundled new_order.wav, long vibration, shows on the lock screen, through Do Not Disturb where the phone allows);
+ * "default" for everything else. The server picks the channel (src/lib/server/load-web-push.ts).
+ * iOS: the push carries the same sound; critical alerts (ringing through silent mode) need an Apple entitlement we don't have.
+ */
+export async function ensureChannels() {
+  if (Platform.OS !== "android") return;
+  await Notifications.setNotificationChannelAsync("orders", {
+    name: "New orders",
+    importance: Notifications.AndroidImportance.MAX,
+    sound: "new_order.wav",
+    vibrationPattern: [0, 800, 400, 800, 400, 800],
+    enableVibrate: true,
+    bypassDnd: true,
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    audioAttributes: { usage: Notifications.AndroidAudioUsage.NOTIFICATION_RINGTONE, contentType: Notifications.AndroidAudioContentType.SONIFICATION },
+  });
+  await Notifications.setNotificationChannelAsync("default", { name: "Updates", importance: Notifications.AndroidImportance.HIGH });
+}
+
+/**
  * Ask for notifications and save this phone's Expo push token as the buyer's / seller's push subscription,
  * so the website's existing senders (order updates, new-order alerts) reach the app. Quietly does nothing in
  * Expo Go, on an emulator without Play services, or before an EAS project id exists (founder step).
  */
 export async function registerPush() {
   try {
+    await ensureChannels();
     const me = await getSession();
     const projectId = (Constants.expoConfig?.extra as any)?.eas?.projectId ?? (Constants as any).easConfig?.projectId;
     if (!me || !Device.isDevice || Constants.executionEnvironment === "storeClient" || !projectId) return;
-    if (Platform.OS === "android") await Notifications.setNotificationChannelAsync("orders", { name: "Orders", importance: Notifications.AndroidImportance.HIGH });
     const { status } = await Notifications.requestPermissionsAsync();
     if (status !== "granted") return;
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
