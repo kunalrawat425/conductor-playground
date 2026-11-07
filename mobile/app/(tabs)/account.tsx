@@ -36,7 +36,7 @@ export default function Account() {
       api<{ addresses: any[] }>(`/api/buyer/addresses?buyer_id=${s.buyer_id}`).catch(() => ({ addresses: [] })),
       api<{ orders: any[] }>(`/api/buyer/orders?buyer_id=${s.buyer_id}&page=1&page_size=1`).catch(() => ({ orders: [] })),
     ]);
-    const b = (p as any)?.buyer || p; setProfile(b); setForm({ first_name: b?.first_name || "", last_name: b?.last_name || "", email: b?.email || "" });
+    const b = (p as any)?.profile || (p as any)?.buyer || p; setProfile(b); setForm({ first_name: b?.first_name || "", last_name: b?.last_name || "", email: b?.email || "" });
     setAddrs(a.addresses || []); setLast(o.orders?.[0] || null);
   }, []);
   useFocusEffect(useCallback(() => { load(); const sub = AppState.addEventListener("change", (x) => x === "active" && load()); return () => sub.remove(); }, [load]));

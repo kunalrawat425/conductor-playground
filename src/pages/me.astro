@@ -1,7 +1,6 @@
 ---
 export const prerender = false;
 import AppShell from "../components/ui/AppShell.astro";
-import ThemeToggle from "../components/ui/atoms/ThemeToggle.astro";
 import LoginSheet from "../components/ui/organisms/LoginSheet.astro";
 import AddressPickerSheet from "../components/ui/organisms/AddressPickerSheet.astro";
 import BottomSheet from "../components/ui/organisms/BottomSheet.astro";
@@ -54,54 +53,19 @@ import { SUPPORT_PHONE_TEL } from "../lib/brand";
   </div>
 
   <div id="v2-me-content" style="display:none;">
-    <!-- Profile hero -->
-    <div class="v2-me-hero">
-      <!-- Decorative rings (same pattern as SellerHero) -->
-      <div class="v2-me-hero-ring v2-me-hero-ring-1"></div>
-      <div class="v2-me-hero-ring v2-me-hero-ring-2"></div>
-      <div class="v2-me-hero-ring v2-me-hero-ring-3"></div>
-      <div class="v2-me-avatar" id="v2-me-avatar">
-        <span id="v2-me-initials" style="font:800 28px Inter;color:#fff;line-height:1;letter-spacing:-.5px;"></span>
-        <svg id="v2-me-avatar-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-      </div>
-      <div class="v2-me-name" id="v2-me-name">Welcome</div>
-      <div class="v2-me-phone" id="v2-me-phone">—</div>
-      <button id="v2-me-edit-name" class="v2-me-edit-btn">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        Edit profile
-      </button>
+    <!-- Account (preview "Account redesign"; same as the app): profile card, three tiles. -->
+    <div class="ac-card ac-profile">
+      <div class="ac-avatar" id="v2-me-avatar"><span id="v2-me-initials"></span><svg id="v2-me-avatar-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div class="ac-who"><b id="v2-me-name">Add your name</b><span id="v2-me-phone">—</span></div>
+      <button id="v2-me-edit-name" class="ac-edit" type="button">Edit</button>
     </div>
-
-    <!-- Quick actions — overlaps hero bottom -->
-    <div class="v2-me-quick">
-      <button type="button" class="v2-me-qa" data-action="addresses">
-        <div class="v2-me-qa-icon" style="background:#EFF6FF;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-        </div>
-        <div class="v2-me-qa-lbl">Addresses</div>
-      </button>
-      <a href="/track" class="v2-me-qa">
-        <div class="v2-me-qa-icon" style="background:#F0FDF4;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
-        </div>
-        <div class="v2-me-qa-lbl">Orders</div>
-      </a>
-      <button type="button" class="v2-me-qa" data-action="notifications">
-        <div class="v2-me-qa-icon" style="background:#FFF7ED;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-        </div>
-        <div class="v2-me-qa-lbl">Alerts</div>
-      </button>
-      <a href={SUPPORT_PHONE_TEL} class="v2-me-qa">
-        <div class="v2-me-qa-icon" style="background:#F5F3FF;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
-        </div>
-        <div class="v2-me-qa-lbl">Call us</div>
-      </a>
+    <div class="ac-tiles">
+      <a href="/track" class="ac-tile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>Orders</a>
+      <button type="button" class="ac-tile" data-action="addresses"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>Addresses</button>
+      <a href={SUPPORT_PHONE_TEL} class="ac-tile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Help</a>
     </div>
-
     <!-- Email missing banner — after quick actions so it's never sandwiched -->
-    <div id="v2-me-email-banner" style="display:none;margin:0 16px 8px;background:var(--v2-brand-l);border:1px solid #bfdbfe;border-radius:var(--v2-radius);padding:12px 14px;">
+    <div id="v2-me-email-banner" style="display:none;margin:12px 16px 0;background:var(--v2-brand-l);border:1px solid #bfdbfe;border-radius:var(--v2-radius);padding:12px 14px;">
       <div style="display:flex;align-items:center;gap:8px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
         <span style="font:600 12px Inter;color:#1d4ed8;flex:1;">Add email for order updates</span>
@@ -109,6 +73,7 @@ import { SUPPORT_PHONE_TEL } from "../lib/brand";
       </div>
     </div>
 
+    <div id="v2-me-orders"></div>
     <!-- Saved addresses block -->
     <div class="v2-me-section-head">Saved Addresses</div>
     <div id="v2-me-addr-list" style="margin: 0 16px 16px;">
@@ -120,36 +85,44 @@ import { SUPPORT_PHONE_TEL } from "../lib/brand";
       <button id="v2-me-add-addr" type="button" class="v2-btn v2-btn-secondary v2-btn-md v2-btn-full">+ Add new address</button>
     </div>
 
-    <!-- Past orders -->
-    <div class="v2-me-section-head">Order History</div>
-    <div id="v2-me-orders" style="margin:0 16px 16px;">
-      <div style="text-align:center;padding:16px;color:var(--v2-ink-3);font:500 12px Inter;">
-        <span class="v2-spinner v2-spinner-sm"></span>
-      </div>
+
+    <div class="v2-me-section-head">Updates</div>
+    <div class="ac-card ac-list">
+      <label class="ac-row" data-action="notifications"><span>Order updates (notifications)</span><input type="checkbox" class="ac-switch" id="ac-notif" /></label>
+      <label class="ac-row"><span>WhatsApp updates</span><input type="checkbox" class="ac-switch" id="ac-wa" /></label>
     </div>
-
-    <!-- Settings list -->
-    <div class="v2-me-section-head">Preferences</div>
-
-
-    <!-- Theme toggle -->
-    <div style="margin: 0 16px 16px;">
-      <ThemeToggle variant="button" />
+    <div class="v2-me-section-head">More</div>
+    <div class="ac-card ac-list">
+      <a class="ac-row" href={SUPPORT_PHONE_TEL}><span>Call us · 7:30 AM – 9 PM</span><i>›</i></a>
+      <a class="ac-row" href="/terms"><span>Terms, privacy, refunds</span><i>›</i></a>
+      <a class="ac-row" href="/data-deletion"><span>Delete my account</span><i>›</i></a>
     </div>
-
-    <a href="/privacy" class="v2-me-list-item">
-      <div class="v2-me-li-icon">📋</div>
-      <div class="v2-me-li-name">Terms & Privacy</div>
-      <div class="v2-me-li-arrow">›</div>
-    </a>
-
     <button id="v2-me-logout" class="v2-me-logout">Log out</button>
 
-    <div class="v2-me-version">Made in Mumbai · v2.0</div>
+    <div class="v2-me-version">Made in Mumbai</div>
   </div>
 </AppShell>
 
 <style is:global>
+  .ac-card { margin: 12px 16px 0; background: var(--v2-bg); border: 1px solid var(--v2-border); border-radius: 16px; }
+  .ac-profile { display: flex; align-items: center; gap: 14px; padding: 16px; }
+  .ac-avatar { width: 54px; height: 54px; border-radius: 50%; background: var(--v2-brand-l); color: var(--v2-brand); display: flex; align-items: center; justify-content: center; font: 800 22px Inter; flex: none; }
+  .ac-who { flex: 1; min-width: 0; } .ac-who b { display: block; font: 800 18px/22px Inter; color: var(--v2-ink); } .ac-who span { display: block; margin-top: 2px; font: 400 13px Inter; color: var(--v2-ink-3); }
+  .ac-edit { border: 1px solid var(--v2-border); background: var(--v2-bg); border-radius: 999px; padding: 7px 14px; font: 700 13px Inter; color: var(--v2-ink); cursor: pointer; }
+  .ac-tiles { display: flex; gap: 10px; margin: 12px 16px 0; }
+  .ac-tile { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 0; background: var(--v2-bg); border: 1px solid var(--v2-border); border-radius: 14px; font: 700 13px Inter; color: var(--v2-ink); text-decoration: none; cursor: pointer; }
+  .ac-list { overflow: hidden; }
+  .ac-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border-top: 1px solid var(--v2-border); font: 600 15px Inter; color: var(--v2-ink); text-decoration: none; cursor: pointer; }
+  .ac-row:first-child { border-top: 0; } .ac-row i { font-style: normal; color: var(--v2-ink-3); font-size: 18px; }
+  .ac-switch { appearance: none; width: 44px; height: 26px; border-radius: 13px; background: var(--v2-bg-3); position: relative; cursor: pointer; transition: background .15s; flex: none; }
+  .ac-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: left .15s; }
+  .ac-switch:checked { background: var(--v2-green); } .ac-switch:checked::after { left: 21px; }
+  .ac-last { display: flex; align-items: center; gap: 12px; padding: 14px; }
+  .ac-last img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+  .ac-last div { flex: 1; min-width: 0; } .ac-last small { display: block; font: 800 11px Inter; letter-spacing: .05em; color: var(--v2-ink-3); }
+  .ac-last b { display: block; margin-top: 2px; font: 700 14px Inter; color: var(--v2-ink); text-transform: capitalize; }
+  .ac-reorder { border: 1.5px solid var(--v2-brand); color: var(--v2-brand); border-radius: 999px; padding: 8px 14px; font: 700 13px Inter; text-decoration: none; white-space: nowrap; }
+
   .v2-me-hero {
     background: linear-gradient(160deg, #003580 0%, #0055CC 45%, #0077E6 75%, #0EA5E9 100%);
     padding: 32px 16px 60px;
@@ -381,7 +354,7 @@ import { SUPPORT_PHONE_TEL } from "../lib/brand";
   }
 
   function setProfileName(name: string) {
-    document.getElementById("v2-me-name")!.textContent = name || "Welcome";
+    document.getElementById("v2-me-name")!.textContent = name || "Add your name";
     const initialsEl = document.getElementById("v2-me-initials")!;
     const iconEl = document.getElementById("v2-me-avatar-icon")!;
     const parts = (name || "").trim().split(/\s+/).filter(Boolean);
@@ -536,6 +509,17 @@ import { SUPPORT_PHONE_TEL } from "../lib/brand";
       });
     });
 
+    // Updates switches (same as the app): notifications reflect the browser permission; WhatsApp saves whatsapp_updates.
+    const notifSw = document.getElementById("ac-notif") as HTMLInputElement | null;
+    if (notifSw) notifSw.checked = "Notification" in window && Notification.permission === "granted";
+    const waSw = document.getElementById("ac-wa") as HTMLInputElement | null;
+    fetch(`/api/buyer/profile?buyer_id=${buyerId}`).then((r) => r.json()).then((d) => { if (waSw && d.profile) waSw.checked = !!d.profile.whatsapp_opt_in_at && !d.profile.whatsapp_opt_out_at; }).catch(() => {});
+    waSw?.addEventListener("change", () => {
+      fetch("/api/buyer/profile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ buyer_id: buyerId, updates: { whatsapp_updates: waSw.checked } }) })
+        .then((r) => { if (!r.ok) throw 0; (window as any).v2Toast?.("success", waSw.checked ? "WhatsApp updates on" : "WhatsApp updates off", ""); })
+        .catch(() => { waSw.checked = !waSw.checked; (window as any).v2Toast?.("error", "Couldn't save", "Try again"); });
+    });
+
     // Quick action: notifications → permission + save push subscription to Supabase
     document.querySelectorAll<HTMLButtonElement>('[data-action="notifications"]').forEach((b) => {
       b.addEventListener("click", async () => {
@@ -677,8 +661,14 @@ import { SUPPORT_PHONE_TEL } from "../lib/brand";
         const count = json.total || 0;
         const totalPages = json.total_pages || 1;
 
-        if (!orders || orders.length === 0) {
-          el.innerHTML = `<div class="v2-me-addr-empty">No orders yet.</div>`;
+        if (!orders || orders.length === 0) { el.innerHTML = ""; return; }
+        // "Your last order" card with Reorder (same as the app); the full list lives on /track.
+        {
+          const o = orders[0];
+          const sp = String(o.species || o.listing?.species || "").toLowerCase();
+          const img = ["pomfret", "surmai", "prawns", "bangda", "rawas", "crab"].includes(sp) ? `/fish/${sp}.jpg` : "/fish/platter.jpg";
+          const qty = o.quantity_unit === "kg" && Number(o.quantity) < 1 ? `${Math.round(Number(o.quantity) * 1000)} g` : `${o.quantity} ${o.quantity_unit || ""}`;
+          el.innerHTML = `<div class="ac-card ac-last"><img src="${img}" alt=""><div><small>YOUR LAST ORDER</small><b>${escape(`${o.species || o.listing?.species || ""} ${qty} · ${o.listing?.seller?.name || "Seller"}`)}</b></div><a class="ac-reorder" href="/track/${o.id}?reorder=1">Reorder</a></div>`;
           return;
         }
 
