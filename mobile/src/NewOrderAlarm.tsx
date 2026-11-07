@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, AppState, Modal, PanResponder, Pressable, Vibration, View } from "react-native";
-import Svg, { Circle } from "react-native-svg";
 import { slotDayLabel, slotTimeLabel } from "../../src/lib/delivery-slots";
 import { router } from "expo-router";
 import Constants from "expo-constants";
@@ -33,7 +32,6 @@ export function NewOrderAlarm() {
   const seen = useRef<Set<string> | null>(null);
   const player = useRef<AudioPlayer | null>(null);
   const cap = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [left, setLeft] = useState(RING_CAP_MS / 1000);
 
   const silence = useCallback(() => {
     player.current?.pause();
@@ -55,7 +53,6 @@ export function NewOrderAlarm() {
     player.current = p;
     Vibration.vibrate([0, 800, 600], true);
     cap.current = setTimeout(silence, RING_CAP_MS);
-    setLeft(RING_CAP_MS / 1000);
   }, [silence]);
 
   const check = useCallback(async () => {
@@ -83,8 +80,6 @@ export function NewOrderAlarm() {
     }
     return () => { clearInterval(timer); app.remove(); push?.remove(); silence(); };
   }, [check, silence]);
-
-  useEffect(() => { if (!order || left <= 0) return; const id = setTimeout(() => setLeft((n) => n - 1), 1000); return () => clearTimeout(id); }, [order, left]);
 
   if (!order) return null;
   const rows: any[] = (order.cart_items || [order]).filter((r: any) => !CLOSED.includes(r.status));
@@ -120,7 +115,6 @@ export function NewOrderAlarm() {
               <Text style={{ fontSize: 48, lineHeight: 56, fontWeight: "900", color: W, marginTop: 6 }}>₹{total.toLocaleString("en-IN")}</Text>
               <Text style={{ fontSize: 15, fontWeight: "600", color: W, opacity: 0.9 }}>{order.pay_on_delivery && !order.razorpay_payment_id ? "Pay on delivery" : "Paid online"} · {order.order_type === "delivery" ? "Delivery" : "Pickup"}</Text>
             </View>
-            <Countdown left={left} total={RING_CAP_MS / 1000} />
           </View>
           <View style={{ marginTop: 18, backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 12, padding: 14, gap: 6 }}>
             {(order.cart_items || [order]).map((r: any) => {
@@ -141,20 +135,6 @@ export function NewOrderAlarm() {
         </View>
       </View>
     </Modal>
-  );
-}
-
-/** Seconds left on the ring, as a white arc. */
-function Countdown({ left, total }: { left: number; total: number }) {
-  const r = 38, c = 2 * Math.PI * r;
-  return (
-    <View style={{ width: 88, height: 88, alignItems: "center", justifyContent: "center" }}>
-      <Svg width={88} height={88} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
-        <Circle cx={44} cy={44} r={r} stroke="rgba(255,255,255,0.25)" strokeWidth={6} fill="none" />
-        <Circle cx={44} cy={44} r={r} stroke="#FFFFFF" strokeWidth={6} fill="none" strokeDasharray={`${c}`} strokeDashoffset={c * (1 - Math.max(0, left) / total)} strokeLinecap="round" />
-      </Svg>
-      <Text style={{ fontSize: 22, fontWeight: "800", color: "#FFFFFF" }}>{Math.floor(left / 60)}:{String(Math.max(0, left) % 60).padStart(2, "0")}</Text>
-    </View>
   );
 }
 

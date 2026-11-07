@@ -21,22 +21,15 @@ export type OcAction = { title: string; kind: "primary" | "danger" | "secondary"
  * .v2-seller-order (dashboard/orders): header (#ID · last 4, time, badges), "n items" strip, lines (option/cut, price, per-line
  * badge, struck when cancelled, refund box), SAME DAY / DELIVERY tags, location, total, payment + ref, Next note, paid line, actions.
  */
-export function SellerOrderCard({ id, time, badges, itemsLine, lines, tags, location, locationNote, total, payment, paymentRef, next, paidLine, actions, extra, waiting, paid }: {
+export function SellerOrderCard({ id, time, badges, itemsLine, lines, tags, location, locationNote, total, payment, paymentRef, next, paidLine, actions, extra }: {
   id: string; time: string; badges: OcBadge[]; itemsLine?: string; lines: OcLine[]; tags: { text: string; kind: "order" | "preorder" | "delivery" | "pickup" }[];
   location?: string; locationNote?: string; total: string; payment?: string; paymentRef?: string; next?: string; paidLine?: string; actions: OcAction[]; extra?: React.ReactNode;
-  /** Fast-accept card (preview): orange left rule, "Waiting m:ss" since the order came in, "Paid ₹" pill. */ waiting?: string; paid?: string;
 }) {
   const t = useTheme();
   const dark = useIsDark();
   const tag = { order: ["#EFF6FF", "#1D4ED8", "#BFDBFE"], preorder: [t.purpleL, t.purple, "#DDD6FE"], delivery: ["#ECFEFF", "#0E7490", "#A5F3FC"], pickup: ["#FEF3C7", "#92400E", "#FDE68A"] };
   return (
-    <View style={[{ marginHorizontal: 24, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: dark ? "rgb(76, 88, 105)" : "rgb(229, 235, 242)", backgroundColor: t.bg, gap: 8 }, waiting ? { borderLeftWidth: 4, borderLeftColor: t.orange } : null, shadowCss("0px 8px 18px 0px rgba(15, 23, 42, 0.06)")]}>
-      {waiting ? (
-        <View style={[row, { justifyContent: "space-between" }]}>
-          <View style={[row, { gap: 6 }]}><Icon name="clock" size={15} color={t.orange} /><Text style={{ fontSize: 13, fontWeight: "800", color: t.orange }}>Waiting {waiting}</Text></View>
-          {paid ? <View style={{ backgroundColor: t.greenL, borderRadius: 6, paddingVertical: 2, paddingHorizontal: 8 }}><Text style={{ fontSize: 12, fontWeight: "700", color: t.green }}>Paid {paid}</Text></View> : null}
-        </View>
-      ) : null}
+    <View style={[{ marginHorizontal: 24, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: dark ? "rgb(76, 88, 105)" : "rgb(229, 235, 242)", backgroundColor: t.bg, gap: 8 }, shadowCss("0px 8px 18px 0px rgba(15, 23, 42, 0.06)")]}>
       <View style={[row, { justifyContent: "space-between", alignItems: "flex-start" }]}>
         <View><Text style={{ fontSize: 13, lineHeight: lh(13), fontWeight: "700" }}>{id}</Text><Text style={{ marginTop: 1, fontSize: 11, lineHeight: lh(11), color: t.ink3 }}>{time}</Text></View>
         <View style={[row, { gap: 5, flexShrink: 1, flexWrap: "wrap", justifyContent: "flex-end" }]}>{badges.map((b, i) => <OcBadge key={i} b={b} />)}</View>

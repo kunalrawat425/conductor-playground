@@ -161,8 +161,7 @@ export default function PartnerOrders() {
                 next={plan.hint || undefined} paidLine={plan.note?.tone === "green" ? plan.note.text : undefined}
                 actions={plan.acts.map((a) => ({ title: busy === o.id + a.action ? "…" : a.label, kind: a.kind === "success" ? "green" : (a.kind as any), disabled: a.disabled, onPress: () => press(o, a) }))}
                 extra={extra}
-                waiting={plan.acts.some((a) => a.action === "accept") ? (() => { const m = Math.max(0, Math.floor((Date.now() - Date.parse(o.created_at)) / 1000)); return m >= 3600 ? `${Math.floor(m / 3600)} h ${Math.floor((m % 3600) / 60)} min` : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`; })() : undefined}
-                paid={o.razorpay_payment_id ? `₹${total.toLocaleString("en-IN")}` : undefined} />
+                />
             </View>
           );
         }}
