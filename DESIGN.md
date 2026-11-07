@@ -723,4 +723,34 @@ Every UI component the website uses, its React Native twin in `mobile/src/ui` (s
 - **Sizes:** —
 - **Tokens:** --v2-green --v2-red --v2-orange --v2-brand
 - **Modes:** light / dark × Diwali / normal (see live.html)
+### LoginPanel (buyer + seller)
+- **Web:** `src/components/ui/organisms/LoginSheet.astro` (`.lg-*`) · **React Native:** `app/login.tsx`
+- **Anatomy:** Full-screen photo behind (buyer: `login-collage.jpg` fish plates; seller: `seller-login.jpg` dock, dashboard green tint) · white bottom panel (24 radius) · logo badge overlapping the top (brand; Diwali: maroon + gold border + gold logo; seller: green + "PARTNER · FOR SELLERS") · tagline 20/800 · sub 13 · "Log in or sign up" divider · 54 px +91 field · Continue (grey until valid) · WhatsApp opt-in (buyer only) · terms. OTP step: back, "OTP verification", "Sent by SMS to … · Change", "The code is valid for 10 minutes.", six 46×54 boxes, "Reading the code from SMS…" (only while auto-read listens), Verify, "Resend SMS in 0:30", "Need help? Call us".
+- **States:** phone / OTP / error / busy; seller adds "New seller or need help? Call us" and the link to the buyer side.
+- **Auto-read:** Android SMS User Consent (`mobile/modules/sms-consent`), iOS oneTimeCode, web WebOTP (`OTPInput.astro`, needs the SMS last line `@www.relifish.com #code`).
+- **Modes:** light / dark × Diwali / normal. The panel rises with the keyboard (Android edge-to-edge).
+
+### Splash
+- **Web:** `#rf-splash` in `AppShell.astro` · **React Native:** native (`expo-splash-screen`, square `splash-gold|white.png`, wordmark in the middle 60 % because Android 12 masks to a circle) + `src/Splash.tsx` (2 s, fade 350 ms)
+- **Anatomy:** Diwali: maroon radial, lights, gold logo, "Wishing you light, joy and good health", HAPPY DIWALI, diya. Normal: brand gradient, white logo, "Fresh fish. Cleaned. Cut. At your door.", sellers line, fish.
+
+### PushPrePrompt
+- **React Native:** `src/PushPrePrompt.tsx` (once, on the order page, while notifications are undecided)
+- **Anatomy:** bell circle · "Know the moment your fish is on its way" · only the pushes we send (confirmed with slot, out for delivery, refunds) · Turn on updates · Not now.
+
+### RichNotification (Android)
+- **Server:** `src/lib/server/fcm.ts` (data-only for Android, APNs alert with image for iOS) · **App:** `showRich` in `mobile/src/ring.ts`
+- **Anatomy:** title · body · fish photo as big picture (400 px copy; Android's limit is 1 MB) · Track order · Call us. Tap opens the order.
+
+### NewOrderRing (Partner)
+- **React Native:** `src/NewOrderAlarm.tsx` (in app) + `showRing` in `src/ring.ts` (lock screen, full-screen intent, loops 60 s)
+- **Anatomy:** green full screen · NEW ORDER · amount 48/900 · paid / pay on delivery · items card (cancelled lines struck) · area + km, same day / pre-order + slot, buyer last 4 · Slide to confirm · View order / Can't fulfil. No timers (there is no confirm deadline).
+
+### Timeline (tracking)
+- **Web:** `.v2-tl` in `pages/track/[id].astro` · **React Native:** `Timeline` + `TrackHero` (mobile/src/ui/orders.tsx)
+- **Anatomy:** one row per real stepper label (`lib/buyer-order-stepper.ts`): done (green tick), now (blue ring + number), next (grey), failed (red). Times only from real timestamps (created_at, payment_verified_at).
+
+### KpiStrip / PrepList (Partner dashboard)
+- **React Native:** `KpiStrip`, `PrepList` (mobile/src/ui/dashboard.tsx)
+- **Anatomy:** three translucent tiles on the green hero (to confirm, in progress, next slot); prep list = packs per fish for the next delivery slot.
 <!-- components:end -->
