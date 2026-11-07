@@ -27,6 +27,8 @@ export type Plan = { note?: { text: string; tone: "green" | "amber" | "purple" |
 /** Which note and buttons an order card gets: the dashboard's renderSingleOrder, without the HTML. */
 export function planFor(o: any, cartRows?: any[]): Plan {
   const live = (cartRows || [o]).filter((r) => !CLOSED.includes(r.status));
+  // Same amount as the web dashboard note: paid_amount of the live rows.
+  const paidTotal = (cartRows ? live : [o]).reduce((n, r) => n + (Number(r.paid_amount) || 0), 0);
   const rows = cartRows ? live : [o];
   const isDelivery = o.order_type === "delivery";
   const paidRzp = o.payment_method === "razorpay" || !!o.payment_verified_at;
@@ -41,13 +43,13 @@ export function planFor(o: any, cartRows?: any[]): Plan {
   if (podUnpaid && ["pending", "pending_payment"].includes(s))
     return { note: podNote, hint: "Next: Confirm the order. The buyer pays on delivery, in the app.", row: true, acts: [{ action: "accept", label: "✓ Confirm order", kind: "primary" }, { action: "decline", label: "Can't fulfill", kind: "danger" }] };
   if (["pending", "scheduled", "pending_payment", "pre_order"].includes(s)) {
-    if (paidRzp) return { note: { text: "✅ Payment received, confirm to start preparing", tone: "green" }, hint: "Next: Confirm the order.", acts: [{ action: "accept", label: "✓ Confirm order", kind: "primary" }] };
+    if (paidRzp) return { note: { text: "Payment received, confirm to start preparing", tone: "green" }, hint: "Next: Confirm the order.", acts: [{ action: "accept", label: "✓ Confirm order", kind: "primary" }] };
     return {
       note: { text: "⏳ Waiting for buyer to complete Razorpay payment.", tone: "grey" }, hint: "Waiting for buyer to complete Razorpay payment.",
       acts: [...(o.razorpay_order_id ? [{ action: "reconcile", label: "🔄 Check Razorpay for payment", kind: "secondary" as const }] : []), { action: "decline", label: "Can't fulfill", kind: "danger" }],
     };
   }
-  if (s === "paid") return { note: { text: "✅ Buyer paid, confirm to accept the order", tone: "green" }, hint: "Next: Confirm the order (or decline, the buyer is refunded in full).", row: true, acts: [{ action: "accept", label: "✓ Confirm order", kind: "primary" }, { action: "decline", label: "Can't fulfill", kind: "danger" }] };
+  if (s === "paid") return { note: { text: `Buyer paid ₹${paidTotal.toLocaleString("en-IN")}, confirm to accept the order`, tone: "green" }, hint: "Next: Confirm the order (or decline, the buyer is refunded in full).", row: true, acts: [{ action: "accept", label: "✓ Confirm order", kind: "primary" }, { action: "decline", label: "Can't fulfill", kind: "danger" }] };
   if (s === "confirmed") {
     // A cart sets the price per item on the website; the app only offers it on a single order.
     if (needsPrice) return { note: podNote, hint: "Next: Set final price before delivery or pickup.", finalPrice: !cartRows, acts: [cancel] };
@@ -56,7 +58,7 @@ export function planFor(o: any, cartRows?: any[]): Plan {
   if (s === "ready_for_pickup" || s === "out_for_delivery") {
     const done = s === "ready_for_pickup" ? { action: "picked_up", label: "✓ Picked up" } : { action: "delivered", label: "✓ Delivered" };
     return {
-      note: podNote ?? (pod.length ? { text: "✅ Paid in the app, hand it over", tone: "green" } : undefined),
+      note: podNote ?? (pod.length ? { text: "Paid in the app, hand it over", tone: "green" } : undefined),
       hint: podUnpaid ? "Next: The buyer pays in the app. Hand it over once this shows Paid." : s === "ready_for_pickup" ? "Next: Mark as picked up when handed over." : "Next: Mark as delivered after drop-off.",
       acts: [
         ...(podUnpaid && o.razorpay_order_id ? [{ action: "reconcile", label: "🔄 Check payment", kind: "secondary" as const }] : []),

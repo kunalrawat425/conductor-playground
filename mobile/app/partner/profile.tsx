@@ -61,7 +61,7 @@ export default function PartnerProfile() {
           {me.has_pickup ? <Badge text="Pickup" /> : null}
         </View>
         {input("name", "Business name *")}
-        <Text style={{ fontSize: 15, fontWeight: "700", marginTop: 18 }}>📍 Location</Text>
+        <Text style={{ fontSize: 15, fontWeight: "700", marginTop: 18 }}>Location</Text>
         {input("location_name", "Area / Neighborhood")}
         {input("location", "Full address / landmark")}
         <View style={{ marginTop: 12 }}>

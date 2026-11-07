@@ -115,9 +115,9 @@ export function LocationBox({ set, coords, onUse, busy }: { set: boolean; coords
   const t = useTheme();
   return (
     <View style={{ padding: 14, borderRadius: 8, borderWidth: 1, borderColor: t.border, backgroundColor: t.bg }}>
-      <Text style={{ fontSize: 13, lineHeight: 21, fontWeight: "600", color: set ? t.green : t.orange }}>{set ? "✅ Location set" : "⚠️ Location not set"}</Text>
+      <Text style={{ fontSize: 13, lineHeight: 21, fontWeight: "600", color: set ? t.green : t.orange }}>{set ? "Location set" : "Location not set"}</Text>
       {coords ? <Text style={{ marginTop: 4, fontSize: 11, lineHeight: lh(11), color: t.ink3 }}>{coords}</Text> : null}
-      <Button title="📍 Use my current location" variant="secondary" size="sm" full loading={busy} onPress={onUse} style={{ marginTop: 10, minHeight: 39 }} />
+      <Button title="Use my current location" variant="secondary" size="sm" full loading={busy} onPress={onUse} style={{ marginTop: 10, minHeight: 39 }} />
       <Text style={{ marginTop: 8, fontSize: 11, lineHeight: lh(11), color: t.ink3 }}>Sets your GPS coordinates so buyers can see distance</Text>
     </View>
   );

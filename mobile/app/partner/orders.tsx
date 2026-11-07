@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Alert, FlatList, Linking, Modal, Platform, Pressable, RefreshControl, TextInput, View } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BADGE, CLOSED, planFor, qtyLabel, sellerPost, STATUS_FOR, type Act } from "../../src/partner";
 import { POD_REFUSED_REASON } from "../../../src/lib/pay-on-delivery";
@@ -8,7 +8,7 @@ import { slotDayLabel, slotTimeLabel } from "../../../src/lib/delivery-slots";
 import { font, radius, useTheme } from "../../src/theme";
 import { api, getSession } from "../../src/api";
 import { Button, Card, Loading, s, Text } from "../../src/ui";
-import { paymentMethodLabel } from "../../../src/lib/order-payment-state";
+import { paymentMethodLabel, refundableAmount, refundDueRupees, refundStatus, wasActuallyPaid } from "../../../src/lib/order-payment-state";
 import { DashboardHero, DashboardTabs } from "../../src/ui/chrome";
 import { KpiStrip, PrepList, SellerOrderCard, type OcBadge } from "../../src/ui/dashboard";
 
@@ -23,6 +23,16 @@ const ASK: Record<string, { title: string; note: string; ok: string }> = {
 };
 
 /** The website's /dashboard/orders: New / Active / History, the same cards, notes and buttons. */
+/** The web dashboard's refund box (refundStatusHtml): a paid line that was cancelled or declined. Retry when Razorpay's refund failed. */
+function refundBox(r: any, o: any) {
+  if (!CLOSED.includes(r.status) || !wasActuallyPaid(r)) return undefined;
+  const rs = refundStatus(r);
+  const amt = (r.refund_sent_at ? Number(r.refund_amt) || refundableAmount(r) : refundDueRupees([r], o.cart_items || [r])).toLocaleString("en-IN");
+  if (rs.state === "refunded") return { title: `₹${amt} refunded to buyer`, text: `${rs.text} No action needed from you.` };
+  if (["cancelled", "declined"].includes(r.status) && r.payment_method === "razorpay" && r.razorpay_payment_id) return { title: `Refund pending: ₹${amt}`, text: rs.text, cta: "Retry refund", onCta: () => (globalThis as any).__rlfRetryRefund?.(r) };
+  return { title: rs.state === "delayed" ? `Refund ₹${amt} to buyer, delayed, retrying` : `Refund ₹${amt} to buyer, processing via Razorpay`, text: `${rs.text} No action needed from you.` };
+}
+
 export default function PartnerOrders() {
   const t = useTheme();
   const [tab, setTab] = useState<string>("pending");
@@ -34,6 +44,8 @@ export default function PartnerOrders() {
   const [stats, setStats] = useState(false);
   const [name, setName] = useState("");
   const insets = useSafeAreaInsets();
+  const { ring: forceRing } = useLocalSearchParams<{ ring?: string }>();
+  if (__DEV__ && forceRing === "1") (globalThis as any).__rlfForceRing = true;
   const [q, setQ] = useState("");
   const [range, setRange] = useState(2);
   const [type, setType] = useState(0);
@@ -51,7 +63,9 @@ export default function PartnerOrders() {
     const isCart = !!o.cart_items;
     setBusy(o.id + act.action);
     try {
-      if (act.action === "reconcile") {
+      if (act.action === "retry_refund") {
+        await sellerPost("/api/seller/orders", { order_id: o.id, action: "retry_refund" });
+      } else if (act.action === "reconcile") {
         const r = await sellerPost("/api/seller/reconcile-razorpay", { order_id: o.id });
         Alert.alert(r?.ok ? (r.refunded ? "Payment found and refunded (order was closed)" : "Payment found, order confirmed") : r?.reason || "No payment yet");
       } else if (act.action === "set_final_price") {
@@ -80,6 +94,7 @@ export default function PartnerOrders() {
     run(o, act);
   }
 
+  (globalThis as any).__rlfRetryRefund = (r: any) => run(r, { action: "retry_refund", label: "", kind: "primary" } as any);
   if (!data) return <Loading />;
   // Next delivery slot among open orders, and what to prepare for it (preview "Prep list").
   const open = data.orders.filter((o) => !CLOSED.includes(o.status) && o.delivery_slot_start && Date.parse(o.delivery_slot_start) > Date.now() - 3600_000);
@@ -154,7 +169,7 @@ export default function PartnerOrders() {
                 time={new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
                 badges={[...(o.razorpay_payment_id && !CLOSED.includes(o.status) && o.status !== "paid" ? [{ text: "Paid", tone: "paid" as const }] : []), { text: bt, tone: BTONE[bk] }]}
                 itemsLine={rows.length > 1 ? `${rows.length} items` : undefined}
-                lines={rows.map((r) => ({ text: `${r.listing?.species || r.species} · ${qtyLabel(r)}${r.pricing_label ? ` · ${r.pricing_label}` : ""}`, price: `₹${(Number(r.total_price || r.final_price) || 0).toLocaleString("en-IN")}`, badge: lineBadge(r), struck: !!o.cart_items && CLOSED.includes(r.status) }))}
+                lines={rows.map((r) => ({ text: `${r.listing?.species || r.species} · ${qtyLabel(r)}${r.pricing_label ? ` · ${r.pricing_label}` : ""}`, price: `₹${(Number(r.total_price || r.final_price) || 0).toLocaleString("en-IN")}`, badge: lineBadge(r), struck: !!o.cart_items && CLOSED.includes(r.status), refund: refundBox(r, o) }))}
                 tags={[{ text: pre ? "Pre-order" : "Same day", kind: pre ? "preorder" : "order" }, { text: o.order_type === "delivery" ? "Delivery" : "Pickup", kind: o.order_type === "delivery" ? "delivery" : "pickup" }]}
                 location={where || undefined} locationNote={!addr && area ? "(full address after you accept)" : undefined}
                 total={`₹${total.toLocaleString("en-IN")}`} payment={paymentMethodLabel(o) || undefined} paymentRef={o.razorpay_payment_id || undefined}

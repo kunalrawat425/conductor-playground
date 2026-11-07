@@ -64,7 +64,9 @@ export function NewOrderAlarm() {
     if (!seen.current) seen.current = new Set(waiting.filter((o) => Date.now() - Date.parse(o.created_at) > FRESH_MS).map((o) => o.id));
     // Confirmed or declined somewhere else (the website, another phone): stop.
     setOrder((cur: any) => { if (cur && !waiting.some((o) => o.id === cur.id)) { silence(); return null; } return cur; });
-    const fresh = waiting.find((o) => !seen.current!.has(o.id));
+    // Dev only (QA of the ring screen): partner/orders?ring=1 rings the first waiting order regardless of age.
+    const forced = __DEV__ && (globalThis as any).__rlfForceRing ? ((globalThis as any).__rlfForceRing = false, waiting[0]) : null;
+    const fresh = forced || waiting.find((o) => !seen.current!.has(o.id));
     if (fresh) { waiting.forEach((o) => seen.current!.add(o.id)); ring(fresh); }
   }, [ring, silence]);
 
