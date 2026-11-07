@@ -1,6 +1,8 @@
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
-import { Platform } from "react-native";
+import { Linking, Platform } from "react-native";
+import notifee, { EventType } from "@notifee/react-native";
+import { showRich } from "./ring";
 import { router } from "expo-router";
 import { api, getSession, ROLE } from "./api";
 
@@ -55,12 +57,27 @@ export async function registerPush() {
   }
 }
 
-/** Tapping a notification opens what it's about: the server sends the website URL (…/track/<id>, /dashboard/orders). */
+/** Open what a notification is about: the server sends the website URL (…/track/<id>, /dashboard/orders). */
+function openUrl(url: string, action?: string) {
+  if (action === "call") { Linking.openURL("tel:+919152207607"); return; }
+  const order = /\/track\/([\w-]+)/.exec(url)?.[1];
+  if (order) router.push(`/order/${order}`);
+  else if (url.includes("/dashboard")) router.push("/partner/orders");
+}
+/**
+ * Taps: Expo-shown notifications (iOS alerts), and the app-drawn Android ones (Notifee: body tap, Track order, Call us),
+ * including the one that cold-started the app. An update that lands while the app is open is drawn the same way.
+ */
 export function onPushTap() {
-  return Notifications.addNotificationResponseReceivedListener((r) => {
-    const url = String((r.notification.request.content.data as any)?.url || "");
-    const order = /\/track\/([\w-]+)/.exec(url)?.[1];
-    if (order) router.push(`/order/${order}`);
-    else if (url.includes("/dashboard")) router.push("/partner/orders");
+  const a = Notifications.addNotificationResponseReceivedListener((r) => openUrl(String((r.notification.request.content.data as any)?.url || "")));
+  const b = Notifications.addNotificationReceivedListener((n) => {
+    const raw: any = n.request.content.data || {};
+    console.log("RLF_RECV", JSON.stringify(n.request.content).slice(0, 600), JSON.stringify((n.request as any).trigger || {}).slice(0, 600));
+    try { const d = typeof raw.dataString === "string" ? JSON.parse(raw.dataString) : raw; if (d?.kind === "update") showRich(d); } catch {}
   });
+  const c = notifee.onForegroundEvent(({ type, detail }) => {
+    if (type === EventType.PRESS || type === EventType.ACTION_PRESS) openUrl(String(detail.notification?.data?.url || ""), detail.pressAction?.id);
+  });
+  notifee.getInitialNotification().then((i) => i && openUrl(String(i.notification.data?.url || ""), i.pressAction?.id)).catch(() => {});
+  return { remove: () => { a.remove(); b.remove(); c(); } };
 }

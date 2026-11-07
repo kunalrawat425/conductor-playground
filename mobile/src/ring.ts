@@ -12,12 +12,16 @@ import { Platform } from "react-native";
 export const RING_TASK = "relifish-new-order-ring";
 const RING_CAP_MS = 60_000;
 
-type RingData = { kind?: string; order_id?: string; title?: string; body?: string; url?: string; image?: string };
+type RingData = { kind?: string; order_id?: string; title?: string; body?: string; url?: string; image?: string; tag?: string };
 
 function payloadData(p: any): RingData {
-  const d = p?.data ?? {};
-  if (typeof d.dataString === "string") { try { return JSON.parse(d.dataString); } catch { return {}; } }
-  return d;
+  // Expo hands the FCM data to the task at different depths (data, data.data, a JSON string); find dataString wherever it is.
+  for (const x of [p, p?.data, p?.data?.data, p?.notification?.data, p?.data?.notification?.data]) {
+    if (!x) continue;
+    const o = typeof x === "string" ? (() => { try { return JSON.parse(x); } catch { return null; } })() : x;
+    if (o && typeof o.dataString === "string") { try { return JSON.parse(o.dataString); } catch {} }
+  }
+  return p?.data ?? {};
 }
 
 export async function showRing(d: RingData) {
@@ -49,12 +53,35 @@ export async function showRing(d: RingData) {
   });
 }
 
+/** An order update (buyer) or other alert: the photo as a big picture and Track order / Call us buttons (preview "Rich notification"). */
+export async function showRich(d: RingData) {
+  if (Platform.OS !== "android") return;
+  const channelId = await notifee.createChannel({ id: "updates", name: "Order updates", importance: AndroidImportance.HIGH, sound: "default", visibility: AndroidVisibility.PUBLIC });
+  const order = d.order_id || /\/track\/([\w-]+)/.exec(d.url || "")?.[1];
+  await notifee.displayNotification({
+    ...(d.tag ? { id: d.tag } : {}),
+    title: d.title || "Relifish",
+    body: d.body || "",
+    data: { url: d.url || "" },
+    android: {
+      channelId, color: "#0066FF", pressAction: { id: "default", launchActivity: "default" },
+      ...(d.image ? { largeIcon: d.image, style: { type: AndroidStyle.BIGPICTURE, picture: d.image } } : d.body ? { style: { type: AndroidStyle.BIGTEXT, text: d.body } } : {}),
+      actions: [
+        ...(order ? [{ title: "Track order", pressAction: { id: "track", launchActivity: "default" } }] : []),
+        { title: "Call us", pressAction: { id: "call", launchActivity: "default" } },
+      ],
+    },
+  });
+}
+
 /** The app is open (or the seller tapped): stop every ringing notification. */
 export const stopRings = () => (Platform.OS === "android" ? notifee.cancelAllNotifications().catch(() => {}) : Promise.resolve());
 
 TaskManager.defineTask(RING_TASK, async ({ data }) => {
+  console.log("RLF_TASK_DATA", JSON.stringify(data).slice(0, 600));
   const d = payloadData(data);
   if (d.kind === "new_order") await showRing(d);
+  else if (d.kind === "update") await showRich(d);
 });
 Notifications.registerTaskAsync(RING_TASK).catch(() => {});
 // Taps and dismissals while the app is closed; opening the app stops the ring (src/NewOrderAlarm.tsx).

@@ -24,6 +24,11 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const sanitized: Record<string, string | number | null> = {};
+    // Account → Updates → WhatsApp switch: same columns the login opt-in writes (verify-otp).
+    if (typeof updates.whatsapp_updates === "boolean") {
+      const now = new Date().toISOString();
+      Object.assign(sanitized, updates.whatsapp_updates ? { whatsapp_opt_in_at: now, whatsapp_opt_out_at: null } : { whatsapp_opt_out_at: now });
+    }
     for (const key of ALLOWED_BUYER_FIELDS) {
       if (updates[key] === undefined) continue;
       const raw = updates[key];
@@ -136,7 +141,7 @@ export const GET: APIRoute = async ({ url, request }) => {
 
     const { data, error } = await supabase
       .from("buyers")
-      .select("id, phone, first_name, last_name, email, email_verified, location_name, lat, lng, created_at, push_enabled")
+      .select("id, phone, first_name, last_name, email, email_verified, location_name, lat, lng, created_at, push_enabled, whatsapp_opt_in_at, whatsapp_opt_out_at")
       .eq("id", buyer_id)
       .single();
 

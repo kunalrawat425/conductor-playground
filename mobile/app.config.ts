@@ -43,9 +43,10 @@ const config: ExpoConfig = {
     // same window as src/lib/festive-window.ts), white logo on brand blue otherwise. Fixed at build time; the JS splash
     // (src/Splash.tsx) follows the live theme right after.
     ["expo-splash-screen", diwali
-      ? { image: "./assets/logo-gold.png", imageWidth: 230, backgroundColor: "#6E0822" }
-      : { image: "./assets/logo-white.png", imageWidth: 230, backgroundColor: "#0066FF" }],
-    ["expo-notifications", { color: "#0066FF", sounds: ["./assets/sounds/new_order.wav"] }],
+      // Square images with the wordmark in the middle 60 %: Android 12+ masks the splash icon to a circle.
+      ? { image: "./assets/splash-gold.png", imageWidth: 288, resizeMode: "contain", backgroundColor: "#6E0822" }
+      : { image: "./assets/splash-white.png", imageWidth: 288, resizeMode: "contain", backgroundColor: "#0066FF" }],
+    ["expo-notifications", { icon: "./assets/notification-icon.png", color: "#0066FF", sounds: ["./assets/sounds/new_order.wav"] }], // white "R" in the status bar
     ["expo-location", { locationWhenInUsePermission: "Relifish uses your location to show fish sellers who deliver to you." }],
   ],
   experiments: { typedRoutes: false },

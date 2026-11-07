@@ -1,3 +1,4 @@
+import { PushPrePrompt } from "../../src/PushPrePrompt";
 import { ga, track } from "../../src/track";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, Linking, RefreshControl, ScrollView, View } from "react-native";
@@ -174,6 +175,7 @@ export default function OrderScreen() {
           <Button title="📞 Call us about this order" variant="secondary" full onPress={() => Linking.openURL("tel:+919152207607")} />
         </View>
       </ScrollView>
+      <PushPrePrompt />
       <BottomNav items={BUYER_NAV} active="orders" onPress={(k) => router.navigate(k === "home" ? "/" : `/${k}` as any)} />
     </View>
   );

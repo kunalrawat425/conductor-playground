@@ -12,6 +12,8 @@ import { BillSummary, BuyerOrderCard, InfoSection, Stepper, StatusHero } from ".
 import { EmailPrompt, MeSectionHead, OrderHistoryRow, ProfileHero, QuickTiles, SavedAddress } from "./account";
 import { ListingCard, LocationBox, SellerOrderCard } from "./dashboard";
 import { Text } from "./base";
+import { PushPrePrompt } from "../PushPrePrompt";
+import { Splash } from "../Splash";
 
 const SB = "https://witoghpdfocywiosmrzv.supabase.co/storage/v1";
 const NOMADIC = "bd8efaae-69e1-4dcb-bdcb-75d1874b96ed";
@@ -107,6 +109,8 @@ export const GALLERY: GalleryItem[] = [
       <Badge variant="rating" text="5.0 ★" /><Badge text="Pre-order available" /><Badge text="Open now · same day" color="green" /><Badge text="Pre-order · next day" color="indigo" /><Badge text="Cancelled" color="red" /><Badge text="Limited" color="orange" /><Badge variant="offer" text="10% OFF" /><Badge variant="status" text="New" /><Badge text="Small" /><Badge text="Large" />
     </View>
   ) },
+  { id: "Splash", rn: "Splash", render: () => <View style={{ height: 844 }}><Splash still /></View> },
+  { id: "PushPrePrompt", rn: "PushPrePrompt", render: () => <View style={{ height: 844 }}><PushPrePrompt preview /></View> },
   { id: "Toast", rn: "Toast", render: () => <View style={{ paddingVertical: 12 }}><Toast title="Added to cart" desc="Surmai · ½ kg · ₹549" /></View> },
 ];
 void Spacer;
