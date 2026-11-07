@@ -44,6 +44,27 @@ import Toast from "../components/ui/atoms/Toast.astro";
 </AppShell>
 
 <style is:global>
+  .ol-tabs { display: flex; padding: 4px; border-radius: 12px; background: var(--v2-bg-3); margin-bottom: 4px; }
+  .ol-tabs button { flex: 1; padding: 10px; border: 0; border-radius: 9px; background: none; font: 600 14px Inter; color: var(--v2-ink-3); cursor: pointer; }
+  .ol-tabs button.on { background: var(--v2-bg); font-weight: 800; color: var(--v2-ink); }
+  .ol-cap { margin: 16px 0 8px; font: 800 12px Inter; letter-spacing: .05em; color: var(--v2-ink-3); }
+  .ol-card { display: block; margin-bottom: 12px; padding: 14px; background: var(--v2-bg); border: 1px solid var(--v2-border); border-radius: 16px; text-decoration: none; color: inherit; }
+  .ol-top, .ol-row { display: flex; align-items: center; gap: 12px; }
+  .ol-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: none; }
+  .ol-main { flex: 1; min-width: 0; }
+  .ol-main b { display: block; font: 800 16px Inter; color: var(--v2-ink); }
+  .ol-main span { display: block; margin-top: 2px; font: 400 13px Inter; color: var(--v2-ink-3); text-transform: capitalize; }
+  .ol-tags { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+  .ol-pill { border-radius: 999px; padding: 3px 9px; font: 700 12px Inter; white-space: nowrap; }
+  .ol-pre { background: #F5F3FF; color: #7C3AED; } .ol-pod { background: #FFFBEB; color: #B45309; }
+  html[data-theme="dark"] .ol-pre { background: rgba(124,58,237,.18); color: #C4B5FD; } html[data-theme="dark"] .ol-pod { background: rgba(217,119,6,.18); color: #FCD34D; }
+  .ol-green { background: var(--v2-green-l); color: var(--v2-green); } .ol-red { background: var(--v2-red-l); color: var(--v2-red); }
+  .ol-prog { display: flex; gap: 4px; margin-top: 14px; } .ol-prog i { flex: 1; height: 4px; border-radius: 2px; background: var(--v2-bg-3); } .ol-prog i.on { background: var(--v2-green); }
+  .ol-line { margin-top: 12px; padding: 9px 12px; border-radius: 10px; background: var(--v2-brand-l); font: 700 13px Inter; color: var(--v2-brand); }
+  .ol-btns { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .ol-btn { padding: 9px 14px; border-radius: 999px; border: 1.5px solid var(--v2-border); font: 700 13px Inter; color: var(--v2-ink); cursor: pointer; }
+  .ol-btn.ol-primary { border-color: var(--v2-brand); color: var(--v2-brand); }
+  .ol-empty { padding: 24px 0; text-align: center; font: 500 14px Inter; color: var(--v2-ink-3); }
   .v2-active-order {
     margin: 0 0 16px;
     background: linear-gradient(135deg, #E6F0FF, #DBEAFE);
@@ -217,127 +238,70 @@ import Toast from "../components/ui/atoms/Toast.astro";
   const PAGE_SIZE = 10;
   let currentPage = 1;
 
+  // Orders list (preview "Orders list"; same as the app): Active · n / Past · n, arriving cards with progress,
+  // status + slot line, Track / Call us / Help, Pre-order and Pay on delivery tags; past cards with Reorder
+  // (rebuilds the cart on the order page) and Rate (finished, unrated); cancelled orders as compact rows.
+  let tab: "active" | "past" = "active";
+  let cache: { active: any[]; past: any[]; nA: number; nP: number } | null = null;
+  const DONE = ["completed", "picked_up"];
+  const STATUS: Record<string, string> = { pending: "Placed", pending_payment: "Waiting for payment", pre_order: "Pre-order placed", scheduled: "Scheduled", confirmed: "Confirmed", paid: "Paid, waiting for the seller", payment_required: "Final price is in", ready_for_pickup: "Ready for pickup", out_for_delivery: "Out for delivery" };
+  const qtyOf = (o: any) => (o.quantity_unit === "kg" && Number(o.quantity) < 1 ? `${Math.round(Number(o.quantity) * 1000)} g` : `${o.quantity} ${o.quantity_unit === "kg" ? "kg" : o.quantity_unit || ""}`);
+  const totalOf = (o: any) => `₹${(Number(o.total_price || 0) + Number(o.delivery_fee || 0)).toLocaleString("en-IN")}`;
+  const dayOf = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short" });
+  const fishImg = (o: any) => { const sp = String(o.species || o.listing?.species || "").toLowerCase(); return ["pomfret", "surmai", "prawns", "bangda", "rawas", "crab"].includes(sp) ? `/fish/${sp}.jpg` : "/fish/platter.jpg"; };
+  const pill = (t: string, cls: string) => `<span class="ol-pill ${cls}">${escapeHtml(t)}</span>`;
+
+  function activeCard(o: any) {
+    const delivery = o.order_type === "delivery";
+    const { labels, step } = resolveBuyerStepper(o, delivery ? "delivery" : "pickup");
+    const pre = o.is_preorder === true || o.placement_kind === "preorder" || o.status === "pre_order";
+    const slot = delivery ? orderSlotText(o) : null;
+    return `<a class="ol-card" href="/track/${o.id}">
+      <div class="ol-top"><img src="${fishImg(o)}" alt="" class="ol-img"><div class="ol-main"><b>${escapeHtml(o.listing?.seller?.name || "Seller")}</b><span>#${o.id.slice(0, 8).toUpperCase()} · ${escapeHtml(qtyOf(o))} ${escapeHtml(o.species || o.listing?.species || "")} · ${totalOf(o)}</span></div>
+        <div class="ol-tags">${pre ? pill("Pre-order", "ol-pre") : ""}${o.pay_on_delivery && !o.razorpay_payment_id ? pill("Pay on delivery", "ol-pod") : ""}</div></div>
+      <div class="ol-prog">${labels.map((_: string, i: number) => `<i class="${i <= step ? "on" : ""}"></i>`).join("")}</div>
+      <div class="ol-line">${escapeHtml(STATUS[o.status] || labels[step] || o.status)}${slot ? ` · ${escapeHtml(slot.label.toLowerCase())} ${escapeHtml(slot.value)}` : ""}</div>
+      <div class="ol-btns"><span class="ol-btn ol-primary">Track order</span><span class="ol-btn" data-href="tel:+919152207607">Call us</span><span class="ol-btn" data-href="/faq">Help</span></div>
+    </a>`;
+  }
+  function pastCard(o: any) {
+    if (isTerminated(o.status)) {
+      const owed = !o.refund_sent_at ? refundableAmount(o) : 0;
+      return `<a class="ol-card ol-row" href="/track/${o.id}"><img src="${fishImg(o)}" alt="" class="ol-img"><div class="ol-main"><b>${escapeHtml(o.listing?.seller?.name || "Seller")} · ${totalOf(o)}</b><span>${dayOf(o.created_at)} · ${owed > 0 ? `Refund ₹${owed.toLocaleString("en-IN")} on the way` : o.pay_on_delivery && !o.razorpay_payment_id ? "Not paid on delivery" : escapeHtml(`${o.species || o.listing?.species || ""} ${qtyOf(o)}`)}</span></div>${pill(o.status === "declined" ? "Declined" : o.status === "refunded" ? "Refunded" : "Cancelled", "ol-red")}</a>`;
+    }
+    return `<a class="ol-card" href="/track/${o.id}">
+      <div class="ol-top"><img src="${fishImg(o)}" alt="" class="ol-img"><div class="ol-main"><b>${escapeHtml(o.listing?.seller?.name || "Seller")}</b><span>${dayOf(o.created_at)} · ${escapeHtml(`${o.species || o.listing?.species || ""} ${qtyOf(o)}`)} · ${totalOf(o)}</span></div>${pill(o.status === "picked_up" ? "Picked up" : "Delivered", "ol-green")}</div>
+      <div class="ol-btns"><span class="ol-btn ol-primary" data-href="/track/${o.id}?reorder=1">Reorder</span>${DONE.includes(o.status) && !o.buyer_feedback ? `<span class="ol-btn">Rate</span>` : ""}</div>
+    </a>`;
+  }
+  function render() {
+    const root = document.getElementById("v2-track-active")!;
+    if (!cache) return;
+    const list = tab === "active" ? cache.active : cache.past;
+    root.innerHTML = `<div class="ol-tabs"><button data-tab="active" class="${tab === "active" ? "on" : ""}">Active · ${cache.nA}</button><button data-tab="past" class="${tab === "past" ? "on" : ""}">Past · ${cache.nP}</button></div>`
+      + (list.length ? `<div class="ol-cap">${tab === "active" ? "ARRIVING" : "PAST ORDERS"}</div>${list.map(tab === "active" ? activeCard : pastCard).join("")}` : `<div class="ol-empty">${tab === "active" ? "Nothing on the way." : "No orders yet."} <a href="/shop">Browse sellers</a></div>`);
+    root.querySelectorAll<HTMLButtonElement>(".ol-tabs button").forEach((b) => b.onclick = () => { tab = b.dataset.tab as any; render(); });
+    root.querySelectorAll<HTMLElement>(".ol-btn[data-href]").forEach((b) => b.onclick = (e) => { e.preventDefault(); location.href = b.dataset.href!; });
+  }
   async function load() {
     const phone = getBuyerPhone();
     const loading = document.getElementById("v2-track-loading")!;
     const guest = document.getElementById("v2-track-guest")!;
-    const empty = document.getElementById("v2-track-empty")!;
-    const active = document.getElementById("v2-track-active")!;
-
     if (!phone) {
-      loading.style.display = "none";
-      guest.style.display = "block";
-      document.getElementById("v2-track-signin-btn")?.addEventListener("click", () => {
-        (window as any).v2OpenSheet?.("v2-track-login");
-      });
+      loading.style.display = "none"; guest.style.display = "block";
+      document.getElementById("v2-track-signin-btn")?.addEventListener("click", () => { (window as any).v2OpenSheet?.("v2-track-login"); });
       return;
     }
-
     try {
-      const offset = (currentPage - 1) * PAGE_SIZE;
       const buyerId = (() => { try { return localStorage.getItem("rlf_buyer_id") || ""; } catch { return ""; } })();
-      // Through the API (buyer session), not straight from the database: the
-      // browser key can no longer read orders. Phone-only orders placed before
-      // login are matched server-side from the buyer's own phone.
-      const res = await fetch(`/api/buyer/orders?buyer_id=${encodeURIComponent(buyerId)}&page=${currentPage}&page_size=${PAGE_SIZE}`);
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error || "Could not load orders");
-      const allOrders = body.orders;
-      const count = body.total;
-
+      const q = async (scope: string) => { const r = await fetch(`/api/buyer/orders?buyer_id=${encodeURIComponent(buyerId)}&scope=${scope}&page=1&page_size=20`); const j = await r.json(); if (!r.ok) throw new Error(j.error || "Could not load orders"); return j; };
+      const [a, p] = await Promise.all([q("active"), q("past")]);
+      const first = !cache;
+      cache = { active: a.orders || [], past: p.orders || [], nA: a.total || 0, nP: p.total || 0 };
+      if (first && !cache.nA && cache.nP) tab = "past";
       loading.style.display = "none";
-      empty.style.display = "none";
-      const totalCount = count || 0;
-      const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-
-      if (!allOrders || allOrders.length === 0) {
-        active.innerHTML = "";
-        empty.style.display = "block";
-        return;
-      }
-
-      active.innerHTML = allOrders.map(o => {
-        const seller = o.listing?.seller?.name || "Seller";
-        const isDelivery = o.order_type === "delivery";
-        const terminated = isTerminated(o.status);
-        const orderType = isDelivery ? "delivery" : "pickup";
-        const { labels, step: stepIdx } = resolveBuyerStepper(o, orderType);
-
-        const listingOpts = o.listing?.pricing_options || [];
-        const opt = listingOpts.find((x: any) => x?.id && x.id === o.pricing_option_id) || null;
-        const bundle = opt?.bundle_size && opt.bundle_size > 0 ? Number(opt.bundle_size) : 1;
-        const unit = o.quantity_unit || "kg";
-        const qtyLabel = unit === "piece" && bundle > 1
-          ? `${Math.round(Number(o.quantity) / bundle)} pack`
-          : (unit === "kg" && Number(o.quantity) > 0 && Number(o.quantity) < 1 ? `${Math.round(Number(o.quantity) * 1000)} grams` : `${o.quantity}${unit}`);
-
-        const stepperHtml = terminated
-          ? `<div class="v2-stepper">
-              <div class="dot done">✓</div>
-              <div class="line done" style="background:#FCA5A5;"></div>
-              <div class="dot" style="background:#DC2626;color:#fff;">✕</div>
-            </div>
-            <div class="v2-stepper-labels" style="justify-content:space-between;">
-              <span>Placed</span>
-              <span style="color:#DC2626;font-weight:700;">${o.status === "declined" ? "Declined" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
-            </div>`
-          : `<div class="v2-stepper">
-              ${labels.map((_, i) => `
-                <div class="dot${i <= stepIdx ? ' done' : ''}">${i <= stepIdx ? '✓' : i + 1}</div>
-                ${i < labels.length - 1 ? `<div class="line${i < stepIdx ? ' done' : ''}"></div>` : ''}
-              `).join("")}
-            </div>
-            <div class="v2-stepper-labels">
-              ${labels.map(l => `<span>${l}</span>`).join("")}
-            </div>`;
-
-        const owed = terminated && !o.refund_sent_at ? refundableAmount(o) : 0;
-        const refundNote = owed > 0
-          ? `<div style="margin-top:10px;padding:8px 10px;background:#F5F3FF;border-radius:6px;font:600 11px Inter;color:#7C3AED;">⏱ Refund ₹${owed.toLocaleString("en-IN")} within 5–7 working days to your original payment method</div>`
-          : "";
-
-        const cardStyle = terminated
-          ? `background:var(--v2-bg);border:1.5px solid #FCA5A5;border-radius:var(--v2-radius-lg);padding:16px;margin-bottom:12px;width:100%;box-sizing:border-box;`
-          : ``;
-
-        return terminated
-          ? `<a href="/track/${o.id}" style="display:block;text-decoration:none;color:inherit;cursor:pointer;${cardStyle}">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <span style="font:700 10px Inter;color:#DC2626;text-transform:uppercase;letter-spacing:.05em;">${o.status === "declined" ? "Declined" : o.status === "cancelled" ? "Cancelled" : "Refunded"}</span>
-                <div>${paymentPillHtml(o)}${statusToTag(o.status)}</div>
-              </div>
-              <div style="font:800 15px Inter;color:var(--v2-ink);margin-bottom:2px;">${escapeHtml(seller)}</div>
-              <div style="font:400 11px Inter;color:var(--v2-ink-3);margin-bottom:10px;">Order #${o.id.slice(0,8).toUpperCase()} · ${qtyLabel} · ${fmtDate(o.created_at)}</div>
-              ${stepperHtml}
-              ${refundNote}
-            </a>`
-          : `<a href="/track/${o.id}" class="v2-active-order" style="display:block;text-decoration:none;color:inherit;cursor:pointer;margin-bottom:12px;">
-              <div class="label">
-                <span style="font:700 10px Inter;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;${orderKindLabel(o) === "Pre-order" ? "background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;" : "background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;"}">${orderKindLabel(o)}</span>
-                <span style="font:700 10px Inter;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;margin-left:4px;${isDelivery ? "background:#ecfeff;color:#0e7490;border:1px solid #a5f3fc;" : "background:#fffbeb;color:#b45309;border:1px solid #fde68a;"}">${isDelivery ? "Delivery" : "Pickup"}</span>
-                ${paymentPillHtml(o)}
-                <span style="margin-left:4px;">${statusToTag(o.status)}</span>
-              </div>
-              <h3>${escapeHtml(seller)}</h3>
-              <div class="sub">Order #${o.id.slice(0, 8).toUpperCase()} · ${qtyLabel} · ${isDelivery ? "🚲 Delivery" : "🧊 Pickup"}</div>
-              ${isDelivery && !["completed", "picked_up"].includes(o.status) && orderSlotText(o) ? `<div style="font:700 12px Inter;margin-top:4px;">🕘 ${escapeHtml(orderSlotText(o)!.label)}: ${escapeHtml(orderSlotText(o)!.value)}</div>` : ""}
-              ${o.cut_style || o.buyer_notes ? `<div style="font:500 11px Inter;margin-top:4px;color:#475569;">${o.cut_style ? `✂️ ${escapeHtml(o.cut_style)}` : ''}${o.cut_style && o.buyer_notes ? ' · ' : ''}${o.buyer_notes ? `📝 ${escapeHtml(o.buyer_notes)}` : ''}</div>` : ''}
-              ${stepperHtml}
-            </a>`;
-      }).join("")
-      + (totalPages > 1 ? `
-        <div class="v2-pagination" style="padding:12px 0;">
-          <button class="v2-pg-btn" id="v2-track-prev" ${currentPage <= 1 ? 'disabled' : ''}>← Prev</button>
-          <span class="v2-pg-info">Page ${currentPage} of ${totalPages}</span>
-          <button class="v2-pg-btn" id="v2-track-next" ${currentPage >= totalPages ? 'disabled' : ''}>Next →</button>
-        </div>` : '');
-
-      // Use onclick to prevent duplicate listeners accumulating across polling cycles
-      const prevEl = document.getElementById("v2-track-prev");
-      const nextEl = document.getElementById("v2-track-next");
-      if (prevEl) prevEl.onclick = () => { if (currentPage > 1) { currentPage--; load(); } };
-      if (nextEl) nextEl.onclick = () => { if (currentPage < totalPages) { currentPage++; load(); } };
-
+      if (!cache.nA && !cache.nP) { document.getElementById("v2-track-empty")!.style.display = "block"; return; }
+      render();
     } catch (err) {
       console.error("track: load failed", err);
       loading.innerHTML = `<div style="text-align:center;padding:40px;color:var(--v2-red);">Failed to load orders.</div>`;
@@ -348,10 +312,7 @@ import Toast from "../components/ui/atoms/Toast.astro";
     load();
 
     // Poll for status changes (browser realtime needed the open orders policy).
-    setInterval(() => {
-      const activeEl = document.getElementById("v2-track-active");
-      if (activeEl && activeEl.children.length > 0) load();
-    }, 20000);
+    setInterval(() => { if (cache) load(); }, 20000);
   }
 
   // Safety net: if load() never hides the spinner (e.g. script error), show guest after 3s

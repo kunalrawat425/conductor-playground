@@ -701,6 +701,11 @@ const { id } = Astro.params;
                 price: it.total_price || 0,
                 qty: it.quantity || 1,
               });
+        // From the orders list "Reorder" (?reorder=1): rebuild the cart once, then the button's own flow continues.
+        if (new URLSearchParams(location.search).get("reorder") === "1" && !sessionStorage.getItem(`rlf-reordered-${o.id}`)) {
+          sessionStorage.setItem(`rlf-reordered-${o.id}`, "1");
+          document.getElementById("v2-od-reorder-btn")?.click();
+        }
             });
           }
           try { if (typeof gtag === "function") gtag("event", "reorder_clicked", { seller_id: sellerIdForReorder, seller_name: seller.name, order_id: o.id }); } catch {}
