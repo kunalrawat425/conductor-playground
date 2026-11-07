@@ -59,37 +59,43 @@ export default function Login() {
     } catch (e: any) { setErr(e.message); setCode(""); track("otp_failed"); } finally { setBusy(false); }
   }
 
-  const shade = dark ? "linear-gradient(180deg, rgba(15,23,42,.35) 20%, rgba(15,23,42,.7) 70%)" : "linear-gradient(180deg, rgba(15,23,42,0) 30%, rgba(15,23,42,.35) 70%)";
+  // Partner app: the dashboard's green over a dock photo, so it can't be mistaken for the buyer app (founder 7 Nov).
+  const shade = seller
+    ? dark ? "linear-gradient(180deg, rgba(6,78,59,.55) 0%, rgba(2,44,34,.85) 70%)" : "linear-gradient(180deg, rgba(5,150,105,.35) 0%, rgba(4,120,87,.75) 70%)"
+    : dark ? "linear-gradient(180deg, rgba(15,23,42,.35) 20%, rgba(15,23,42,.7) 70%)" : "linear-gradient(180deg, rgba(15,23,42,0) 30%, rgba(15,23,42,.35) 70%)";
+  const accent = seller ? t.green : t.brand;
+  const gold = festive && !seller;
   const link = { color: t.ink2, textDecorationLine: "underline" as const };
   return (
-    <View style={{ flex: 1, backgroundColor: dark ? "#0F172A" : t.bg3 }}>
-      <Image source={require("../assets/login-collage.jpg")} style={[StyleSheet.absoluteFill, { width: "100%", height: "100%", opacity: dark ? 0.85 : 1 }]} resizeMode="cover" />
+    <View style={{ flex: 1, backgroundColor: seller ? (dark ? "#064E3B" : "#059669") : dark ? "#0F172A" : t.bg3 }}>
+      <Image source={seller ? require("../assets/seller-login.jpg") : require("../assets/login-collage.jpg")} style={[StyleSheet.absoluteFill, { width: "100%", height: seller ? "75%" : "100%", opacity: dark && !seller ? 0.85 : 1 }]} resizeMode="cover" />
       <Pressable style={[StyleSheet.absoluteFill, grad(shade)]} onPress={() => close()} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: "flex-end" }}>
         <View style={[{ backgroundColor: t.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: sent ? 40 : 46, paddingHorizontal: 22, paddingBottom: insets.bottom + 18, alignItems: "stretch" }, shadowCss("0px -10px 30px 0px rgba(0, 0, 0, 0.18)")]}>
-          <View style={[{ position: "absolute", top: -30, alignSelf: "center", width: 200, height: 60, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: t.brand },
-            festive ? { borderWidth: 2, borderColor: "#D4A24C" } : null, festive ? grad("linear-gradient(135deg, #B3123B, #8B0A2E)") : null,
-            shadowCss(festive ? "0px 10px 24px 0px rgba(139, 10, 46, 0.35)" : "0px 10px 24px 0px rgba(0, 102, 255, 0.3)")]}>
-            <Image source={festive ? require("../assets/logo-gold.png") : require("../assets/logo-white.png")} style={{ width: 152, height: 36 }} resizeMode="contain" />
+          <View style={[{ position: "absolute", top: -30, alignSelf: "center", width: 200, height: seller ? 66 : 60, borderRadius: 18, alignItems: "center", justifyContent: "center", gap: 2, backgroundColor: accent },
+            gold ? { borderWidth: 2, borderColor: "#D4A24C" } : null, gold ? grad("linear-gradient(135deg, #B3123B, #8B0A2E)") : seller ? grad("linear-gradient(135deg, #059669, #10B981)") : null,
+            shadowCss(gold ? "0px 10px 24px 0px rgba(139, 10, 46, 0.35)" : seller ? "0px 10px 24px 0px rgba(5, 150, 105, 0.35)" : "0px 10px 24px 0px rgba(0, 102, 255, 0.3)")]}>
+            <Image source={gold ? require("../assets/logo-gold.png") : require("../assets/logo-white.png")} style={{ width: seller ? 132 : 152, height: seller ? 31 : 36 }} resizeMode="contain" />
+            {seller ? <Text style={{ fontSize: 9, fontWeight: "800", letterSpacing: 1.44, color: "#FFFFFF", opacity: 0.92 }}>PARTNER · FOR SELLERS</Text> : null}
           </View>
 
           {!sent ? (
             <>
-              <Text style={{ textAlign: "center", fontSize: 20, lineHeight: 25, letterSpacing: -0.4, fontWeight: "800", marginTop: 2, marginBottom: 4 }}>{seller ? "Your shop on Relifish,\norders straight to your phone" : "Fresh fish from verified sellers,\ncleaned & cut"}</Text>
-              <Text style={{ textAlign: "center", fontSize: 13, fontWeight: "500", color: t.ink3 }}>{festive ? "Happy Diwali · Thane & Mumbai, delivered" : "Thane & Mumbai · delivered to your door"}</Text>
+              <Text style={{ textAlign: "center", fontSize: 20, lineHeight: 25, letterSpacing: -0.4, fontWeight: "800", marginTop: 2, marginBottom: 4 }}>{seller ? "Seller sign in" : "Fresh fish from verified sellers,\ncleaned & cut"}</Text>
+              <Text style={{ textAlign: "center", fontSize: 13, fontWeight: "500", color: t.ink3 }}>{seller ? "Manage orders, menu and deliveries" : festive ? "Happy Diwali · Thane & Mumbai, delivered" : "Thane & Mumbai · delivered to your door"}</Text>
               <View style={[row, { gap: 12, marginTop: 16, marginBottom: 12 }]}>
                 <View style={{ flex: 1, height: 1, backgroundColor: t.border }} />
-                <Text style={{ fontSize: 13, fontWeight: "600", color: t.ink3 }}>{seller ? "Seller sign in" : "Log in or sign up"}</Text>
+                <Text style={{ fontSize: 13, fontWeight: "600", color: t.ink3 }}>{seller ? "Your shop's registered number" : "Log in or sign up"}</Text>
                 <View style={{ flex: 1, height: 1, backgroundColor: t.border }} />
               </View>
-              <View style={[row, { height: 54, borderWidth: 1.5, borderRadius: 12, borderColor: err ? t.red : focus ? t.brand : t.border, backgroundColor: t.bg, overflow: "hidden" }, focus ? shadowCss(`0px 0px 0px 3px ${t.brandL}`) : null]}>
+              <View style={[row, { height: 54, borderWidth: 1.5, borderRadius: 12, borderColor: err ? t.red : focus ? accent : t.border, backgroundColor: t.bg, overflow: "hidden" }, focus ? shadowCss(`0px 0px 0px 3px ${seller ? t.greenL : t.brandL}`) : null]}>
                 <View style={{ height: "100%", justifyContent: "center", paddingLeft: 14, paddingRight: 12, borderRightWidth: 1.5, borderRightColor: t.border }}><Text style={{ fontSize: 16, fontWeight: "700" }}>+91</Text></View>
                 <TextInput value={phone} onChangeText={(v) => setPhone(v.replace(/\D/g, "").slice(-10))} autoFocus keyboardType="phone-pad" maxLength={14}
                   placeholder="Enter mobile number" placeholderTextColor={t.ink4} textContentType="telephoneNumber" autoComplete="tel" onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
                   onSubmitEditing={() => ok && send()} style={{ flex: 1, height: "100%", paddingHorizontal: 14, fontSize: 17, letterSpacing: 0.68, color: t.ink, fontFamily: phone ? "Inter_600SemiBold" : "Inter_500Medium" }} />
               </View>
               {err ? <Text style={{ marginTop: 6, fontSize: 12, color: t.red }}>{err}</Text> : null}
-              <Button title="Continue" full size="lg" loading={busy} disabled={!ok} onPress={send} textColor={ok ? undefined : t.ink4}
+              <Button title="Continue" full size="lg" loading={busy} disabled={!ok} onPress={send} textColor={ok ? undefined : t.ink4} color={seller ? t.green : undefined}
                 style={{ marginTop: 12, height: 54, borderRadius: 12, opacity: 1, ...(!ok ? { backgroundColor: t.bg3 } : {}) }} />
               {!seller ? (
                 <Pressable onPress={() => setWa(!wa)} style={[row, { alignItems: "flex-start", gap: 10, marginTop: 12 }]} accessibilityRole="checkbox" accessibilityState={{ checked: wa }}>
@@ -100,6 +106,7 @@ export default function Login() {
               <Text style={{ marginTop: 12, textAlign: "center", fontSize: 11, lineHeight: 16.5, fontWeight: "500", color: t.ink3 }}>
                 By continuing, you agree to our <Text style={link} onPress={() => Linking.openURL(`https://www.relifish.com/terms${seller ? "#sellers" : ""}`)}>Terms of service</Text> & <Text style={link} onPress={() => Linking.openURL("https://www.relifish.com/privacy")}>Privacy policy</Text>
               </Text>
+              {seller ? <Pressable onPress={() => Linking.openURL("https://play.google.com/store/apps/details?id=com.relifish.app")} style={{ marginTop: 10, alignItems: "center" }}><Text style={{ fontSize: 13, fontWeight: "700", color: t.green }}>Buying fish? Get the Relifish app</Text></Pressable> : null}
             </>
           ) : (
             <>
@@ -114,7 +121,7 @@ export default function Login() {
               {Platform.OS === "android" && code.length < 6 && !err ? (
                 <View style={[row, { alignSelf: "center", gap: 6 }]}><View style={[{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.green }, shadowCss(`0px 0px 0px 3px ${t.greenL}`)]} /><Text style={{ fontSize: 12, fontWeight: "600", color: t.green }}>Reading the code from SMS…</Text></View>
               ) : null}
-              <Button title="Verify & continue" full loading={busy} disabled={code.length !== 6} onPress={() => verify()} style={{ marginTop: 14, height: 54, borderRadius: 12 }} />
+              <Button title="Verify & continue" full color={seller ? t.green : undefined} loading={busy} disabled={code.length !== 6} onPress={() => verify()} style={{ marginTop: 14, height: 54, borderRadius: 12 }} />
               <Pressable disabled={wait > 0 || busy} onPress={send} style={{ marginTop: 12, alignItems: "center" }}>
                 {wait > 0
                   ? <Text style={{ fontSize: 14, fontWeight: "500", color: t.ink3 }}>Didn't get it? Resend SMS in <Text style={{ fontWeight: "700", color: t.ink }}>{fmt(wait)}</Text></Text>

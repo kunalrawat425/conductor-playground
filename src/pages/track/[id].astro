@@ -133,6 +133,22 @@ const { id } = Astro.params;
   .v2-od-item-qty { color: var(--v2-ink-3); font-size: 11px; margin-top: 2px; }
   .v2-od-bill div { display: flex; justify-content: space-between; padding: 4px 0; font: 500 13px Inter; color: var(--v2-ink-2); }
   .v2-od-bill .total { font: 800 15px Inter; color: var(--v2-ink); padding-top: 8px; border-top: 1px solid var(--v2-border); margin-top: 4px; }
+  .v2-tl { display: block; }
+  .v2-tl-row { display: flex; gap: 14px; }
+  .v2-tl-rail { display: flex; flex-direction: column; align-items: center; width: 24px; }
+  .v2-tl-dot { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font: 800 12px Inter; color: #fff; background: var(--v2-bg-3); flex: none; }
+  .v2-tl-done .v2-tl-dot { background: var(--v2-green); }
+  .v2-tl-fail .v2-tl-dot { background: var(--v2-red); }
+  .v2-tl-now .v2-tl-dot { background: var(--v2-bg); border: 2px solid var(--v2-brand); color: var(--v2-brand); }
+  .v2-tl-todo .v2-tl-dot { color: var(--v2-ink-4); }
+  .v2-tl-line { flex: 1; width: 2px; min-height: 22px; background: var(--v2-bg-3); }
+  .v2-tl-done .v2-tl-line { background: var(--v2-green); }
+  .v2-tl-body { flex: 1; padding-bottom: 16px; }
+  .v2-tl-row:last-child .v2-tl-body { padding-bottom: 0; }
+  .v2-tl-body b { display: block; font: 800 16px/22px Inter; color: var(--v2-ink); }
+  .v2-tl-todo .v2-tl-body b { color: var(--v2-ink-3); }
+  .v2-tl-fail .v2-tl-body b { color: var(--v2-red); }
+  .v2-tl-body span { display: block; margin-top: 2px; font: 400 13px Inter; color: var(--v2-ink-3); }
   .v2-od-stepper {
     display: flex; align-items: center; gap: 4px;
     margin-bottom: 6px;
@@ -364,36 +380,20 @@ const { id } = Astro.params;
     const { labels: stepLabels, step } = resolveBuyerStepper(o, orderType);
     const stepper = document.getElementById("v2-od-stepper");
     const stepLabelEl = document.querySelector(".v2-od-steplabels");
-    const isRefundStepper = ["declined","cancelled"].includes(o.status) && wasActuallyPaid(o);
-    if (isRefundStepper) {
-      const refundStep = o.refund_sent_at ? 2 : 1;
-      const refundLabels = ["Placed", o.status === "declined" ? "Declined" : "Cancelled", "Refund"];
-      stepper.innerHTML = [0,1,2].map(i =>
-        `<div class="dot${i <= refundStep ? ' done' : ''}" style="${i === 1 ? 'background:var(--v2-red);' : ''}">${i <= refundStep ? '✓' : i+1}</div>` +
-        (i < 2 ? `<div class="line${i < refundStep ? ' done' : ''}"></div>` : '')
-      ).join("");
-      if (stepLabelEl) stepLabelEl.innerHTML = refundLabels.map(l => `<span>${l}</span>`).join("");
+    // Tracking timeline (preview "Tracking"; same as the app's Timeline): one row per step with what it means.
+    const at = (iso) => iso ? new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "";
+    const SUB = { Placed: at(o.created_at), Confirmed: "The seller accepted your order", Preparing: "Cleaning & packing", "Out for delivery": "We'll notify you", Delivered: o.pay_on_delivery ? "Pay in the app on delivery, no cash" : "Enjoy your fish", "Picked up": "Collected from the shop", Ready: "Ready at the shop" };
+    let rows;
+    if (["declined", "cancelled"].includes(o.status)) {
+      const paid = wasActuallyPaid(o);
+      rows = [{ l: "Order placed", s: at(o.created_at), st: "done" }, { l: o.status === "declined" ? "Declined by the seller" : "Cancelled", s: "", st: "fail" }];
+      if (paid) rows.push({ l: o.refund_sent_at ? "Refunded" : "Refund on the way", s: o.refund_sent_at ? at(o.refund_sent_at) : "5–7 working days to your original payment method", st: o.refund_sent_at ? "done" : "now" });
     } else {
-      const terminalMeta = {
-        declined: { label: "Declined", color: "#DC2626", icon: "✕" },
-        cancelled: { label: "Cancelled", color: "#DC2626", icon: "✕" },
-      };
-      const terminal = terminalMeta[o.status];
-      if (terminal) {
-        stepper.innerHTML = `
-          <div class="dot done">✓</div>
-          <div class="line done"></div>
-          <div class="dot" style="background:${terminal.color};color:#fff;font-size:11px;">${terminal.icon}</div>
-        `;
-        if (stepLabelEl) stepLabelEl.innerHTML = `<span>Placed</span><span style="color:${terminal.color};font-weight:700;margin-left:auto;">${terminal.label}</span>`;
-      } else {
-        stepper.innerHTML = Array.from({ length: stepLabels.length }, (_, i) =>
-          `<div class="dot${i <= step ? ' done' : ''}">${i <= step ? '✓' : i+1}</div>` +
-          (i < stepLabels.length - 1 ? `<div class="line${i < step ? ' done' : ''}"></div>` : '')
-        ).join("");
-        if (stepLabelEl) stepLabelEl.innerHTML = stepLabels.map(l => `<span>${l}</span>`).join("");
-      }
+      rows = stepLabels.map((l, i) => ({ l, s: SUB[l] || "", st: i < step ? "done" : i === step ? (i === stepLabels.length - 1 ? "done" : "now") : "todo" }));
     }
+    stepper.className = "v2-tl";
+    stepper.innerHTML = rows.map((r, i) => `<div class="v2-tl-row v2-tl-${r.st}"><div class="v2-tl-rail"><span class="v2-tl-dot">${r.st === "done" ? "✓" : r.st === "fail" ? "✕" : i + 1}</span>${i < rows.length - 1 ? '<span class="v2-tl-line"></span>' : ""}</div><div class="v2-tl-body"><b>${escape(r.l)}</b>${r.s ? `<span>${escape(r.s)}</span>` : ""}</div></div>`).join("");
+    if (stepLabelEl) stepLabelEl.style.display = "none";
 
     // Seller
     const seller = o.seller || {};

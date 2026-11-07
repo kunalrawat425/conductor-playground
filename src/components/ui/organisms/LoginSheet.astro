@@ -23,14 +23,14 @@ const MAX_ATTEMPTS = 3;
      dismissible={false}: none of those close it; Back just leaves the page. -->
 <BottomSheet id={id} title={title} showClose={false} dismissible={dismissible}>
   <!-- Blinkit-style login (preview "Login redesign"): fish collage behind (backdrop), white panel with the logo badge. -->
-  <div class:list={["lg-root", festive && "lg-diwali"]}>
-    <div class="lg-badge" aria-hidden="true"><img src={festive ? "/logo-gold.png" : "/logo-white.png"} alt="" width="152" height="36" /></div>
+  <div class:list={["lg-root", role === "seller" ? "lg-seller" : festive && "lg-diwali"]}>
+    <div class="lg-badge" aria-hidden="true"><img src={festive && role !== "seller" ? "/logo-gold.png" : "/logo-white.png"} alt="" width="152" height="36" />{role === "seller" && <span class="lg-badge-tag">Partner · for sellers</span>}</div>
 
     <!-- Step 1: phone entry -->
     <div id={`${id}-step1`}>
-      <div class="lg-tag">{role === "seller" ? <>Your shop on Relifish,<br />orders straight to your phone</> : <>Fresh fish from verified sellers,<br />cleaned &amp; cut</>}</div>
-      <div class="lg-sub">{festive ? "Happy Diwali · Thane & Mumbai, delivered" : "Thane & Mumbai · delivered to your door"}</div>
-      <div class="lg-or">{role === "seller" ? "Seller sign in" : "Log in or sign up"}</div>
+      <div class="lg-tag">{role === "seller" ? "Seller sign in" : <>Fresh fish from verified sellers,<br />cleaned &amp; cut</>}</div>
+      <div class="lg-sub">{role === "seller" ? "Manage orders, menu and deliveries" : festive ? "Happy Diwali · Thane & Mumbai, delivered" : "Thane & Mumbai · delivered to your door"}</div>
+      <div class="lg-or">{role === "seller" ? "Your shop's registered number" : "Log in or sign up"}</div>
       <form id={`${id}-phone-form`} autocomplete="off">
         <PhoneInput id={`${id}-phone`} required={true} />
         <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full lg-cta" id={`${id}-send-otp`}>Continue</button>
@@ -41,6 +41,7 @@ const MAX_ATTEMPTS = 3;
           </label>
         )}
         <p class="lg-terms">By continuing, you agree to our <a href={termsHref} target="_blank">{termsLabel}</a> &amp; <a href="/privacy" target="_blank">Privacy policy</a></p>
+        {role === "seller" && <a class="lg-switch" href="/shop">Buying fish? Go to shop</a>}
       </form>
     </div>
 
@@ -75,6 +76,15 @@ const MAX_ATTEMPTS = 3;
   .lg-badge { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; width: 200px; height: 60px; border-radius: 18px; background: var(--v2-brand); box-shadow: 0 10px 24px rgba(0,102,255,.30); z-index: 2; }
   .lg-diwali .lg-badge { background: linear-gradient(135deg, #B3123B, #8B0A2E); border: 2px solid #D4A24C; box-shadow: 0 10px 24px rgba(139,10,46,.35); }
   .lg-badge img { width: 152px; height: auto; }
+  /* Seller (Partner) login: the dashboard's green, a dock photo, "Partner · for sellers" tag (founder 7 Nov). */
+  .v2-sheet-backdrop:has(.lg-seller) { background: linear-gradient(to bottom, rgba(5,150,105,.35) 0%, rgba(4,120,87,.75) 70%), url(/seller-login.jpg) center top / cover no-repeat, #059669; }
+  html[data-theme="dark"] .v2-sheet-backdrop:has(.lg-seller) { background: linear-gradient(to bottom, rgba(6,78,59,.55) 0%, rgba(2,44,34,.85) 70%), url(/seller-login.jpg) center top / cover no-repeat, #064E3B; }
+  .lg-seller .lg-badge { flex-direction: column; gap: 2px; height: 66px; background: linear-gradient(135deg, #059669, #10B981); border: 0; box-shadow: 0 10px 24px rgba(5,150,105,.35); }
+  .lg-seller .lg-badge img { width: 132px; }
+  .lg-badge-tag { font: 800 9px var(--v2-font); letter-spacing: .16em; text-transform: uppercase; color: #fff; opacity: .92; }
+  .lg-seller .lg-cta:not(:disabled) { background: var(--v2-green); border-color: var(--v2-green); }
+  .lg-seller .v2-input-wrap:focus-within, .lg-seller .v2-otp-cell:focus { border-color: var(--v2-green); box-shadow: 0 0 0 3px var(--v2-green-l); }
+  .lg-switch { display: block; margin-top: 10px; font: 700 13px var(--v2-font); color: var(--v2-green); text-decoration: none; }
   .lg-tag { font: 800 20px/1.25 var(--v2-font); letter-spacing: -.02em; margin: 2px 0 4px; color: var(--v2-ink); }
   .lg-sub { font: 500 13px var(--v2-font); color: var(--v2-ink-3); }
   .lg-or { display: flex; align-items: center; gap: 12px; margin: 16px 0 12px; font: 600 13px var(--v2-font); color: var(--v2-ink-3); }
