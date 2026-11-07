@@ -108,9 +108,8 @@ export default function Orders() {
           {pill(DONE.includes(o.status) ? (o.status === "picked_up" ? "Picked up" : "Delivered") : o.status, t.greenL, t.green)}
         </View>
         <View style={[row, { gap: 8, marginTop: 12 }]}>
-          {btn("Reorder", "refresh", () => { ga("reorder_clicked", { order_id: o.id }); router.push(`/order/${o.id}`); }, true)}
-          {btn("Rate", "star", () => Linking.openURL(`https://www.relifish.com/track/${o.id}`))}
-          {btn("Invoice", "file", () => Linking.openURL(`https://www.relifish.com/track/${o.id}`))}
+          {btn("Reorder", "refresh", () => { ga("reorder_clicked", { order_id: o.id }); router.push(`/order/${o.id}?reorder=1`); }, true)}
+          {DONE.includes(o.status) && !o.buyer_feedback ? btn("Rate", "star", () => Linking.openURL(`https://www.relifish.com/track/${o.id}`)) : null}
         </View>
       </Pressable>
     );
@@ -121,7 +120,7 @@ export default function Orders() {
     <View style={{ flex: 1, backgroundColor: t.bg2 }}>
       <AppHeader variant="page" title="Your orders" onBack={() => router.navigate("/")} />
       {me === undefined || (me && !data) ? <ActivityIndicator style={{ marginTop: 48 }} size="large" color={t.brand} /> : !me ? (
-        <View style={{ marginTop: 16 }}><EmptyState icon="📋" title="Sign in to see your orders" desc="Use your phone number to view past orders and track current ones." cta="Sign in" onCta={() => router.push("/login")} /></View>
+        <View style={{ marginTop: 16 }}><EmptyState icon="ordersO" title="Sign in to see your orders" desc="Use your phone number to view past orders and track current ones." cta="Sign in" onCta={() => router.push("/login")} /></View>
       ) : (
         <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}>
           <View style={{ flexDirection: "row", marginHorizontal: 16, padding: 4, borderRadius: 12, backgroundColor: t.bg3 }}>
@@ -132,7 +131,7 @@ export default function Orders() {
             ))}
           </View>
           {!list.length ? (
-            <View style={{ marginTop: 16 }}><EmptyState icon="📋" title={tab === "active" ? "Nothing on the way" : "No orders yet"} desc="Browse verified sellers near you to get started." cta="Browse sellers" onCta={() => router.navigate("/")} /></View>
+            <View style={{ marginTop: 16 }}><EmptyState icon="ordersO" title={tab === "active" ? "Nothing on the way" : "No orders yet"} desc="Browse verified sellers near you to get started." cta="Browse sellers" onCta={() => router.navigate("/")} /></View>
           ) : tab === "active" ? (
             <>{cap("ARRIVING")}<View style={{ gap: 12 }}>{list.map((o) => <Active key={o.id} o={o} />)}</View></>
           ) : (

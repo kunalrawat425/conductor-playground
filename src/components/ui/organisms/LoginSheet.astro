@@ -41,7 +41,8 @@ const MAX_ATTEMPTS = 3;
           </label>
         )}
         <p class="lg-terms">By continuing, you agree to our <a href={termsHref} target="_blank">{termsLabel}</a> &amp; <a href="/privacy" target="_blank">Privacy policy</a></p>
-        {role === "seller" && <a class="lg-switch" href="/shop">Buying fish? Go to shop</a>}
+        {role === "seller" && <a class="lg-switch" href="tel:+919152207607">New seller or need help? Call us</a>}
+        {role === "seller" && <a class="lg-switch lg-switch-2" href="/shop">Buying fish? Go to shop</a>}
       </form>
     </div>
 
@@ -54,6 +55,7 @@ const MAX_ATTEMPTS = 3;
         <b>OTP verification</b>
       </div>
       <div class="otp-sent">Sent by SMS to <b id={`${id}-phone-display`}></b> · <button type="button" id={`${id}-change-phone`} class="otp-change">Change</button></div>
+      <div class="otp-valid">The code is valid for 10 minutes.</div>
       <form id={`${id}-otp-form`} autocomplete="off">
         <OTPInput id={`${id}-otp`} length={6} autoSubmitFormId={`${id}-otp-form`} />
         <div class="otp-auto" id={`${id}-auto`} hidden><span class="otp-dot"></span>Reading the code from SMS…</div>
@@ -84,6 +86,7 @@ const MAX_ATTEMPTS = 3;
   .lg-badge-tag { font: 800 9px var(--v2-font); letter-spacing: .16em; text-transform: uppercase; color: #fff; opacity: .92; }
   .lg-seller .lg-cta:not(:disabled) { background: var(--v2-green); border-color: var(--v2-green); }
   .lg-seller .v2-input-wrap:focus-within, .lg-seller .v2-otp-cell:focus { border-color: var(--v2-green); box-shadow: 0 0 0 3px var(--v2-green-l); }
+  .lg-switch-2 { color: var(--v2-ink-3); font-weight: 600; margin-top: 6px; }
   .lg-switch { display: block; margin-top: 10px; font: 700 13px var(--v2-font); color: var(--v2-green); text-decoration: none; }
   .lg-tag { font: 800 20px/1.25 var(--v2-font); letter-spacing: -.02em; margin: 2px 0 4px; color: var(--v2-ink); }
   .lg-sub { font: 500 13px var(--v2-font); color: var(--v2-ink-3); }
@@ -106,6 +109,7 @@ const MAX_ATTEMPTS = 3;
   .otp-back { position: absolute; left: 0; top: -4px; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--v2-bg-3); color: var(--v2-ink); border: 0; cursor: pointer; }
   .otp-sent { font: 500 14px/1.5 var(--v2-font); color: var(--v2-ink-3); }
   .otp-sent b { color: var(--v2-ink); font-weight: 800; }
+  .otp-valid { margin-top: 2px; font: 400 12px var(--v2-font); color: var(--v2-ink-3); }
   .otp-change { font: 700 14px var(--v2-font); color: var(--v2-link); background: none; border: 0; padding: 0; cursor: pointer; }
   .lg-root .v2-otp { justify-content: center; gap: 9px; margin: 20px 0 14px; }
   .lg-root .v2-otp-cell { width: 46px; height: 54px; border-radius: 12px; border: 1.5px solid var(--v2-border); font: 800 22px var(--v2-font); text-align: center; }

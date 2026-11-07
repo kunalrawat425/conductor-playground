@@ -33,7 +33,7 @@ export function PushPrePrompt({ preview }: { /** gallery: always open */ preview
     const N = await import("expo-notifications");
     if ((await N.requestPermissionsAsync()).granted) import("./push").then((m) => m.registerPush());
   }
-  const rows: [IconName, string][] = [["check", "Seller confirmed your order"], ["truck", "Out for delivery, with the time"], ["card", "Pay in the app when it arrives"]];
+  const rows: [IconName, string][] = [["check", "Seller confirmed your order, with the delivery slot"], ["truck", "Out for delivery, with the time"], ["card", "Refund updates if an order can't go ahead"]];
   return (
     <Modal visible={show} transparent animationType="slide" onRequestClose={() => done("later")} statusBarTranslucent>
       <Pressable style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.5)" }} onPress={() => done("later")} />

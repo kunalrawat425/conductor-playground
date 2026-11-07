@@ -117,7 +117,8 @@ export default function Login() {
               <Text style={{ marginTop: 12, textAlign: "center", fontSize: 11, lineHeight: 16.5, fontWeight: "500", color: t.ink3 }}>
                 By continuing, you agree to our <Text style={link} onPress={() => Linking.openURL(`https://www.relifish.com/terms${seller ? "#sellers" : ""}`)}>Terms of service</Text> & <Text style={link} onPress={() => Linking.openURL("https://www.relifish.com/privacy")}>Privacy policy</Text>
               </Text>
-              {seller ? <Pressable onPress={() => Linking.openURL("https://play.google.com/store/apps/details?id=com.relifish.app")} style={{ marginTop: 10, alignItems: "center" }}><Text style={{ fontSize: 13, fontWeight: "700", color: t.green }}>Buying fish? Get the Relifish app</Text></Pressable> : null}
+              {seller ? <Pressable onPress={() => Linking.openURL("tel:+919152207607")} style={{ marginTop: 10, alignItems: "center" }}><Text style={{ fontSize: 13, fontWeight: "700", color: t.green }}>New seller or need help? Call us</Text></Pressable> : null}
+              {seller ? <Pressable onPress={() => Linking.openURL("https://play.google.com/store/apps/details?id=com.relifish.app")} style={{ marginTop: 8, alignItems: "center" }}><Text style={{ fontSize: 13, fontWeight: "600", color: t.ink3 }}>Buying fish? Get the Relifish app</Text></Pressable> : null}
             </>
           ) : (
             <>
@@ -128,7 +129,8 @@ export default function Login() {
               <Text style={{ textAlign: "center", fontSize: 14, lineHeight: 21, fontWeight: "500", color: t.ink3 }}>
                 Sent by SMS to <Text style={{ fontWeight: "800", color: t.ink }}>+91 {phone.slice(0, 5)} {phone.slice(5)}</Text> · <Text style={{ fontWeight: "700", color: t.link }} onPress={() => { setSent(false); setCode(""); setErr(""); }}>Change</Text>
               </Text>
-              <View style={{ marginTop: 20, marginBottom: 14 }}><OTPInput value={code} onChange={setCode} onComplete={(c) => verify(c)} error={err || undefined} cell={46} gap={9} /></View>
+              <Text style={{ marginTop: 2, textAlign: "center", fontSize: 12, color: t.ink3 }}>The code is valid for 10 minutes.</Text>
+              <View style={{ marginTop: 18, marginBottom: 14 }}><OTPInput value={code} onChange={setCode} onComplete={(c) => verify(c)} error={err || undefined} cell={46} gap={9} /></View>
               {listening && code.length < 6 && !err ? (
                 <View style={[row, { alignSelf: "center", gap: 6 }]}><View style={[{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.green }, shadowCss(`0px 0px 0px 3px ${t.greenL}`)]} /><Text style={{ fontSize: 12, fontWeight: "600", color: t.green }}>Reading the code from SMS…</Text></View>
               ) : null}

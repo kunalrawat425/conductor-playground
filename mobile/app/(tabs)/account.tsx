@@ -42,7 +42,7 @@ export default function Account() {
   useFocusEffect(useCallback(() => { load(); const sub = AppState.addEventListener("change", (x) => x === "active" && load()); return () => sub.remove(); }, [load]));
 
   const header = <AppHeader variant="page" title="Account" onBack={() => router.navigate("/")} />;
-  if (me === null) return <View style={{ flex: 1, backgroundColor: t.bg2 }}>{header}<View style={{ marginTop: 16 }}><EmptyState icon="🔑" title="Sign in to your account" desc="Use your phone number to view profile, saved addresses, and order history." cta="Sign in" onCta={() => router.push("/login")} /></View></View>;
+  if (me === null) return <View style={{ flex: 1, backgroundColor: t.bg2 }}>{header}<View style={{ marginTop: 16 }}><EmptyState icon="user" title="Sign in to your account" desc="Use your phone number to view profile, saved addresses, and order history." cta="Sign in" onCta={() => router.push("/login")} /></View></View>;
 
   const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ");
   const wa = !!profile?.whatsapp_opt_in_at && !profile?.whatsapp_opt_out_at;
@@ -100,7 +100,7 @@ export default function Account() {
               <Text style={{ fontSize: 11, fontWeight: "800", letterSpacing: 0.6, color: t.ink3 }}>YOUR LAST ORDER</Text>
               <Text numberOfLines={2} style={{ marginTop: 2, fontSize: 14, fontWeight: "700", textTransform: "capitalize" }}>{last.species || last.listing?.species} {lastQty} · {last.listing?.seller?.name || "Seller"}</Text>
             </View>
-            <Pressable onPress={() => { ga("reorder_clicked", { order_id: last.id }); router.push(`/order/${last.id}`); }} style={[row, { gap: 6, borderWidth: 1.5, borderColor: t.brand, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 }]}><Icon name="refresh" size={14} color={t.brand} /><Text style={{ fontSize: 13, fontWeight: "700", color: t.brand }}>Reorder</Text></Pressable>
+            <Pressable onPress={() => { ga("reorder_clicked", { order_id: last.id }); router.push(`/order/${last.id}?reorder=1`); }} style={[row, { gap: 6, borderWidth: 1.5, borderColor: t.brand, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 }]}><Icon name="refresh" size={14} color={t.brand} /><Text style={{ fontSize: 13, fontWeight: "700", color: t.brand }}>Reorder</Text></Pressable>
           </View>
         ) : null}
 

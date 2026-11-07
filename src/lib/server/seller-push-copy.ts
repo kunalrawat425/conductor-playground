@@ -92,7 +92,7 @@ export function sellerPushNotification(
 
     case "pod_paid":
       return {
-        title: "Paid ✅ — hand it over",
+        title: "Paid — hand it over",
         body: `The buyer paid${amt}${species ? ` for ${species}` : ""}${idSuffix}. Mark it delivered once they have it.`,
       };
 

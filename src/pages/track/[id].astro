@@ -382,7 +382,8 @@ const { id } = Astro.params;
     const stepLabelEl = document.querySelector(".v2-od-steplabels");
     // Tracking timeline (preview "Tracking"; same as the app's Timeline): one row per step with what it means.
     const at = (iso) => iso ? new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "";
-    const SUB = { Placed: at(o.created_at), Confirmed: "The seller accepted your order", Preparing: "Cleaning & packing", "Out for delivery": "We'll notify you", Delivered: o.pay_on_delivery ? "Pay in the app on delivery, no cash" : "Enjoy your fish", "Picked up": "Collected from the shop", Ready: "Ready at the shop" };
+    // Descriptions for the stepper's own labels (lib/buyer-order-stepper); a time only where the order has one.
+    const SUB = { Placed: at(o.created_at), "Pre-ordered": at(o.created_at), Paid: o.payment_verified_at ? at(o.payment_verified_at) : o.pay_on_delivery ? "In the app when it arrives, no cash" : "", Confirmed: "The seller accepted your order", "On the way": "Out for delivery", Ready: "Ready to collect at the shop" };
     let rows;
     if (["declined", "cancelled"].includes(o.status)) {
       const paid = wasActuallyPaid(o);

@@ -8,6 +8,7 @@ import { ActivityIndicator, Pressable, TextInput, View, type TextInputProps, typ
 import * as Haptics from "expo-haptics";
 import { lit, useIsDark, useTheme } from "../theme";
 import { grad, lh, row, shadowCss, Text } from "./base";
+import { Icon, ICONS, type IconName } from "./icons";
 
 /** .v2-btn: primary / secondary / ghost / danger; sm 13/700 (8/16 pad) · md 14/700 (12/24) · lg 16/800 (14/32); min 44 tall; 8 radius. */
 export function Button({ title, onPress, variant = "primary", size = "md", disabled, loading, full, style, color, textColor }: {
@@ -139,7 +140,7 @@ export function EmptyState({ icon, title, desc, cta, onCta, ghost, onGhost }: { 
   const t = useTheme();
   return (
     <View style={{ marginHorizontal: 16, alignItems: "center", paddingVertical: 40, paddingHorizontal: 24, backgroundColor: t.bg, borderWidth: 1, borderColor: t.border, borderRadius: 12 }}>
-      <Text style={{ fontSize: 56, lineHeight: 74 }}>{icon}</Text>
+      {icon in ICONS ? <View style={{ height: 74, justifyContent: "center" }}><Icon name={icon as IconName} size={48} color={t.ink3} /></View> : <Text style={{ fontSize: 56, lineHeight: 74 }}>{icon}</Text>}
       <Text style={{ marginTop: 16, fontSize: 17, lineHeight: lh(17), fontWeight: "800", textAlign: "center" }}>{title}</Text>
       {desc ? <Text style={{ marginTop: 12, fontSize: 13, lineHeight: 19.5, color: t.ink3, textAlign: "center" }}>{desc}</Text> : null}
       {cta ? <Button title={cta} onPress={onCta} style={{ marginTop: 20, alignSelf: "center" }} /> : null}

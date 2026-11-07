@@ -29,7 +29,7 @@ const LABEL: Record<string, string> = {
 const DONE = ["completed", "picked_up", "cancelled", "declined", "refunded"];
 
 export default function OrderScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, reorder: autoReorder } = useLocalSearchParams<{ id: string; reorder?: string }>();
   const t = useTheme();
   const [o, setO] = useState<any>(null);
   const [pod, setPod] = useState<any>(null);
@@ -46,6 +46,7 @@ export default function OrderScreen() {
     setPod(unpaid ? await api(`/api/orders/pay-on-delivery?order_id=${id}&buyer_id=${me.buyer_id}`).catch(() => null) : null);
   }, [id]);
   useEffect(() => { load(); const iv = setInterval(load, 15000); return () => clearInterval(iv); }, [load]);
+  if (o && autoReorder === "1" && !(globalThis as any).__rlfReordered?.[o.id]) { (globalThis as any).__rlfReordered = { ...((globalThis as any).__rlfReordered || {}), [o.id]: true }; setTimeout(() => reorder(), 0); }
   if (!o) return <View style={{ flex: 1, backgroundColor: t.bg2 }}><AppHeader variant="page" title="Order details" onBack={() => router.back()} /><ActivityIndicator style={{ marginTop: 48 }} size="large" color={t.brand} /></View>;
 
   const items: any[] = o.cart?.items?.filter((i: any) => !["cancelled", "declined"].includes(i.status)) || [o];
@@ -100,19 +101,28 @@ export default function OrderScreen() {
   function reorder() {
     ga("reorder_clicked", { order_id: o.id });
     const sid = o.seller?.id || o.listing?.seller_id;
+    let added = 0;
     for (const i of items) {
-      const L = i.listing || o.listing; if (!L) continue;
+      const L = i.listing || o.listing; if (!L || L.deleted_at || (L.is_available === false && !L.is_preorder_enabled)) continue;
       const opts = getListingPriceOptions(L); const k = Math.max(0, opts.findIndex((x: any) => x.id === i.pricing_option_id)); const opt: any = opts[k]; if (!opt) continue;
       const bundle = optionBundleAmount(opt) || 1;
       cart.setPacks({ id: sid, name: o.seller?.name || "" }, { listing_id: L.id, species: L.species, option_id: opt.id || `opt_${k}`, option_label: opt.label || formatOptionMenuLabel(opt), unit: opt.unit || "kg", bundle, price: Number(opt.price) || 0 }, Math.max(1, Math.round(Number(i.quantity) / bundle)));
+      added++;
     }
+    if (!added) Alert.alert("Not on the menu right now", "These fish aren't available today. Have a look at the seller's menu.");
     router.push(`/seller/${sid}`);
   }
 
   const when = (iso?: string | null) => (iso ? new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "");
   const slot = o.order_type === "delivery" ? orderSlotText(o) : null;
   // Tracking timeline (preview): the stepper's steps, with what each means for the buyer.
-  const SUB: Record<string, string> = { Placed: when(o.created_at), Confirmed: "The seller accepted your order", Preparing: "Cleaning & packing", "Out for delivery": "We'll notify you", Delivered: o.pay_on_delivery ? "Pay in the app on delivery, no cash" : "Enjoy your fish", "Picked up": "Collected from the shop", Ready: "Ready at the shop" };
+  // Descriptions for the stepper's own labels (src/lib/buyer-order-stepper.ts); a time only where the order has one.
+  const SUB: Record<string, string> = {
+    Placed: when(o.created_at), "Pre-ordered": when(o.created_at),
+    Paid: o.payment_verified_at ? when(o.payment_verified_at) : o.pay_on_delivery ? "In the app when it arrives, no cash" : "",
+    Confirmed: "The seller accepted your order", "On the way": "Out for delivery", Ready: "Ready to collect at the shop",
+    Delivered: "", "Picked up": "",
+  };
   const timeline: TimelineStep[] = closed
     ? [{ label: "Order placed", sub: when(o.created_at), state: "done" }, { label: o.status === "declined" ? "Declined by the seller" : "Cancelled", sub: cancelledByText(o.cancelled_by, "buyer", o.cancel_reason), state: "fail" }]
     : steps.labels.map((l: string, i: number) => ({ label: l, sub: SUB[l] || (i === steps.step + 1 && slot ? slot.value : undefined), state: i < steps.step ? "done" : i === steps.step ? (i === steps.labels.length - 1 ? "done" : "now") : "todo" }));
@@ -122,8 +132,8 @@ export default function OrderScreen() {
       <AppHeader variant="page" title={`Order #${String(o.id).slice(0, 8).toUpperCase()}`} onBack={() => (router.canGoBack() ? router.back() : router.replace("/orders"))} />
       <ScrollView contentContainerStyle={{ paddingBottom: 24, gap: 12 }} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
         <TrackHero tone={tone as any} kicker={`${o.is_preorder || o.placement_kind === "preorder" ? "PRE-ORDER" : "ORDER"} #${String(o.id).slice(0, 8).toUpperCase()} · ${statusText.toUpperCase()}`}
-          title={slot ? `${o.status === "out_for_delivery" ? "Arriving" : "Arrives"} ${slot.value}` : statusText}
-          sub={closed ? cancelReasonText(o.cancel_reason) || undefined : slot ? `${slot.label} · ${cleanSellerName(o.seller?.name) || "The seller"} is buying your fish fresh that morning` : `Placed ${when(o.created_at)}`} />
+          title={o.order_type !== "delivery" && o.status === "ready_for_pickup" ? "Ready for pickup" : slot && !closed && !["completed", "picked_up"].includes(o.status) ? `${o.status === "out_for_delivery" ? "Arriving" : "Arrives"} ${slot.value}` : statusText}
+          sub={closed ? cancelReasonText(o.cancel_reason) || undefined : slot ? slot.label : `Placed ${when(o.created_at)}`} />
         <Timeline steps={timeline} />
         <InfoSection title="From">
           <Text style={{ fontSize: 14, lineHeight: lh(14), fontWeight: "700" }}>{cleanSellerName(o.seller?.name) || "Seller"}</Text>
