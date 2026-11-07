@@ -8,7 +8,7 @@ import { Alert, AppState, Image, Linking, Modal, Pressable, ScrollView, Switch, 
 import Constants from "expo-constants";
 import { router, useFocusEffect } from "expo-router";
 import { api, getSession, setSession, type Session } from "../../src/api";
-import { resizedImageUrl } from "../../../src/lib/seller-display";
+import { CATEGORY_PHOTOS } from "../../src/ui/photos";
 import { useTheme } from "../../src/theme";
 import { ga } from "../../src/track";
 import { AppHeader } from "../../src/ui/chrome";
@@ -71,7 +71,8 @@ export default function Account() {
     setProfile({ ...profile, whatsapp_opt_in_at: on ? new Date().toISOString() : profile?.whatsapp_opt_in_at, whatsapp_opt_out_at: on ? null : new Date().toISOString() });
     await api("/api/buyer/profile", { buyer_id: me!.buyer_id, updates: { whatsapp_updates: on } }).catch(() => load());
   }
-  const lastPhoto = last?.listing?.photo_url ? resizedImageUrl(last.listing.photo_url, 120) : null;
+  // The orders API has no listing photo: the species plate photo, like the Orders list.
+  const lastPhoto = last ? CATEGORY_PHOTOS[String(last.species || last.listing?.species || "").toLowerCase()] ?? CATEGORY_PHOTOS.all : null;
   const lastQty = last ? (last.quantity_unit === "kg" && Number(last.quantity) < 1 ? `${Math.round(Number(last.quantity) * 1000)} g` : `${last.quantity} ${last.quantity_unit}`) : "";
 
   return (
@@ -95,7 +96,7 @@ export default function Account() {
 
         {last ? (
           <View style={[card, row, { marginTop: 12, gap: 12, padding: 14 }]}>
-            <View style={{ width: 44, height: 44, borderRadius: 22, overflow: "hidden", backgroundColor: t.bg3 }}>{lastPhoto ? <Image source={{ uri: lastPhoto }} style={{ width: 44, height: 44 }} /> : null}</View>
+            <View style={{ width: 44, height: 44, borderRadius: 22, overflow: "hidden", backgroundColor: t.bg3 }}>{lastPhoto ? <Image source={lastPhoto} style={{ width: 44, height: 44 }} /> : null}</View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 11, fontWeight: "800", letterSpacing: 0.6, color: t.ink3 }}>YOUR LAST ORDER</Text>
               <Text numberOfLines={2} style={{ marginTop: 2, fontSize: 14, fontWeight: "700", textTransform: "capitalize" }}>{last.species || last.listing?.species} {lastQty} · {last.listing?.seller?.name || "Seller"}</Text>
