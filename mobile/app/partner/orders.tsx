@@ -167,12 +167,12 @@ export default function PartnerOrders() {
               <SellerOrderCard
                 id={`#${String(o.id).slice(0, 8).toUpperCase()}${o.buyer_phone ? ` · ${String(o.buyer_phone).slice(-4)}` : ""}`}
                 time={new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
-                badges={[...(o.razorpay_payment_id && !CLOSED.includes(o.status) && o.status !== "paid" ? [{ text: "Paid", tone: "paid" as const }] : []), { text: bt, tone: BTONE[bk] }]}
+                badges={[...(o.razorpay_payment_id && !CLOSED.includes(o.status) ? [{ text: "Paid", tone: "paid" as const }] : []), { text: bt, tone: BTONE[bk] }]}
                 itemsLine={rows.length > 1 ? `${rows.length} items` : undefined}
                 lines={rows.map((r) => ({ text: `${r.listing?.species || r.species} · ${qtyLabel(r)}${r.pricing_label ? ` · ${r.pricing_label}` : ""}`, price: `₹${(Number(r.total_price || r.final_price) || 0).toLocaleString("en-IN")}`, badge: lineBadge(r), struck: !!o.cart_items && CLOSED.includes(r.status), refund: refundBox(r, o) }))}
                 tags={[{ text: pre ? "Pre-order" : "Same day", kind: pre ? "preorder" : "order" }, { text: o.order_type === "delivery" ? "Delivery" : "Pickup", kind: o.order_type === "delivery" ? "delivery" : "pickup" }]}
                 location={where || undefined} locationNote={!addr && area ? "(full address after you accept)" : undefined}
-                total={`₹${total.toLocaleString("en-IN")}`} payment={paymentMethodLabel(o) || undefined} paymentRef={o.razorpay_payment_id || undefined}
+                total={`₹${total.toLocaleString("en-IN")}`} payment={paymentMethodLabel(o) ? `${paymentMethodLabel(o)}${o.razorpay_payment_id ? " · Ref" : ""}` : undefined} paymentRef={o.razorpay_payment_id || undefined}
                 next={plan.hint || undefined} paidLine={plan.note?.tone === "green" ? plan.note.text : undefined}
                 actions={plan.acts.map((a) => ({ title: busy === o.id + a.action ? "…" : a.label, kind: a.kind === "success" ? "green" : (a.kind as any), disabled: a.disabled, onPress: () => press(o, a) }))}
                 extra={extra}
