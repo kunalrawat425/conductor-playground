@@ -86,6 +86,26 @@ const MAX_ATTEMPTS = 3;
   .lg-badge-tag { font: 800 9px var(--v2-font); letter-spacing: .16em; text-transform: uppercase; color: #fff; opacity: .92; }
   .lg-seller .lg-cta:not(:disabled) { background: var(--v2-green); border-color: var(--v2-green); }
   .lg-seller .v2-input-wrap:focus-within, .lg-seller .v2-otp-cell:focus { border-color: var(--v2-green); box-shadow: 0 0 0 3px var(--v2-green-l); }
+  /* Desktop / tablet (>= 768 px, founder 7 Nov): a centred card, the collage as its sharp header image (1x/2x),
+     a dimmed page behind; the card scrolls inside itself so nothing is clipped down to 600 px tall. */
+  @media (min-width: 768px) {
+    .v2-sheet-backdrop:has(.lg-root), html[data-theme="dark"] .v2-sheet-backdrop:has(.lg-root),
+    .v2-sheet-backdrop:has(.lg-seller), html[data-theme="dark"] .v2-sheet-backdrop:has(.lg-seller) {
+      background: rgba(15, 23, 42, .62); align-items: center; padding: 24px;
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    }
+    .v2-sheet:has(.lg-root) { width: 440px; max-width: 440px; max-height: calc(100vh - 48px); margin: 0; border-radius: 24px; overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,.35); }
+    .v2-sheet:has(.lg-root)::before {
+      content: ""; flex: none; height: 210px;
+      background: url(/login-collage-hdr.jpg) center / cover no-repeat;
+      background-image: image-set(url(/login-collage-hdr.jpg) 1x, url(/login-collage-hdr@2x.jpg) 2x);
+    }
+    .v2-sheet:has(.lg-seller)::before {
+      background: linear-gradient(to bottom, rgba(5,150,105,.25), rgba(4,120,87,.55)), url(/seller-login.jpg) center 20% / cover no-repeat;
+    }
+    .v2-sheet:has(.lg-root) .v2-sheet-body { overflow-y: auto; padding-bottom: 24px; }
+    .lg-badge { top: 180px; }
+  }
   .lg-switch-2 { color: var(--v2-ink-3); font-weight: 600; margin-top: 6px; }
   .lg-switch { display: block; margin-top: 10px; font: 700 13px var(--v2-font); color: var(--v2-green); text-decoration: none; }
   .lg-tag { font: 800 20px/1.25 var(--v2-font); letter-spacing: -.02em; margin: 2px 0 4px; color: var(--v2-ink); }
