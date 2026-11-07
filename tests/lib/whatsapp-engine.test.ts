@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { isLiveFor, templatePayload, validWebhookSignature, waNumber, watiParams, watiTemplate } from "../../src/lib/server/whatsapp";
+import { isLiveFor, metaTemplate, templatePayload, validWebhookSignature, waNumber, watiParams, watiTemplate } from "../../src/lib/server/whatsapp";
 import { TEMPLATES, DRAFT_TEMPLATES, TEMPLATE, templateProblems, fishName, firstName, PROMO_IMAGE, SIGNUP_IMAGE, varCount } from "../../src/lib/messaging/templates";
 import { againOrder, orderMessage, orderPhoto, type OrderWaEvent } from "../../src/lib/server/notify-order-whatsapp";
 import { DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy";
@@ -369,6 +369,10 @@ describe("Wati provider", () => {
     expect(watiParams({ ...conf, headerImage: null }).map((p) => p.name)).toEqual(["1", "2", "3", "4"]);
     expect(watiTemplate({ to: "1", name: "rf2_out", body: ["#AB12", "2 PM"] })).toBe("rfw_out");
     expect(watiTemplate({ to: "1", name: "rf_hello", body: ["Kiran"] })).toBe("rfw_hello");
+    expect(metaTemplate({ ...conf, headerImage: "https://x/p.jpg" })).toBe("rs2_confirmed");
+    expect(metaTemplate({ ...conf, headerImage: null })).toBe("rst_confirmed");
+    expect(metaTemplate({ to: "1", name: "rf2_cancelled", body: [] })).toBe("rs_cancelled_u");
+    expect(metaTemplate({ to: "1", name: "rf2_paid", body: [] })).toBe("rs_paid");
   });
   it("is live only with Wati keys, and still honours dry-run and the test-only list", () => {
     vi.stubEnv("WA_PROVIDER", "wati");
