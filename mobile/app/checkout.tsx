@@ -6,7 +6,7 @@
  */
 import { track } from "../src/track";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Linking, Pressable, ScrollView, View } from "react-native";
+import { Image, Linking, Pressable, ScrollView, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api, getSession, supabase, type Session } from "../src/api";
@@ -18,10 +18,11 @@ import { computeDeliveryFee, haversineKm } from "../../src/lib/order-pricing";
 import { getListingPriceOptions, formatOptionMenuLabel, optionBundleAmount } from "../../src/lib/listing-pricing";
 import { getSpeciesDisplay } from "../../src/lib/species";
 import { compareMenuOrder } from "../../src/lib/menu-order";
+import { comboParts, dealSaving, isComboListing } from "../../src/lib/combo-deals";
 import { resizedImageUrl } from "../../src/lib/seller-display";
 import { rupees, useFestive, useTheme } from "../src/theme";
 import { AddressCard, Button, Input, SheetHeader, SlotPicker, StepBar } from "../src/ui/atoms";
-import { BillDetails, CheckoutCart, CheckoutFoot, DiwaliGiftCard, PrepPrefs, SuggestRail } from "../src/ui/checkout";
+import { BillDetails, CheckoutCart, CheckoutFoot, CoCard, DiwaliGiftCard, PrepPrefs, SuggestRail } from "../src/ui/checkout";
 import { lh, row, Text } from "../src/ui/base";
 
 type Address = { id: string; label?: string; flat?: string; building?: string; landmark?: string; location_name?: string; lat?: number; lng?: number; is_default?: boolean };
@@ -69,8 +70,12 @@ export default function Checkout() {
   const placement = slot?.kind || (seller ? (classifyPlacementAtOrderTime(seller, Date.now()) as string) : "same_day");
   const pre = placement === "preorder";
   const byId = useMemo(() => Object.fromEntries(listings.map((l) => [l.id, l])), [listings]);
+  // "Special deal for you!" (seller/[id].astro): the real combo with the biggest saving that can be added now and isn't in the cart.
+  const deal = useMemo(() => listings.filter((l) => isComboListing(l) && !cart.lines.some((c) => c.listing_id === l.id) && (pre ? l.is_preorder_enabled : l.is_available && !l.is_order_paused))
+    .flatMap((l) => (l.pricing_options || []).map((o: any, n: number) => ({ l, o, optId: o.id || `opt_${n}`, save: dealSaving(o) })))
+    .filter((d) => d.save > 0).sort((a, b) => b.save - a.save)[0], [listings, cart.lines, pre]);
   // You might also like (seller/[id].astro): the first pack of other fish that can be added now, up to 6.
-  const picks = useMemo(() => listings.filter((l) => !cart.lines.some((c) => c.listing_id === l.id) && (pre ? l.is_preorder_enabled : l.is_available && !l.is_order_paused)).slice(0, 6), [listings, cart.lines, pre]);
+  const picks = useMemo(() => listings.filter((l) => l.id !== deal?.l.id && !cart.lines.some((c) => c.listing_id === l.id) && (pre ? l.is_preorder_enabled : l.is_available && !l.is_order_paused)).slice(0, 6), [listings, cart.lines, pre]);
 
   const close = () => (router.canGoBack() ? router.back() : router.replace("/"));
   if (!cart.seller) return <Sheet onClose={close} insets={insets.bottom}><Text style={{ padding: 24, textAlign: "center", color: t.ink2 }}>Your cart is empty.</Text></Sheet>;
@@ -136,6 +141,17 @@ export default function Checkout() {
           <ScrollView style={{ flexGrow: 0, maxHeight: 520 }} contentContainerStyle={{ gap: 12, paddingBottom: 12 }}>
             <CheckoutCart when={when} shipment={`Shipment of ${cart.lines.length} item${cart.lines.length !== 1 ? "s" : ""} from ${cart.seller.name}`} onPickTime={() => setStep(1)} onClear={() => { cart.clear(); close(); }} onQty={setQty}
               items={cart.lines.map((l) => { const L = byId[l.listing_id]; const o: any = getListingPriceOptions(L || {}).find((x: any, i: number) => (x.id || `opt_${i}`) === l.option_id); return { photo: L?.photo_url ? resizedImageUrl(L.photo_url, 300) : null, name: getSpeciesDisplay(l.species), sub: `${l.packs} pack · ${l.option_label}`, qty: l.packs, price: rupees(l.price * l.packs), was: Number(o?.compare_at_price) > l.price ? rupees(Number(o.compare_at_price) * l.packs) : null }; })} />
+            {deal ? (
+              <CoCard title="Special deal for you!">
+                <View style={[row, { gap: 12 }]}>
+                  {deal.l.photo_url ? <Image source={{ uri: resizedImageUrl(deal.l.photo_url, 300)! }} style={{ width: 56, height: 56, borderRadius: 10 }} /> : null}
+                  <Text style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>Upgrade to {getSpeciesDisplay(deal.l.species)}{"\n"}<Text style={{ fontWeight: "800" }}>{rupees(Number(deal.o.price))}</Text>  <Text style={{ color: t.ink4, textDecorationLine: "line-through" }}>{rupees(Number(deal.o.compare_at_price))}</Text></Text>
+                  <Pressable onPress={() => { const o: any = deal.o; cart.setPacks(cart.seller!, { listing_id: deal.l.id, species: deal.l.species, option_id: deal.optId, option_label: "pack", unit: o.unit || "kg", bundle: optionBundleAmount(o), price: pre ? Number(o.preorder_price_max) || Number(o.preorder_price_min) || Number(o.price) || 0 : Number(o.price) || 0 }, 1); }}
+                    style={{ width: 64, height: 36, borderRadius: 9, borderWidth: 1, borderColor: t.brand, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 13, fontWeight: "800", color: t.brand }}>ADD</Text></Pressable>
+                </View>
+                <Text style={{ marginTop: 10, fontSize: 13, fontWeight: "700", color: t.green }}>{comboParts(deal.o.label).length > 1 ? `${comboParts(deal.o.label).join(" + ")}: save` : "Save"} {rupees(deal.save)} on this combo</Text>
+              </CoCard>
+            ) : null}
             {festive ? <DiwaliGiftCard onOpen={() => Linking.openURL("https://www.relifish.com/diwali-wishes")} /> : null}
             {picks.length ? <SuggestRail onAdd={addPick} items={picks.map((l) => { const o: any = getListingPriceOptions(l)[0] || {}; return { photo: l.photo_url ? resizedImageUrl(l.photo_url, 300) : null, price: rupees(Number(o.price) || 0), was: Number(o.compare_at_price) > Number(o.price) ? rupees(Number(o.compare_at_price)) : null, name: getSpeciesDisplay(l.species), size: o.label || o.unit_label || "" }; })} /> : null}
             <PrepPrefs options={["🐟 Whole", "✂️ Cleaned", "🔪 Cut"]} value={cut} onChange={(v) => setCut((c) => (c === v ? undefined : v))} note={note} onNote={setNote} />

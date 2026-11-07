@@ -5,7 +5,7 @@
  */
 import { track } from "../../src/track";
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, ScrollView, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { supabase } from "../../src/api";
@@ -17,7 +17,7 @@ import { closedStatusLabel } from "../../../src/lib/cart";
 import { dateLabelIST, deliveryDaysAt, nextSlotText, slotPreorderLabel, storePreorderLabel } from "../../../src/lib/delivery-slots";
 import { areaNameForPoint } from "../../../src/lib/areas";
 import { getSpeciesDisplay } from "../../../src/lib/species";
-import { bestValueIndex } from "../../../src/lib/combo-deals";
+import { bestValueIndex, bundleGroups } from "../../../src/lib/combo-deals";
 import { cleanSellerName, resizedImageUrl, stripContactInfo } from "../../../src/lib/seller-display";
 import { compareMenuOrder } from "../../../src/lib/menu-order";
 import { rupees, useTheme } from "../../src/theme";
@@ -63,8 +63,14 @@ export default function SellerPage() {
       : (() => { const d = pre ? preorderDeliveryDateIST(seller, now) || slotDays[0]?.date : null; return !d ? "tomorrow" : d === ist(now) ? "today" : dayWord(d); })();
     const listings = all.filter((l) => (open ? l.is_available === true && !l.is_order_paused : pre ? l.is_preorder_enabled === true : l.is_available === true));
     const tags = [accepts && pre ? "Pre-order available" : accepts ? "Pre-order" : null, !seller.has_delivery ? "Pickup only" : null, seller.has_delivery ? `${seller.delivery_rad || 5}km delivery` : null, seller.min_order_amount > 0 ? `Min ₹${seller.min_order_amount}` : null].filter(Boolean) as string[];
+    // "Bundles · save more" (seller/[id].astro): combos grouped under their base fish; they get no card of their own.
+    const bundles = closed ? [] : bundleGroups(listings as any, (l: any) => getSpeciesDisplay(l.species));
+    const combos = bundles.filter((g) => g.sizes.length).flatMap((g) => g.combos);
+    const hosted = new Set(combos.map((r) => r.listing.id));
+    const hasCombo = (l: any) => (/\bcombo\b/i.test(`${l.species} ${l.size_label || ""}`) ? 1 : 0);
+    const cards = listings.filter((l) => !hosted.has(l.id)).sort((a, b) => hasCombo(b) - hasCombo(a));
     return {
-      open, pre, closed, preorderOnly, slotLine, deliveryFor, listings, tags,
+      open, pre, closed, preorderOnly, slotLine, deliveryFor, listings: cards, combos, tags, count: listings.length,
       preorderLine: accepts ? preorderStatusLabel(seller, now) : null,
       nextSlot: nextSlotText(seller, now), closedLabel: closedStatusLabel(seller, now),
       sameDay: sameDayScheduleLabel(seller), preSchedule: storePreorderLabel(seller),
@@ -102,7 +108,40 @@ export default function SellerPage() {
           <View style={{ marginTop: 16 }}><EmptyState icon="🔍" title="No items available" desc={seller.accepts_preorder ? "Pre-order for tomorrow or later instead." : "Check back during opening hours."} cta={seller.accepts_preorder ? "Pre-order" : "Browse sellers"} onCta={() => router.replace("/")} /></View>
         ) : (
           <>
-            <MenuHeader title={m.closed ? (m.preorderOnly ? "Menu (pre-orders paused)" : "Menu (Closed)") : m.pre ? "Pre-order Menu" : "Today's Menu"} count={m.listings.length} />
+            <MenuHeader title={m.closed ? (m.preorderOnly ? "Menu (pre-orders paused)" : "Menu (Closed)") : m.pre ? "Pre-order Menu" : "Today's Menu"} count={m.count} />
+            {m.combos.length ? (
+              <View style={{ marginHorizontal: 16, marginBottom: 10, paddingHorizontal: 12, paddingTop: 2, paddingBottom: 4, borderRadius: 12, borderWidth: 1, borderColor: t.border, backgroundColor: t.bg }}>
+                <Text style={{ marginTop: 12, marginBottom: 10, fontSize: 12, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase", color: t.ink3 }}>Bundles · save more</Text>
+                {m.combos.map((r) => {
+                  const l: any = r.listing; const o: any = r.opt;
+                  const inStock = l.is_available === true && !l.is_order_paused && (l.weight_avail == null || Number(l.weight_avail) > 0);
+                  if (m.pre ? l.is_preorder_enabled !== true : !inStock) return null;
+                  const price = m.pre ? Number(o.preorder_price_max) || Number(o.preorder_price_min) || Number(o.price) || 0 : Number(o.price) || 0;
+                  const count = packsOf(l.id, r.optId);
+                  const line = { listing_id: l.id, species: l.species, option_id: r.optId, option_label: "pack", unit: o.unit || "kg", bundle: optionBundleAmount(o), price };
+                  const set = (n: number) => { if (n > count) track("add_to_cart", { seller_id: seller.id }); cart.setPacks({ id: seller.id, name: seller.name }, line, Math.max(0, n)); };
+                  return (
+                    <View key={`${l.id}-${r.optId}`} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, paddingHorizontal: 10, marginBottom: 8, marginTop: r.ribbon ? 6 : 0, borderWidth: 1.5, borderRadius: 12, borderColor: count ? t.brand : t.border, backgroundColor: count ? t.brandL : t.bg }}>
+                      {l.photo_url ? <Image source={{ uri: resizedImageUrl(l.photo_url, 300)! }} style={{ width: 48, height: 48, borderRadius: 8 }} /> : null}
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 13, lineHeight: 19, fontWeight: "700" }}>{getSpeciesDisplay(l.species)}</Text>
+                        <Text style={{ marginTop: 4, marginBottom: 6, fontSize: 12, lineHeight: 18.6, color: t.ink3 }}>{r.parts.join(" + ")}</Text>
+                        <Text style={{ fontSize: 16, fontWeight: "800" }}>₹{price.toLocaleString("en-IN")}{Number(o.compare_at_price) > price ? <Text style={{ fontSize: 12, fontWeight: "500", color: t.ink4, textDecorationLine: "line-through" }}>  ₹{Number(o.compare_at_price).toLocaleString("en-IN")}</Text> : null}</Text>
+                        {optionHasDealDisplay({ ...o, price } as any) ? <View style={{ alignSelf: "flex-start", marginTop: 4, backgroundColor: t.brand, borderRadius: 5, paddingVertical: 2, paddingHorizontal: 6 }}><Text style={{ fontSize: 11, fontWeight: "800", letterSpacing: 0.22, color: "#FFFFFF" }}>{optionDiscountPercentDisplay({ ...o, price } as any)}% OFF</Text></View> : null}
+                      </View>
+                      {count ? (
+                        <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: t.brand, borderRadius: 8, height: 30 }}>
+                          <Pressable accessibilityLabel="Remove one" onPress={() => set(count - 1)} style={{ width: 30, alignItems: "center" }}><Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>−</Text></Pressable>
+                          <Text style={{ paddingHorizontal: 6, fontSize: 12, fontWeight: "700", color: "#FFFFFF" }}>{count} pack</Text>
+                          <Pressable accessibilityLabel="Add one" onPress={() => set(count + 1)} style={{ width: 30, alignItems: "center" }}><Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>+</Text></Pressable>
+                        </View>
+                      ) : <Pressable accessibilityLabel={`Add ${getSpeciesDisplay(l.species)}`} onPress={() => set(1)} style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: t.brand, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 18, fontWeight: "700", color: "#FFFFFF" }}>+</Text></Pressable>}
+                      {r.ribbon ? <View style={{ position: "absolute", top: -10, right: 10, backgroundColor: r.ribbon === "popular" ? "#EA580C" : "#16A34A", borderRadius: 5, paddingVertical: 3, paddingHorizontal: 8 }}><Text style={{ fontSize: 11, fontWeight: "800", letterSpacing: 0.44, color: "#FFFFFF" }}>{r.ribbon === "popular" ? "MOST POPULAR" : "BEST VALUE"}</Text></View> : null}
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
             <View style={{ gap: 10 }}>
               {m.listings.map((l) => {
                 const opts = getListingPriceOptions(l);
