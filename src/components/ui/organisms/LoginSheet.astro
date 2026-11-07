@@ -51,7 +51,7 @@ const MAX_ATTEMPTS = 3;
         Change
       </button>
     </div>
-    <p style="font:400 12px Inter;color:var(--v2-ink-3);margin:0 0 16px;line-height:1.5;">
+    <p id={`${id}-sent-via`} style="font:400 12px Inter;color:var(--v2-ink-3);margin:0 0 16px;line-height:1.5;">
       6-digit code sent via SMS · expires in 10 min
     </p>
     <form id={`${id}-otp-form`} autocomplete="off">
@@ -79,6 +79,14 @@ const MAX_ATTEMPTS = 3;
 
   function getEl(suffix) { return document.getElementById(`${id}-${suffix}`); }
   let otpSentOnce = false; // second send = resend (funnel)
+  // First code goes by WhatsApp (falls back to SMS server-side); Resend always uses SMS (founder, 7 Nov).
+  let sentVia = "sms";
+  const resendLabel = () => (sentVia === "whatsapp" ? "Get code by SMS instead" : "Resend code by SMS");
+  function showChannel(ch) {
+    sentVia = ch === "whatsapp" ? "whatsapp" : "sms";
+    const el = getEl("sent-via");
+    if (el) el.textContent = `6-digit code sent on ${sentVia === "whatsapp" ? "WhatsApp" : "SMS"} · expires in 10 min`;
+  }
   // Funnel step to our DB; queued if the tracker (FunnelTrack, end of page) hasn't loaded yet.
   const rft = (e, d) => (window.rfTrack ? window.rfTrack(e, d) : (window.rfq = window.rfq || []).push([e, d]));
 
@@ -143,19 +151,19 @@ const MAX_ATTEMPTS = 3;
     let secs = Math.max(0, Math.ceil(fromSeconds));
     if (secs <= 0) {
       btn.disabled = false;
-      label.textContent = "Resend code";
+      label.textContent = resendLabel();
       return;
     }
-    label.textContent = `Resend code (${secs}s)`;
+    label.textContent = `${resendLabel()} (${secs}s)`;
     clearInterval(countdownTimer);
     countdownTimer = setInterval(() => {
       secs--;
       if (secs <= 0) {
         clearInterval(countdownTimer);
         btn.disabled = false;
-        label.textContent = "Resend code";
+        label.textContent = resendLabel();
       } else {
-        label.textContent = `Resend code (${secs}s)`;
+        label.textContent = `${resendLabel()} (${secs}s)`;
       }
     }, 1000);
   }
@@ -255,10 +263,11 @@ const MAX_ATTEMPTS = 3;
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone, channel: "whatsapp" }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send OTP");
+      showChannel(data.channel);
       try { if (typeof gtag === "function") gtag("event", "otp_sent", { role }); } catch {}
       if (role !== "seller") { rft(otpSentOnce ? "otp_resend" : "otp_sent"); otpSentOnce = true; }
       const sentAt = Date.now();
@@ -382,10 +391,11 @@ const MAX_ATTEMPTS = 3;
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: currentPhone }),
+        body: JSON.stringify({ phone: currentPhone, channel: "sms" }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
+      showChannel(data.channel);
       const sentAt = Date.now();
       saveSession(currentPhone, sentAt);
       otpAttempts = 0;
@@ -395,10 +405,11 @@ const MAX_ATTEMPTS = 3;
       clearOTPCells();
       startCountdown(RESEND_COOLDOWN);
       window.v2Toast?.("info", "OTP resent", "Check your SMS");
+      sentVia = "sms";
     } catch (err) {
       window.v2Toast?.("error", "Resend failed", err.message || "Try again");
       btn.disabled = false;
-      getEl("resend-label").textContent = "Resend code";
+      getEl("resend-label").textContent = resendLabel();
     }
   });
 
