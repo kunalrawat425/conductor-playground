@@ -2018,7 +2018,7 @@ const tags = [
         document.body.appendChild(overlay);
         const firstOrderId = Array.isArray(data.orders) && data.orders[0]?.id ? String(data.orders[0].id) : "";
         setTimeout(() => {
-          // ?pay=1: the order page opens Razorpay straight away (no second "Pay" tap).
+          // ?pay=1: the order page shows Pay now / Pay on delivery; Razorpay opens only on Pay now (7 Nov).
           window.location.href = firstOrderId ? `/track/${encodeURIComponent(firstOrderId)}?pay=1` : "/track";
         }, 2000);
       } catch (err) {
