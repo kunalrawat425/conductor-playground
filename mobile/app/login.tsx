@@ -11,6 +11,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api, ROLE, setSession } from "../src/api";
 import { track } from "../src/track";
+import { listenForOtp, smsConsentAvailable } from "../modules/sms-consent";
 import { useFestive, useIsDark, useTheme } from "../src/theme";
 import { Button, OTPInput } from "../src/ui/atoms";
 import { grad, row, shadowCss, Text } from "../src/ui/base";
@@ -33,10 +34,20 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [focus, setFocus] = useState(false);
+  const [listening, setListening] = useState(false);
   const ok = /^[6-9]\d{9}$/.test(phone);
   const close = () => (seller ? null : router.canGoBack() ? router.back() : router.replace("/"));
 
   useEffect(() => { track("login_shown"); }, []);
+  // Android SMS User Consent while the OTP step is open: the code fills the boxes and logs in; stops on leave or after 5 min.
+  useEffect(() => {
+    if (!sent) return;
+    let on = true;
+    const stop = listenForOtp((c) => { if (!on) return; setListening(false); setCode(c); verify(c); }, () => setListening(false));
+    setListening(smsConsentAvailable);
+    const cap = setTimeout(() => { stop(); setListening(false); }, 5 * 60_000);
+    return () => { on = false; clearTimeout(cap); stop(); setListening(false); };
+  }, [sent]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (wait <= 0) return; const id = setTimeout(() => setWait(wait - 1), 1000); return () => clearTimeout(id); }, [wait]);
 
   async function send() {
@@ -118,7 +129,7 @@ export default function Login() {
                 Sent by SMS to <Text style={{ fontWeight: "800", color: t.ink }}>+91 {phone.slice(0, 5)} {phone.slice(5)}</Text> · <Text style={{ fontWeight: "700", color: t.link }} onPress={() => { setSent(false); setCode(""); setErr(""); }}>Change</Text>
               </Text>
               <View style={{ marginTop: 20, marginBottom: 14 }}><OTPInput value={code} onChange={setCode} onComplete={(c) => verify(c)} error={err || undefined} cell={46} gap={9} /></View>
-              {Platform.OS === "android" && code.length < 6 && !err ? (
+              {listening && code.length < 6 && !err ? (
                 <View style={[row, { alignSelf: "center", gap: 6 }]}><View style={[{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.green }, shadowCss(`0px 0px 0px 3px ${t.greenL}`)]} /><Text style={{ fontSize: 12, fontWeight: "600", color: t.green }}>Reading the code from SMS…</Text></View>
               ) : null}
               <Button title="Verify & continue" full color={seller ? t.green : undefined} loading={busy} disabled={code.length !== 6} onPress={() => verify()} style={{ marginTop: 14, height: 54, borderRadius: 12 }} />

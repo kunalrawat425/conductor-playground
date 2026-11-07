@@ -54,12 +54,16 @@ const { id = "otp", length = 6, error, helper, autoSubmitFormId } = Astro.props;
       cells[Math.min(from + d.length, len - 1)]?.focus();
       syncHidden();
     }
-    // WebOTP (Android Chrome): reads the code from the SMS when it ends with "@www.relifish.com #123456".
-    let asked = false;
+    // WebOTP (Android Chrome): reads the code from the SMS once its last line is "@www.relifish.com #123456"
+    // (new DLT text in .context/otp-sms-webotp.md). Stops when the code is submitted, the step closes, or after 5 min.
+    let ac: AbortController | null = null;
     cells[0]?.addEventListener("focus", () => {
-      if (asked || !("OTPCredential" in window)) return;
-      asked = true;
-      (navigator.credentials as any).get({ otp: { transport: ["sms"] } }).then((c: any) => c?.code && fill(c.code)).catch(() => {});
+      if (ac || !("OTPCredential" in window)) return;
+      ac = new AbortController();
+      const done = () => { ac?.abort(); };
+      setTimeout(done, 5 * 60_000);
+      wrap.closest("form")?.addEventListener("submit", done, { once: true });
+      (navigator.credentials as any).get({ otp: { transport: ["sms"] }, signal: ac.signal }).then((c: any) => c?.code && fill(c.code)).catch(() => {}).finally(() => { ac = null; });
     });
 
     cells.forEach((cell, idx) => {

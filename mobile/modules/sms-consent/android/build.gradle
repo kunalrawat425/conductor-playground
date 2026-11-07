@@ -1,0 +1,17 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.relifish'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.smsconsent"
+  defaultConfig { versionCode 1; versionName '1.0.0' }
+}
+
+dependencies {
+  // SMS User Consent API: Android shows "Allow Relifish to read this message?" for the one SMS with the code.
+  implementation 'com.google.android.gms:play-services-auth-api-phone:18.1.0'
+}
