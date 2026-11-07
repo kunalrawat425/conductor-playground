@@ -10,9 +10,9 @@ import { lit, useIsDark, useTheme } from "../theme";
 import { grad, lh, row, shadowCss, Text } from "./base";
 
 /** .v2-btn: primary / secondary / ghost / danger; sm 13/700 (8/16 pad) · md 14/700 (12/24) · lg 16/800 (14/32); min 44 tall; 8 radius. */
-export function Button({ title, onPress, variant = "primary", size = "md", disabled, loading, full, style, color }: {
+export function Button({ title, onPress, variant = "primary", size = "md", disabled, loading, full, style, color, textColor }: {
   title: string; onPress?: () => void; variant?: "primary" | "secondary" | "ghost" | "danger"; size?: "sm" | "md" | "lg";
-  disabled?: boolean; loading?: boolean; full?: boolean; style?: ViewStyle; /** fill colour override (e.g. orange on PermissionPrompt) */ color?: string;
+  disabled?: boolean; loading?: boolean; full?: boolean; style?: ViewStyle; /** fill colour override (e.g. orange on PermissionPrompt) */ color?: string; textColor?: string;
 }) {
   const t = useTheme();
   const v = { primary: [color ?? t.brand, "#FFFFFF", null], secondary: [t.bg, t.brand, t.brand], ghost: ["transparent", t.ink, null], danger: [t.red, "#FFFFFF", null] }[variant] as [string, string, string | null];
@@ -21,7 +21,7 @@ export function Button({ title, onPress, variant = "primary", size = "md", disab
     <Pressable accessibilityRole="button" disabled={disabled || loading} onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress?.(); }}
       style={({ pressed }) => [{ minHeight: size === "lg" ? 52 : 44, paddingVertical: z[0], paddingHorizontal: z[1], borderRadius: 8, backgroundColor: v[0], borderWidth: v[2] ? 1 : 0, borderColor: v[2] ?? "transparent", ...row, justifyContent: "center", gap: 8, alignSelf: full ? "stretch" : "flex-start", opacity: disabled || loading ? 0.4 : pressed ? 0.88 : 1 }, style]}>
       {loading ? <ActivityIndicator size="small" color={v[1]} /> : null}
-      <Text style={{ fontSize: z[2], lineHeight: lh(z[2]), fontWeight: z[3] as any, color: v[1] }}>{title}</Text>
+      <Text style={{ fontSize: z[2], lineHeight: lh(z[2]), fontWeight: z[3] as any, color: textColor ?? v[1] }}>{title}</Text>
     </Pressable>
   );
 }

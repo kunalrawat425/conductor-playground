@@ -1,76 +1,128 @@
 /**
- * Login as a bottom panel over the page (like the site's LoginSheet): number, then the 6-digit code. The code fills itself
- * from the SMS (Android SMS autofill / iOS one-time-code) and logs in as soon as all 6 digits are in.
- * Same /api/auth endpoints and signed session as the site.
+ * Login = the site's LoginSheet redesign (preview "Login redesign"): fish collage behind, white bottom panel with the logo
+ * badge, "Log in or sign up", +91 field, Continue, WhatsApp opt-in, terms; then OTP verification (6 boxes filled from the
+ * SMS by Android autofill / iOS one-time-code, auto-submit), "Resend SMS in 0:30", "Need help? Call us".
+ * Same /api/auth endpoints and signed session as the site. The panel rises with the keyboard (Android is edge-to-edge).
  */
-import { track } from "../src/track";
 import { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Pressable, View } from "react-native";
+import { Image, KeyboardAvoidingView, Linking, Platform, Pressable, StyleSheet, TextInput, View } from "react-native";
 import Constants from "expo-constants";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api, ROLE, setSession } from "../src/api";
-import { useTheme } from "../src/theme";
-import { Button, OTPInput, PhoneInput, SheetHeader } from "../src/ui/atoms";
-import { Text } from "../src/ui/base";
+import { track } from "../src/track";
+import { useFestive, useIsDark, useTheme } from "../src/theme";
+import { Button, OTPInput } from "../src/ui/atoms";
+import { grad, row, shadowCss, Text } from "../src/ui/base";
+import { Icon } from "../src/ui/icons";
+
+const RESEND = 30;
+const fmt = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
 
 export default function Login() {
   const t = useTheme();
+  const dark = useIsDark();
+  const festive = useFestive();
   const insets = useSafeAreaInsets();
+  const seller = ROLE === "seller";
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
+  const [wait, setWait] = useState(0);
+  const [wa, setWa] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const digits = phone.replace(/\D/g, "").slice(-10);
-  const seller = ROLE === "seller";
+  const [focus, setFocus] = useState(false);
+  const ok = /^[6-9]\d{9}$/.test(phone);
   const close = () => (seller ? null : router.canGoBack() ? router.back() : router.replace("/"));
 
   useEffect(() => { track("login_shown"); }, []);
+  useEffect(() => { if (wait <= 0) return; const id = setTimeout(() => setWait(wait - 1), 1000); return () => clearTimeout(id); }, [wait]);
+
   async function send() {
     setBusy(true); setErr("");
-    try { await api("/api/auth/send-otp", { phone: "+91" + digits, ...(seller ? { role: "seller" } : {}) }); track(sent ? "otp_resend" : "otp_sent"); setSent(true); setCode(""); }
+    try { await api("/api/auth/send-otp", { phone: "+91" + phone, ...(seller ? { role: "seller" } : {}) }); track(sent ? "otp_resend" : "otp_sent"); setSent(true); setCode(""); setWait(RESEND); }
     catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }
   async function verify(c = code) {
     if (busy) return;
     setBusy(true); setErr("");
     try {
-      const r = await api<{ buyer_id?: string; seller_id?: string; name?: string; session: string }>("/api/auth/verify-otp", { phone: "+91" + digits, code: c.trim(), ...(seller ? { role: "seller" } : {}) });
+      const r = await api<{ buyer_id?: string; seller_id?: string; name?: string; session: string }>("/api/auth/verify-otp", { phone: "+91" + phone, code: c.trim(), ...(seller ? { role: "seller" } : { whatsapp_opt_in: wa }) });
       if (seller) {
         if (!r.seller_id) throw new Error("No Relifish shop on this number. Apply at relifish.com/sell.");
-        await setSession({ seller_id: r.seller_id, name: r.name, phone: digits, token: r.session });
-      } else await setSession({ buyer_id: r.buyer_id, phone: digits, token: r.session });
+        await setSession({ seller_id: r.seller_id, name: r.name, phone, token: r.session });
+      } else await setSession({ buyer_id: r.buyer_id, phone, token: r.session });
       track("otp_verified");
       if (Constants.executionEnvironment !== "storeClient") import("../src/push").then((p) => p.registerPush());
       if (seller) router.replace("/partner/orders"); else close();
     } catch (e: any) { setErr(e.message); setCode(""); track("otp_failed"); } finally { setBusy(false); }
   }
 
+  const shade = dark ? "linear-gradient(180deg, rgba(15,23,42,.35) 20%, rgba(15,23,42,.7) 70%)" : "linear-gradient(180deg, rgba(15,23,42,0) 30%, rgba(15,23,42,.35) 70%)";
+  const link = { color: t.ink2, textDecorationLine: "underline" as const };
   return (
-    <View style={{ flex: 1, justifyContent: "flex-end" }}>
-      <Pressable style={{ position: "absolute", inset: 0, backgroundColor: seller ? t.bg2 : "rgba(15, 23, 42, 0.5)" } as any} onPress={() => close()} />
-      {/* Android is edge-to-edge (SDK 58): the window no longer resizes for the keyboard, so pad on both platforms or the panel hides under it. */}
-      <KeyboardAvoidingView behavior="padding">
-        <View style={{ backgroundColor: t.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: insets.bottom + 16 }}>
-          <SheetHeader title={sent ? "Enter the code" : seller ? "Log in to Relifish Partner" : "Log in to Relifish"} />
-          <View style={{ padding: 16, gap: 14 }}>
-            <Text style={{ fontSize: 13, lineHeight: 19, color: t.ink3 }}>
-              {sent ? `We sent a 6-digit code to +91 ${digits}. It fills in by itself when the SMS arrives.` : seller ? "Your shop's registered number. We'll send you a one-time code." : "We'll send you a one-time code. No password needed."}
-            </Text>
-            {!sent
-              ? <PhoneInput value={phone} onChangeText={(v) => setPhone(v.replace(/\D/g, "").slice(-10))} autoFocus error={err || undefined} onSubmitEditing={() => /^[6-9]\d{9}$/.test(digits) && send()} />
-              : <OTPInput value={code} onChange={setCode} onComplete={(c) => verify(c)} error={err || undefined} helper="Expires in 10 minutes" />}
-            {!sent
-              ? <Button title="Send code" full loading={busy} disabled={!/^[6-9]\d{9}$/.test(digits)} onPress={send} />
-              : <Button title="Log in" full loading={busy} disabled={code.length !== 6} onPress={() => verify()} />}
-            {sent ? (
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <Pressable onPress={() => { setSent(false); setCode(""); setErr(""); }} hitSlop={8}><Text style={{ fontSize: 13, fontWeight: "700", color: t.link }}>Change number</Text></Pressable>
-                <Pressable onPress={send} hitSlop={8}><Text style={{ fontSize: 13, fontWeight: "700", color: t.link }}>Resend code</Text></Pressable>
-              </View>
-            ) : null}
+    <View style={{ flex: 1, backgroundColor: dark ? "#0F172A" : t.bg3 }}>
+      <Image source={require("../assets/login-collage.jpg")} style={[StyleSheet.absoluteFill, { width: "100%", height: "100%", opacity: dark ? 0.85 : 1 }]} resizeMode="cover" />
+      <Pressable style={[StyleSheet.absoluteFill, grad(shade)]} onPress={() => close()} />
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: "flex-end" }}>
+        <View style={[{ backgroundColor: t.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: sent ? 40 : 46, paddingHorizontal: 22, paddingBottom: insets.bottom + 18, alignItems: "stretch" }, shadowCss("0px -10px 30px 0px rgba(0, 0, 0, 0.18)")]}>
+          <View style={[{ position: "absolute", top: -30, alignSelf: "center", width: 200, height: 60, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: t.brand },
+            festive ? { borderWidth: 2, borderColor: "#D4A24C" } : null, festive ? grad("linear-gradient(135deg, #B3123B, #8B0A2E)") : null,
+            shadowCss(festive ? "0px 10px 24px 0px rgba(139, 10, 46, 0.35)" : "0px 10px 24px 0px rgba(0, 102, 255, 0.3)")]}>
+            <Image source={festive ? require("../assets/logo-gold.png") : require("../assets/logo-white.png")} style={{ width: 152, height: 36 }} resizeMode="contain" />
           </View>
+
+          {!sent ? (
+            <>
+              <Text style={{ textAlign: "center", fontSize: 20, lineHeight: 25, letterSpacing: -0.4, fontWeight: "800", marginTop: 2, marginBottom: 4 }}>{seller ? "Your shop on Relifish,\norders straight to your phone" : "Fresh fish from verified sellers,\ncleaned & cut"}</Text>
+              <Text style={{ textAlign: "center", fontSize: 13, fontWeight: "500", color: t.ink3 }}>{festive ? "Happy Diwali · Thane & Mumbai, delivered" : "Thane & Mumbai · delivered to your door"}</Text>
+              <View style={[row, { gap: 12, marginTop: 16, marginBottom: 12 }]}>
+                <View style={{ flex: 1, height: 1, backgroundColor: t.border }} />
+                <Text style={{ fontSize: 13, fontWeight: "600", color: t.ink3 }}>{seller ? "Seller sign in" : "Log in or sign up"}</Text>
+                <View style={{ flex: 1, height: 1, backgroundColor: t.border }} />
+              </View>
+              <View style={[row, { height: 54, borderWidth: 1.5, borderRadius: 12, borderColor: err ? t.red : focus ? t.brand : t.border, backgroundColor: t.bg, overflow: "hidden" }, focus ? shadowCss(`0px 0px 0px 3px ${t.brandL}`) : null]}>
+                <View style={{ height: "100%", justifyContent: "center", paddingLeft: 14, paddingRight: 12, borderRightWidth: 1.5, borderRightColor: t.border }}><Text style={{ fontSize: 16, fontWeight: "700" }}>+91</Text></View>
+                <TextInput value={phone} onChangeText={(v) => setPhone(v.replace(/\D/g, "").slice(-10))} autoFocus keyboardType="phone-pad" maxLength={14}
+                  placeholder="Enter mobile number" placeholderTextColor={t.ink4} textContentType="telephoneNumber" autoComplete="tel" onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
+                  onSubmitEditing={() => ok && send()} style={{ flex: 1, height: "100%", paddingHorizontal: 14, fontSize: 17, letterSpacing: 0.68, color: t.ink, fontFamily: phone ? "Inter_600SemiBold" : "Inter_500Medium" }} />
+              </View>
+              {err ? <Text style={{ marginTop: 6, fontSize: 12, color: t.red }}>{err}</Text> : null}
+              <Button title="Continue" full size="lg" loading={busy} disabled={!ok} onPress={send} textColor={ok ? undefined : t.ink4}
+                style={{ marginTop: 12, height: 54, borderRadius: 12, opacity: 1, ...(!ok ? { backgroundColor: t.bg3 } : {}) }} />
+              {!seller ? (
+                <Pressable onPress={() => setWa(!wa)} style={[row, { alignItems: "flex-start", gap: 10, marginTop: 12 }]} accessibilityRole="checkbox" accessibilityState={{ checked: wa }}>
+                  <View style={{ width: 18, height: 18, marginTop: 1, borderRadius: 5, borderWidth: 1.5, borderColor: wa ? t.brand : t.ink4, backgroundColor: wa ? t.brand : t.bg, alignItems: "center", justifyContent: "center" }}>{wa ? <Icon name="check" size={12} color="#FFFFFF" strokeWidth={3} /> : null}</View>
+                  <Text style={{ flex: 1, fontSize: 12, lineHeight: 17.4, fontWeight: "500", color: t.ink2 }}>Send me order updates and fresh-catch alerts on WhatsApp. Reply STOP anytime.</Text>
+                </Pressable>
+              ) : null}
+              <Text style={{ marginTop: 12, textAlign: "center", fontSize: 11, lineHeight: 16.5, fontWeight: "500", color: t.ink3 }}>
+                By continuing, you agree to our <Text style={link} onPress={() => Linking.openURL(`https://www.relifish.com/terms${seller ? "#sellers" : ""}`)}>Terms of service</Text> & <Text style={link} onPress={() => Linking.openURL("https://www.relifish.com/privacy")}>Privacy policy</Text>
+              </Text>
+            </>
+          ) : (
+            <>
+              <View style={{ alignItems: "center", justifyContent: "center", marginBottom: 6 }}>
+                <Pressable accessibilityLabel="Change number" onPress={() => { setSent(false); setCode(""); setErr(""); }} style={{ position: "absolute", left: 0, top: -4, width: 34, height: 34, borderRadius: 17, backgroundColor: t.bg3, alignItems: "center", justifyContent: "center" }}><Icon name="back" size={18} color={t.ink} /></Pressable>
+                <Text style={{ fontSize: 19, fontWeight: "800" }}>OTP verification</Text>
+              </View>
+              <Text style={{ textAlign: "center", fontSize: 14, lineHeight: 21, fontWeight: "500", color: t.ink3 }}>
+                Sent by SMS to <Text style={{ fontWeight: "800", color: t.ink }}>+91 {phone.slice(0, 5)} {phone.slice(5)}</Text> · <Text style={{ fontWeight: "700", color: t.link }} onPress={() => { setSent(false); setCode(""); setErr(""); }}>Change</Text>
+              </Text>
+              <View style={{ marginTop: 20, marginBottom: 14 }}><OTPInput value={code} onChange={setCode} onComplete={(c) => verify(c)} error={err || undefined} cell={46} gap={9} /></View>
+              {Platform.OS === "android" && code.length < 6 && !err ? (
+                <View style={[row, { alignSelf: "center", gap: 6 }]}><View style={[{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.green }, shadowCss(`0px 0px 0px 3px ${t.greenL}`)]} /><Text style={{ fontSize: 12, fontWeight: "600", color: t.green }}>Reading the code from SMS…</Text></View>
+              ) : null}
+              <Button title="Verify & continue" full loading={busy} disabled={code.length !== 6} onPress={() => verify()} style={{ marginTop: 14, height: 54, borderRadius: 12 }} />
+              <Pressable disabled={wait > 0 || busy} onPress={send} style={{ marginTop: 12, alignItems: "center" }}>
+                {wait > 0
+                  ? <Text style={{ fontSize: 14, fontWeight: "500", color: t.ink3 }}>Didn't get it? Resend SMS in <Text style={{ fontWeight: "700", color: t.ink }}>{fmt(wait)}</Text></Text>
+                  : <Text style={{ fontSize: 14, fontWeight: "700", color: t.link }}>Resend SMS</Text>}
+              </Pressable>
+              <Pressable onPress={() => Linking.openURL("tel:+919152207607")} style={{ marginTop: 10, alignItems: "center" }}><Text style={{ fontSize: 13, fontWeight: "600", color: t.ink2, textDecorationLine: "underline" }}>Need help? Call us</Text></Pressable>
+            </>
+          )}
         </View>
       </KeyboardAvoidingView>
     </View>
