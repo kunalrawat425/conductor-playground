@@ -86,6 +86,13 @@ async function sendWati(t: TemplateSend): Promise<SendResult> {
   }
 }
 
+/** Template name on the AiSensy WABA 1481796845015979 (Meta direct sends): the Wati name with rfw → rs
+ * (rs2_ photo, rst_ text only, rs_ no header). Created in the AiSensy portal on 7 Nov 2026; the rfw names
+ * are locked on that WABA until early Dec, and templates created there through the Graph API get deleted. */
+export function metaTemplate(t: TemplateSend): string {
+  return watiTemplate(t).replace(/^rfw/, "rs");
+}
+
 /** Live only when configured, not WA_DRY_RUN, and (if WA_TEST_ONLY is set) the number is on it. */
 export function isLiveFor(to: string): boolean {
   if (useWati() ? !env("WATI_API_URL") || !env("WATI_API_KEY") : !env("WA_PHONE_NUMBER_ID") || !env("WA_TOKEN")) return false;
@@ -101,7 +108,7 @@ export async function sendTemplate(t: TemplateSend): Promise<SendResult> {
     const res = await fetch(`${GRAPH}/${env("WA_PHONE_NUMBER_ID")}/messages`, {
       method: "POST",
       headers: { Authorization: `Bearer ${env("WA_TOKEN")}`, "Content-Type": "application/json" },
-      body: JSON.stringify(templatePayload(t)),
+      body: JSON.stringify(templatePayload({ ...t, name: metaTemplate(t) })),
     });
     const j: any = await res.json().catch(() => ({}));
     if (!res.ok) return { status: "failed", error: `${res.status} ${j?.error?.message || ""}`.trim().slice(0, 300) };
