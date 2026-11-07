@@ -30,6 +30,7 @@ export type Dispatch = {
   sms?: SmsPart | null;             // the SMS version; none → WhatsApp only (promos)
   smsOk?: boolean;                  // false → never SMS (DND, STOP for reminders)
   smsFallback?: boolean;            // WhatsApp failed → SMS once (reminders, order updates)
+  whatsappAlways?: boolean;         // ignore WHATSAPP_OFF (seller new-order message, founder 7 Nov)
 };
 type Channel = "whatsapp" | "sms";
 export type DispatchResult = { status: "duplicate" | "sent" | "dry_run" | "failed" | "no_channel" | "capped"; channel?: string; id?: string; error?: string };
@@ -49,7 +50,7 @@ export async function dispatch(sb: any, d: Dispatch): Promise<DispatchResult> {
     // Handled on WhatsApp before; only a failed one may still go once by SMS.
     return wa.status === "failed" && d.smsFallback && canSms ? sendOne(sb, d, "sms", to) : { status: "duplicate", channel: "whatsapp" };
   }
-  if (d.whatsappOk && env("WHATSAPP_OFF") !== "true") {
+  if (d.whatsappOk && (d.whatsappAlways || env("WHATSAPP_OFF") !== "true")) {
     const r = await sendOne(sb, d, "whatsapp", to);
     if (r.status !== "failed" || !d.smsFallback || !canSms) return r;
     const s = await sendOne(sb, d, "sms", to);
