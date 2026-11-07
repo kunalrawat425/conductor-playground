@@ -15,7 +15,8 @@ const config: ExpoConfig = {
   scheme: partner ? "relifishpartner" : "relifish",
   version: V.version, // one source: version.json (node scripts/bump-version.mjs)
   orientation: "portrait",
-  icon: "./assets/icon.png",
+  // Partner: the seller dashboard green with a storefront, the wordmark and PARTNER (founder 7 Nov); buyer: blue "R".
+  icon: partner ? "./assets/partner-icon.png" : "./assets/icon.png",
   userInterfaceStyle: "automatic",
   ios: {
     bundleIdentifier: partner ? "com.relifish.partner" : "com.relifish.app",
@@ -29,7 +30,7 @@ const config: ExpoConfig = {
   android: {
     package: partner ? "com.relifish.partner" : "com.relifish.app",
     versionCode: V.androidVersionCode,
-    adaptiveIcon: { foregroundImage: "./assets/adaptive-icon.png", backgroundColor: "#0066FF" },
+    adaptiveIcon: partner ? { foregroundImage: "./assets/partner-adaptive-icon.png", backgroundColor: "#059669" } : { foregroundImage: "./assets/adaptive-icon.png", backgroundColor: "#0066FF" },
     permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "POST_NOTIFICATIONS", "USE_FULL_SCREEN_INTENT", "VIBRATE", "WAKE_LOCK"],
     // Firebase project "relifish" (relifishstore@gmail.com); files are git-ignored, kept in mobile/firebase/.
     googleServicesFile: partner ? "./firebase/google-services-partner.json" : "./firebase/google-services-buyer.json",
@@ -42,11 +43,13 @@ const config: ExpoConfig = {
     // Native splash = the site's #rf-splash wordmark: gold logo on maroon in the Diwali window (28 Oct–15 Nov IST, the
     // same window as src/lib/festive-window.ts), white logo on brand blue otherwise. Fixed at build time; the JS splash
     // (src/Splash.tsx) follows the live theme right after.
-    ["expo-splash-screen", diwali
+    ["expo-splash-screen", partner
+      ? { image: "./assets/splash-white.png", imageWidth: 288, resizeMode: "contain", backgroundColor: "#059669" } // seller side: never festive, dashboard green
+      : diwali
       // Square images with the wordmark in the middle 60 %: Android 12+ masks the splash icon to a circle.
       ? { image: "./assets/splash-gold.png", imageWidth: 288, resizeMode: "contain", backgroundColor: "#6E0822" }
       : { image: "./assets/splash-white.png", imageWidth: 288, resizeMode: "contain", backgroundColor: "#0066FF" }],
-    ["expo-notifications", { icon: "./assets/notification-icon.png", color: "#0066FF", sounds: ["./assets/sounds/new_order.wav"] }], // white "R" in the status bar
+    ["expo-notifications", { icon: partner ? "./assets/partner-notification-icon.png" : "./assets/notification-icon.png", color: partner ? "#059669" : "#0066FF", sounds: ["./assets/sounds/new_order.wav"] }], // white "R" in the status bar
     ["expo-location", { locationWhenInUsePermission: "Relifish uses your location to show fish sellers who deliver to you." }],
   ],
   experiments: { typedRoutes: false },
