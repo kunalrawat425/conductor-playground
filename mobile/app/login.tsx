@@ -71,7 +71,7 @@ export default function Login() {
     } catch (e: any) { setErr(e.message); setCode(""); track("otp_failed"); } finally { setBusy(false); }
   }
 
-  // Partner app: the dashboard's green over a dock photo, so it can't be mistaken for the buyer app (founder 7 Nov).
+  // Partner app: the dashboard's green, no photo, so it can't be mistaken for the buyer app (founder 7 Nov).
   const shade = seller
     ? dark ? `linear-gradient(180deg, ${pal.a6_78_59_55} 0%, ${pal.a2_44_34_85} 70%)` : `linear-gradient(180deg, ${pal.a5_150_105_35} 0%, ${pal.a4_120_87_75} 70%)`
     : dark ? `linear-gradient(180deg, ${pal.a15_23_42_35} 20%, ${pal.a15_23_42_7} 70%)` : `linear-gradient(180deg, ${pal.a15_23_42_0} 30%, ${pal.a15_23_42_35} 70%)`;
@@ -80,7 +80,7 @@ export default function Login() {
   const link = { color: t.ink2, textDecorationLine: "underline" as const };
   return (
     <View style={{ flex: 1, backgroundColor: seller ? (dark ? pal.h064E3B : pal.h059669) : dark ? pal.h0F172A : t.bg3 }}>
-      <Image source={seller ? require("../assets/seller-login.jpg") : require("../assets/login-collage.jpg")} style={[StyleSheet.absoluteFill, { width: "100%", height: seller ? "75%" : "100%", opacity: dark && !seller ? 0.85 : 1 }]} resizeMode="cover" />
+      {!seller && <Image source={require("../assets/login-collage.jpg")} style={[StyleSheet.absoluteFill, { width: "100%", height: "100%", opacity: dark ? 0.85 : 1 }]} resizeMode="cover" />}
       <Pressable style={[StyleSheet.absoluteFill, grad(shade)]} onPress={() => close()} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: "flex-end" }}>
         <View style={[{ backgroundColor: t.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: sent ? 40 : 46, paddingHorizontal: 22, paddingBottom: insets.bottom + 18, alignItems: "stretch" }, shadowCss(`0px -10px 30px 0px ${pal.a0_0_0_018}`)]}>

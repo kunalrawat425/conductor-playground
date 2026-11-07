@@ -78,9 +78,9 @@ const MAX_ATTEMPTS = 3;
   .lg-badge { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; width: 200px; height: 60px; border-radius: 18px; background: var(--v2-brand); box-shadow: 0 10px 24px rgba(0,102,255,.30); z-index: 2; }
   .lg-diwali .lg-badge { background: linear-gradient(135deg, #B3123B, #8B0A2E); border: 2px solid #D4A24C; box-shadow: 0 10px 24px rgba(139,10,46,.35); }
   .lg-badge img { width: 152px; height: auto; }
-  /* Seller (Partner) login: the dashboard's green, a dock photo, "Partner · for sellers" tag (founder 7 Nov). */
-  .v2-sheet-backdrop:has(.lg-seller) { background: linear-gradient(to bottom, rgba(5,150,105,.35) 0%, rgba(4,120,87,.75) 70%), url(/seller-login.jpg) center top / cover no-repeat, #059669; }
-  html[data-theme="dark"] .v2-sheet-backdrop:has(.lg-seller) { background: linear-gradient(to bottom, rgba(6,78,59,.55) 0%, rgba(2,44,34,.85) 70%), url(/seller-login.jpg) center top / cover no-repeat, #064E3B; }
+  /* Seller (Partner) login: the dashboard's green (no photo, founder 7 Nov), "Partner · for sellers" tag (founder 7 Nov). */
+  .v2-sheet-backdrop:has(.lg-seller) { background: linear-gradient(to bottom, rgba(5,150,105,.35) 0%, rgba(4,120,87,.75) 70%), #059669; }
+  html[data-theme="dark"] .v2-sheet-backdrop:has(.lg-seller) { background: linear-gradient(to bottom, rgba(6,78,59,.55) 0%, rgba(2,44,34,.85) 70%), #064E3B; }
   .lg-seller .lg-badge { flex-direction: column; gap: 2px; height: 66px; background: linear-gradient(135deg, #059669, #10B981); border: 0; box-shadow: 0 10px 24px rgba(5,150,105,.35); }
   .lg-seller .lg-badge img { width: 132px; }
   .lg-badge-tag { font: 800 9px var(--v2-font); letter-spacing: .16em; text-transform: uppercase; color: #fff; opacity: .92; }
@@ -101,7 +101,7 @@ const MAX_ATTEMPTS = 3;
       background-image: image-set(url(/login-collage-hdr.jpg) 1x, url(/login-collage-hdr@2x.jpg) 2x);
     }
     .v2-sheet:has(.lg-seller)::before {
-      background: linear-gradient(to bottom, rgba(5,150,105,.25), rgba(4,120,87,.55)), url(/seller-login.jpg) center 20% / cover no-repeat;
+      background: linear-gradient(to bottom, rgba(5,150,105,.25), rgba(4,120,87,.55));
     }
     .v2-sheet:has(.lg-root) .v2-sheet-body { overflow-y: auto; padding-bottom: 24px; }
     .lg-badge { top: 180px; }
