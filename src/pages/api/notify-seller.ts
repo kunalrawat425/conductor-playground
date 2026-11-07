@@ -142,7 +142,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     try {
       const webPush = await loadWebPush();
-      webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
+      if (vapidPublicKey && vapidPrivateKey) webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
       await webPush.sendNotification(
         subscription,
         JSON.stringify({

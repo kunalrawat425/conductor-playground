@@ -172,7 +172,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
 
   try {
     const webPush = await loadWebPush();
-    webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
+    if (vapidPublicKey && vapidPrivateKey) webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
     const uniqueTag = `order-${effectiveBuyerId}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     await webPush.sendNotification(
       subscription,
@@ -246,7 +246,7 @@ export async function sendCustomBuyerPush(
 
   try {
     const webPush = await loadWebPush();
-    webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
+    if (vapidPublicKey && vapidPrivateKey) webPush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
     const uniqueTag = `custom-${buyerId}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     await webPush.sendNotification(
       subscription,
