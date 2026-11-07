@@ -5,7 +5,7 @@ import { SLOT_SELLER_COLUMNS } from "../../../lib/delivery-slots";
 import { sellerNameToSlug } from "../../../lib/seller-display";
 import { PROMO_SMS_START, smsCapReached, cartMessage, decide, decideActivity, istDate, offerAt, pickSeller, promoSms, signupMessage, type BuyerState, type MsgSeller, type SentLog } from "../../../lib/messaging/schedule";
 import { firstName, fishName } from "../../../lib/messaging/templates";
-import { dispatch, smsFallbackDue, smsFallbackFor, type Dispatch } from "../../../lib/server/messaging";
+import { dispatch, smsFallbackDue, smsFallbackFor, whatsappRoute, type Dispatch } from "../../../lib/server/messaging";
 import { againOrder, checkoutFish, loadCheckout, ORDER_SELECT, orderMessage, orderPhoto, orderSms, type OrderWaEvent } from "../../../lib/server/notify-order-whatsapp";
 import { hasPaymentEvidence } from "../../../lib/server/reminders";
 import { syncWatiStatuses } from "../../../lib/server/wati-status";
@@ -317,10 +317,10 @@ async function run({ url }: { url: URL }): Promise<Response> {
     }
     if (!msg) continue;
     // 2 reminder/promo SMS a week (founder, 1 Nov): an SMS-bound reminder or promo past the cap is skipped here (the DB refuses it anyway).
-    const smsBound = !(whatsappOk && env("WHATSAPP_OFF") !== "true");
+    const smsBound = !whatsappRoute(msg, !!msg.sms);
     if (smsBound && msg.sms && smsCapReached(history, now)) { report.push({ buyer: who, skip: "2 SMS this week" }); continue; }
     if (!whatsappOk && !msg.sms) { report.push({ buyer: who, skip: msg.kind === "promo" ? "promo: no WhatsApp and no promo SMS for this stage/time" : "not opted in to WhatsApp" }); continue; }
-    const line = { buyer: who, kind: msg.kind, template: msg.template, vars: msg.body, sms: msg.sms ?? null, link: msg.link_path, image: msg.headerImage ?? null, channel: whatsappOk && env("WHATSAPP_OFF") !== "true" ? "whatsapp" : msg.sms ? "sms" : "none" };
+    const line = { buyer: who, kind: msg.kind, template: msg.template, vars: msg.body, sms: msg.sms ?? null, link: msg.link_path, image: msg.headerImage ?? null, channel: whatsappRoute(msg, !!msg.sms) ? "whatsapp" : msg.sms ? "sms" : "none" };
     if (dry) { report.push({ ...line, sent: "dry_run" }); continue; }
     const r = await dispatch(sb, msg);
     report.push({ ...line, channel: r.channel ?? line.channel, sent: r.status, error: r.error });
