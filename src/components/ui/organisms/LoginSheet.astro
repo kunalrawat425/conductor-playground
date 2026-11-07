@@ -54,7 +54,7 @@ const MAX_ATTEMPTS = 3;
         </button>
         <b>OTP verification</b>
       </div>
-      <div class="otp-sent">Sent by SMS to <b id={`${id}-phone-display`}></b> · <button type="button" id={`${id}-change-phone`} class="otp-change">Change</button></div>
+      <div class="otp-sent">Sent by <span id={`${id}-sent-via`}>SMS</span> to <b id={`${id}-phone-display`}></b> · <button type="button" id={`${id}-change-phone`} class="otp-change">Change</button></div>
       <div class="otp-valid">The code is valid for 10 minutes.</div>
       <form id={`${id}-otp-form`} autocomplete="off">
         <OTPInput id={`${id}-otp`} length={6} autoSubmitFormId={`${id}-otp-form`} />
@@ -151,6 +151,15 @@ const MAX_ATTEMPTS = 3;
 
   function getEl(suffix) { return document.getElementById(`${id}-${suffix}`); }
   let otpSentOnce = false; // second send = resend (funnel)
+  // First code goes by WhatsApp (falls back to SMS server-side); Resend always uses SMS (founder, 7 Nov).
+  let sentVia = "sms";
+  const resendLabel = () => (sentVia === "whatsapp" ? "Get code by SMS instead" : "Resend SMS");
+  function showChannel(ch) {
+    sentVia = ch === "whatsapp" ? "whatsapp" : "sms";
+    const el = getEl("sent-via");
+    if (el) el.textContent = sentVia === "whatsapp" ? "WhatsApp" : "SMS";
+    const auto = getEl("auto"); if (auto && sentVia === "whatsapp") auto.hidden = true; // WebOTP reads SMS only
+  }
   // Funnel step to our DB; queued if the tracker (FunnelTrack, end of page) hasn't loaded yet.
   const rft = (e, d) => (window.rfTrack ? window.rfTrack(e, d) : (window.rfq = window.rfq || []).push([e, d]));
 
@@ -225,20 +234,20 @@ const MAX_ATTEMPTS = 3;
     let secs = Math.max(0, Math.ceil(fromSeconds));
     if (secs <= 0) {
       btn.disabled = false;
-      label.textContent = "Resend SMS";
+      label.textContent = resendLabel();
       return;
     }
     const fmt = (n) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
-    label.innerHTML = `Didn't get it? Resend SMS in <b>${fmt(secs)}</b>`;
+    label.innerHTML = `Didn't get it? ${resendLabel()} in <b>${fmt(secs)}</b>`;
     clearInterval(countdownTimer);
     countdownTimer = setInterval(() => {
       secs--;
       if (secs <= 0) {
         clearInterval(countdownTimer);
         btn.disabled = false;
-        label.textContent = "Resend SMS";
+        label.textContent = resendLabel();
       } else {
-        label.innerHTML = `Didn't get it? Resend SMS in <b>${fmt(secs)}</b>`;
+        label.innerHTML = `Didn't get it? ${resendLabel()} in <b>${fmt(secs)}</b>`;
       }
     }, 1000);
   }
@@ -251,7 +260,7 @@ const MAX_ATTEMPTS = 3;
     getEl("verify-otp").disabled = false;
     clearOTPCells();
     showStep(2);
-    if ("OTPCredential" in window) getEl("auto")?.removeAttribute("hidden");
+    if ("OTPCredential" in window && sentVia === "sms") getEl("auto")?.removeAttribute("hidden");
     const elapsed = (Date.now() - sentAtMs) / 1000;
     startCountdown(RESEND_COOLDOWN - elapsed);
   }
@@ -339,10 +348,11 @@ const MAX_ATTEMPTS = 3;
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone, channel: "whatsapp" }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send OTP");
+      showChannel(data.channel);
       try { if (typeof gtag === "function") gtag("event", "otp_sent", { role }); } catch {}
       if (role !== "seller") { rft(otpSentOnce ? "otp_resend" : "otp_sent"); otpSentOnce = true; }
       const sentAt = Date.now();
@@ -466,10 +476,11 @@ const MAX_ATTEMPTS = 3;
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: currentPhone }),
+        body: JSON.stringify({ phone: currentPhone, channel: "sms" }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
+      showChannel(data.channel);
       const sentAt = Date.now();
       saveSession(currentPhone, sentAt);
       otpAttempts = 0;
@@ -479,10 +490,11 @@ const MAX_ATTEMPTS = 3;
       clearOTPCells();
       startCountdown(RESEND_COOLDOWN);
       window.v2Toast?.("info", "OTP resent", "Check your SMS");
+      sentVia = "sms";
     } catch (err) {
       window.v2Toast?.("error", "Resend failed", err.message || "Try again");
       btn.disabled = false;
-      getEl("resend-label").textContent = "Resend SMS";
+      getEl("resend-label").textContent = resendLabel();
     }
   });
 

@@ -2,6 +2,8 @@
  * One place that sends a Relifish message to a buyer and records it in message_log.
  * - One channel per message (founder, 30 Oct): WhatsApp when the buyer opted in, else SMS (MSG91).
  *   WHATSAPP_OFF=true (founder, 1 Nov: Wati paused) sends everything by SMS; promos have no SMS, so they stop.
+ *   WHATSAPP_PROMOS_ONLY=true (founder, 7 Nov): WhatsApp only for marketing templates (promos, cart nudges:
+ *   photo + chat); utility ones (order updates, unpaid reminders) go by SMS when they have one.
  *   A reminder or order update whose WhatsApp fails is re-sent once by SMS (smsFallback), now or
  *   later when Wati reports the failure (smsFallbackFor, from the messaging cron).
  * - Idempotent: each channel's row is inserted first with a unique dedupe_key (key + ":whatsapp" /
@@ -30,11 +32,21 @@ export type Dispatch = {
   sms?: SmsPart | null;             // the SMS version; none → WhatsApp only (promos)
   smsOk?: boolean;                  // false → never SMS (DND, STOP for reminders)
   smsFallback?: boolean;            // WhatsApp failed → SMS once (reminders, order updates)
+  whatsappAlways?: boolean;         // ignore WHATSAPP_OFF (seller new-order message, founder 7 Nov)
 };
 type Channel = "whatsapp" | "sms";
 export type DispatchResult = { status: "duplicate" | "sent" | "dry_run" | "failed" | "no_channel" | "capped"; channel?: string; id?: string; error?: string };
 
 const env = (k: string) => ((import.meta as any).env?.[k] ?? process.env[k] ?? "") as string;
+
+/** May this message go by WhatsApp under the WHATSAPP_OFF / WHATSAPP_PROMOS_ONLY switches? (pure; tested) */
+export function whatsappRoute(d: Pick<Dispatch, "whatsappOk" | "whatsappAlways" | "template" | "sms">, canSms: boolean): boolean {
+  if (!d.whatsappOk) return false;
+  if (d.whatsappAlways) return true;
+  if (env("WHATSAPP_OFF") === "true") return false;
+  if (env("WHATSAPP_PROMOS_ONLY") === "true" && canSms && TEMPLATE[d.template]?.category !== "MARKETING") return false;
+  return true;
+}
 
 export async function dispatch(sb: any, d: Dispatch): Promise<DispatchResult> {
   const to = waNumber(d.phone);
@@ -49,7 +61,7 @@ export async function dispatch(sb: any, d: Dispatch): Promise<DispatchResult> {
     // Handled on WhatsApp before; only a failed one may still go once by SMS.
     return wa.status === "failed" && d.smsFallback && canSms ? sendOne(sb, d, "sms", to) : { status: "duplicate", channel: "whatsapp" };
   }
-  if (d.whatsappOk && env("WHATSAPP_OFF") !== "true") {
+  if (whatsappRoute(d, canSms)) {
     const r = await sendOne(sb, d, "whatsapp", to);
     if (r.status !== "failed" || !d.smsFallback || !canSms) return r;
     const s = await sendOne(sb, d, "sms", to);

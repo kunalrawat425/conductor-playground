@@ -69,11 +69,14 @@ async function sendViaMSG91(phone: string, otp: string): Promise<{ ok: boolean; 
 
 /**
  * POST /api/auth/send-otp
- * Body: { phone: "+919876543210" }
+ * Body: { phone: "+919876543210", channel?: "whatsapp" | "sms" }
+ * channel "whatsapp" (web login, founder 7 Nov): the code goes by WhatsApp (rf2_login_otp, AiSensy
+ * rs_login_otp); if that send fails it goes by SMS. Asking for it is the consent for that one message.
+ * No channel (app SMS autofill, older callers) = SMS as before. Response says which channel was used.
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { phone } = await request.json();
+    const { phone, channel } = await request.json();
 
     // Same normalisation as verify-otp and every other phone column, so the
     // otp_codes key can never drift from what verify looks up.
@@ -154,14 +157,23 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: "Failed to create OTP" }), { status: 500 });
     }
 
+    let sentBy: "whatsapp" | "sms" = "sms";
     if (OTP_SEND_ENABLED) {
-      const sms = await sendViaMSG91(normalised, otp);
-      if (!sms.ok) {
-        return new Response(JSON.stringify({ error: sms.error || "Failed to send OTP" }), { status: 502 });
+      if (channel === "whatsapp") {
+        const { sendTemplate } = await import("../../../lib/server/whatsapp");
+        const wa = await sendTemplate({ to: normalised, name: "rf2_login_otp", body: [otp], urlSuffix: otp });
+        if (wa.status === "sent") sentBy = "whatsapp";
+        else console.warn("[send-otp] WhatsApp code not sent, using SMS", { status: wa.status });
+      }
+      if (sentBy === "sms") {
+        const sms = await sendViaMSG91(normalised, otp);
+        if (!sms.ok) {
+          return new Response(JSON.stringify({ error: sms.error || "Failed to send OTP" }), { status: 502 });
+        }
       }
     }
 
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
+    return new Response(JSON.stringify({ success: true, channel: sentBy }), { status: 200 });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("send-otp error:", err);

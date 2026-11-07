@@ -848,12 +848,11 @@ const { id } = Astro.params;
     } else if (info?.block?.code === "over_limit" && btn) {
       btn.insertAdjacentHTML("afterend", `<div style="font:400 11px Inter;color:var(--v2-ink-3);text-align:center;margin-top:8px;">${escape(info.block.message)}</div>`);
     }
-    // Arrived from "Place Order" (?pay=1): open Razorpay straight away only when there's no choice to make.
+    // Arrived from "Place Order" (?pay=1): never open Razorpay on its own (founder, 7 Nov). The buyer
+    // picks Pay now or Pay on delivery on this page first.
     if (autoPay) {
       autoPay = false;
       history.replaceState(null, "", location.pathname);
-      // An open pay-on-delivery order: show that alert instead of covering it with Razorpay.
-      if (!info?.eligible && info?.block?.code !== "open_order") (document.getElementById("v2-rzp-pay-btn") as HTMLButtonElement | null)?.click();
     }
   }
 

@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { isLiveFor, templatePayload, validWebhookSignature, waNumber, watiParams, watiTemplate } from "../../src/lib/server/whatsapp";
+import { isLiveFor, metaTemplate, templatePayload, validWebhookSignature, waNumber, watiParams, watiTemplate } from "../../src/lib/server/whatsapp";
 import { TEMPLATES, DRAFT_TEMPLATES, TEMPLATE, templateProblems, fishName, firstName, PROMO_IMAGE, SIGNUP_IMAGE, varCount } from "../../src/lib/messaging/templates";
 import { againOrder, orderMessage, orderPhoto, type OrderWaEvent } from "../../src/lib/server/notify-order-whatsapp";
 import { DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy";
@@ -13,6 +13,7 @@ import { DEFAULT_PROMO_IMAGE } from "../../src/lib/server/buyer-order-push-copy"
  */
 const APPROVED: Record<string, [string, boolean, number]> = {
   rf2_out_pod: ["UTILITY", false, 3], // Wati rfw_out_pod, pay on delivery on its way (6 Nov 2026)
+  rf2_seller_order: ["UTILITY", false, 3], // AiSensy rs_seller_order, new paid order to the seller (7 Nov 2026)
   rf2_welcome: ["MARKETING", true, 3], rf2_welcome_search: ["MARKETING", true, 3],
   rf2_cart_today: ["MARKETING", true, 4], rf2_cart_preorder: ["MARKETING", true, 4],
   rf2_promo_cart: ["MARKETING", true, 5], rf2_promo_unpaid: ["MARKETING", true, 4],
@@ -369,6 +370,10 @@ describe("Wati provider", () => {
     expect(watiParams({ ...conf, headerImage: null }).map((p) => p.name)).toEqual(["1", "2", "3", "4"]);
     expect(watiTemplate({ to: "1", name: "rf2_out", body: ["#AB12", "2 PM"] })).toBe("rfw_out");
     expect(watiTemplate({ to: "1", name: "rf_hello", body: ["Kiran"] })).toBe("rfw_hello");
+    expect(metaTemplate({ ...conf, headerImage: "https://x/p.jpg" })).toBe("rs2_confirmed");
+    expect(metaTemplate({ ...conf, headerImage: null })).toBe("rst_confirmed");
+    expect(metaTemplate({ to: "1", name: "rf2_cancelled", body: [] })).toBe("rs_cancelled_u");
+    expect(metaTemplate({ to: "1", name: "rf2_paid", body: [] })).toBe("rs_paid");
   });
   it("is live only with Wati keys, and still honours dry-run and the test-only list", () => {
     vi.stubEnv("WA_PROVIDER", "wati");

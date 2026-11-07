@@ -153,3 +153,20 @@ describe("seller order SMS", () => {
     expect(sellerOrderSms("pay_on_delivery", "ce259725-f599", 193, null).vars).toEqual(["#CE259725", "Rs.193, pays on delivery", "as agreed"]);
   });
 });
+
+import { orderSmsRecipients } from "../../src/lib/server/seller-push-copy";
+describe("new-order SMS copy", () => {
+  it("goes to the seller plus each copy number, once each", () => {
+    expect(orderSmsRecipients("9000000001", "9870619974", "o1")).toEqual([
+      ["9000000001", "seller_order:o1"],
+      ["9870619974", "seller_order:o1:copy:9870619974"],
+    ]);
+  });
+  it("skips a copy number that is the seller's own, and bad entries", () => {
+    expect(orderSmsRecipients("+91 98706 19974", "9870619974, 123", "o1")).toEqual([["+91 98706 19974", "seller_order:o1"]]);
+  });
+  it("still sends the copy when the seller has no phone; nothing when unset", () => {
+    expect(orderSmsRecipients(null, "919870619974", "o1")).toEqual([["9870619974", "seller_order:o1:copy:9870619974"]]);
+    expect(orderSmsRecipients("9000000001", "", "o1")).toHaveLength(1);
+  });
+});
