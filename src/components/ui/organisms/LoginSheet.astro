@@ -2,6 +2,8 @@
 import BottomSheet from "./BottomSheet.astro";
 import PhoneInput from "../atoms/PhoneInput.astro";
 import OTPInput from "../atoms/OTPInput.astro";
+import { festiveTheme } from "../../../lib/festive";
+const festive = festiveTheme() === "diwali";
 interface Props {
   id?: string;
   role?: "buyer" | "seller";
@@ -20,57 +22,93 @@ const MAX_ATTEMPTS = 3;
 <!-- No ✕ (founder): back out by tapping outside, swiping down, or the phone's back button.
      dismissible={false}: none of those close it; Back just leaves the page. -->
 <BottomSheet id={id} title={title} showClose={false} dismissible={dismissible}>
-  <!-- Step 1: phone entry -->
-  <div id={`${id}-step1`}>
-    <p style="font:400 13px Inter;color:var(--v2-ink-2);margin:0 0 16px;line-height:1.5;">
-      Enter your mobile number. We'll send a one-time code, no password needed.
-    </p>
-    <form id={`${id}-phone-form`} autocomplete="off">
-      <PhoneInput id={`${id}-phone`} required={true} />
-      <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-send-otp`}>
-        Send OTP
-      </button>
-      {role === "buyer" && (
-        <label style="display:flex;gap:8px;align-items:flex-start;margin:12px 2px 0;font:400 12px/1.45 Inter;color:var(--v2-ink-2);cursor:pointer;">
-          <input type="checkbox" id={`${id}-wa-optin`} style="margin-top:2px;width:16px;height:16px;flex-shrink:0;" />
-          <span>Send me fresh listings, offers and order updates from Relifish on WhatsApp. Reply STOP anytime.</span>
-        </label>
-      )}
-      <p style="font:400 11px Inter;color:var(--v2-ink-3);margin:10px 0 0;text-align:center;line-height:1.5;">
-        By continuing, you agree to Relifish's <a href={termsHref} target="_blank" style="color:inherit;text-decoration:underline;">{termsLabel}</a> and <a href="/privacy" target="_blank" style="color:inherit;text-decoration:underline;">Privacy Policy</a>.
-      </p>
-    </form>
-  </div>
+  <!-- Blinkit-style login (preview "Login redesign"): fish collage behind (backdrop), white panel with the logo badge. -->
+  <div class:list={["lg-root", festive && "lg-diwali"]}>
+    <div class="lg-badge" aria-hidden="true"><img src={festive ? "/logo-gold.png" : "/logo-white.png"} alt="" width="152" height="36" /></div>
 
-  <!-- Step 2: OTP entry -->
-  <div id={`${id}-step2`} style="display:none;">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-      <span style="font:600 14px Inter;color:var(--v2-ink);" id={`${id}-phone-display`}></span>
-      <button type="button" id={`${id}-change-phone`}
-        style="font:400 12px Inter;color:var(--v2-ink-3);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;">
-        Change
-      </button>
+    <!-- Step 1: phone entry -->
+    <div id={`${id}-step1`}>
+      <div class="lg-tag">{role === "seller" ? <>Your shop on Relifish,<br />orders straight to your phone</> : <>Fresh fish from verified sellers,<br />cleaned &amp; cut</>}</div>
+      <div class="lg-sub">{festive ? "Happy Diwali · Thane & Mumbai, delivered" : "Thane & Mumbai · delivered to your door"}</div>
+      <div class="lg-or">{role === "seller" ? "Seller sign in" : "Log in or sign up"}</div>
+      <form id={`${id}-phone-form`} autocomplete="off">
+        <PhoneInput id={`${id}-phone`} required={true} />
+        <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full lg-cta" id={`${id}-send-otp`}>Continue</button>
+        {role === "buyer" && (
+          <label class="lg-wa">
+            <input type="checkbox" id={`${id}-wa-optin`} />
+            <span>Send me order updates and fresh-catch alerts on WhatsApp. Reply STOP anytime.</span>
+          </label>
+        )}
+        <p class="lg-terms">By continuing, you agree to our <a href={termsHref} target="_blank">{termsLabel}</a> &amp; <a href="/privacy" target="_blank">Privacy policy</a></p>
+      </form>
     </div>
-    <p style="font:400 12px Inter;color:var(--v2-ink-3);margin:0 0 16px;line-height:1.5;">
-      6-digit code sent via SMS · expires in 10 min
-    </p>
-    <form id={`${id}-otp-form`} autocomplete="off">
-      <OTPInput id={`${id}-otp`} length={6} autoSubmitFormId={`${id}-otp-form`} />
-      <!-- inline error/hint row -->
-      <p id={`${id}-hint`}
-        style="font:400 12px Inter;color:var(--v2-orange);min-height:16px;margin:6px 0 0;text-align:center;"></p>
-      <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full" id={`${id}-verify-otp`}
-        style="margin-top:10px;">
-        Verify &amp; continue
-      </button>
-      <!-- resend: disabled with countdown, enabled when ready -->
-      <button type="button" class="v2-btn v2-btn-ghost v2-btn-sm v2-btn-full" id={`${id}-resend`}
-        style="margin-top:8px;" disabled>
-        <span id={`${id}-resend-label`}>Resend code (30s)</span>
-      </button>
-    </form>
+
+    <!-- Step 2: OTP entry -->
+    <div id={`${id}-step2`} style="display:none;">
+      <div class="otp-head">
+        <button type="button" class="otp-back" aria-label="Change number" onclick={`document.getElementById('${id}-change-phone').click()`}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"></path></svg>
+        </button>
+        <b>OTP verification</b>
+      </div>
+      <div class="otp-sent">Sent by SMS to <b id={`${id}-phone-display`}></b> · <button type="button" id={`${id}-change-phone`} class="otp-change">Change</button></div>
+      <form id={`${id}-otp-form`} autocomplete="off">
+        <OTPInput id={`${id}-otp`} length={6} autoSubmitFormId={`${id}-otp-form`} />
+        <div class="otp-auto" id={`${id}-auto`} hidden><span class="otp-dot"></span>Reading the code from SMS…</div>
+        <p id={`${id}-hint`} class="otp-hint"></p>
+        <button type="submit" class="v2-btn v2-btn-primary v2-btn-md v2-btn-full lg-cta" id={`${id}-verify-otp`}>Verify &amp; continue</button>
+        <button type="button" class="otp-resend" id={`${id}-resend`} disabled><span id={`${id}-resend-label`}>Didn't get it? Resend SMS in <b>0:30</b></span></button>
+        <a class="otp-help" href="tel:+919152207607">Need help? Call us</a>
+      </form>
+    </div>
   </div>
 </BottomSheet>
+
+<style is:global>
+  /* Login redesign: the collage fills the screen behind the sheet (public/login-collage.jpg, rendered from the mockup). */
+  .v2-sheet-backdrop:has(.lg-root) { background: linear-gradient(to bottom, rgba(15,23,42,0) 30%, rgba(15,23,42,.35) 70%), url(/login-collage.jpg) center top / cover no-repeat, var(--v2-bg-3); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  html[data-theme="dark"] .v2-sheet-backdrop:has(.lg-root) { background: linear-gradient(to bottom, rgba(15,23,42,.35) 20%, rgba(15,23,42,.7) 70%), url(/login-collage.jpg) center top / cover no-repeat, #0F172A; }
+  .v2-sheet:has(.lg-root) { position: relative; overflow: visible; border-radius: 24px 24px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,.18); }
+  .v2-sheet:has(.lg-root) .v2-sheet-head { display: none; }
+  .v2-sheet:has(.lg-root) .v2-sheet-body { padding: 46px 22px max(18px, env(safe-area-inset-bottom, 0px)); text-align: center; }
+  .lg-badge { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; width: 200px; height: 60px; border-radius: 18px; background: var(--v2-brand); box-shadow: 0 10px 24px rgba(0,102,255,.30); z-index: 2; }
+  .lg-diwali .lg-badge { background: linear-gradient(135deg, #B3123B, #8B0A2E); border: 2px solid #D4A24C; box-shadow: 0 10px 24px rgba(139,10,46,.35); }
+  .lg-badge img { width: 152px; height: auto; }
+  .lg-tag { font: 800 20px/1.25 var(--v2-font); letter-spacing: -.02em; margin: 2px 0 4px; color: var(--v2-ink); }
+  .lg-sub { font: 500 13px var(--v2-font); color: var(--v2-ink-3); }
+  .lg-or { display: flex; align-items: center; gap: 12px; margin: 16px 0 12px; font: 600 13px var(--v2-font); color: var(--v2-ink-3); }
+  .lg-or::before, .lg-or::after { content: ""; flex: 1; height: 1px; background: var(--v2-border); }
+  .lg-root .v2-field { margin: 0; }
+  .lg-root .v2-field-label { display: none; }
+  .lg-root .v2-input-wrap { height: 54px; border: 1.5px solid var(--v2-border); border-radius: 12px; }
+  .lg-root .v2-input-wrap:focus-within { border-color: var(--v2-brand); box-shadow: 0 0 0 3px var(--v2-brand-l); }
+  .lg-root .v2-input-prefix { font: 700 16px var(--v2-font); color: var(--v2-ink); background: none; border-right: 1.5px solid var(--v2-border); padding: 0 12px 0 14px; display: flex; align-items: center; }
+  .lg-root .v2-input { font: 600 17px var(--v2-font); letter-spacing: .04em; }
+  .lg-cta { margin-top: 12px; height: 54px; border-radius: 12px; font-size: 16px; font-weight: 800; }
+  .lg-cta:disabled { background: var(--v2-bg-3); color: var(--v2-ink-4); opacity: 1; }
+  .lg-wa { display: flex; gap: 10px; align-items: flex-start; text-align: left; margin-top: 12px; font: 500 12px/1.45 var(--v2-font); color: var(--v2-ink-2); cursor: pointer; }
+  .lg-wa input { flex: none; width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--v2-brand); }
+  .lg-terms { margin: 12px 0 0; font: 500 11px/1.5 var(--v2-font); color: var(--v2-ink-3); }
+  .lg-terms a { color: var(--v2-ink-2); text-decoration: underline; }
+  .otp-head { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 6px; }
+  .otp-head b { font: 800 19px var(--v2-font); color: var(--v2-ink); }
+  .otp-back { position: absolute; left: 0; top: -4px; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--v2-bg-3); color: var(--v2-ink); border: 0; cursor: pointer; }
+  .otp-sent { font: 500 14px/1.5 var(--v2-font); color: var(--v2-ink-3); }
+  .otp-sent b { color: var(--v2-ink); font-weight: 800; }
+  .otp-change { font: 700 14px var(--v2-font); color: var(--v2-link); background: none; border: 0; padding: 0; cursor: pointer; }
+  .lg-root .v2-otp { justify-content: center; gap: 9px; margin: 20px 0 14px; }
+  .lg-root .v2-otp-cell { width: 46px; height: 54px; border-radius: 12px; border: 1.5px solid var(--v2-border); font: 800 22px var(--v2-font); text-align: center; }
+  .lg-root .v2-otp-cell:focus { border-color: var(--v2-brand); box-shadow: 0 0 0 3px var(--v2-brand-l); outline: none; }
+  .otp-auto { font: 600 12px var(--v2-font); color: var(--v2-green); display: inline-flex; align-items: center; gap: 6px; }
+  .otp-auto[hidden] { display: none; }
+  .otp-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--v2-green); box-shadow: 0 0 0 3px var(--v2-green-l); }
+  .otp-hint { font: 500 12px var(--v2-font); color: var(--v2-orange); min-height: 16px; margin: 6px 0 0; }
+  .otp-resend { display: block; width: 100%; margin-top: 12px; font: 500 14px var(--v2-font); color: var(--v2-ink-3); background: none; border: 0; cursor: pointer; }
+  .otp-resend:not(:disabled) { color: var(--v2-link); font-weight: 700; }
+  .otp-resend b { color: var(--v2-ink); }
+  .otp-help { display: block; margin-top: 10px; font: 600 13px var(--v2-font); color: var(--v2-ink-2); text-decoration: underline; }
+</style>
 
 <script define:vars={{ id, role, redirectTo, dismissible, SESSION_KEY, RESEND_COOLDOWN, MAX_ATTEMPTS }}>
   let currentPhone = "";
@@ -102,6 +140,16 @@ const MAX_ATTEMPTS = 3;
   getEl("title")?.addEventListener("click", focusPhone);
   if (getEl("title")) getEl("title").style.cursor = "pointer";
   getEl("step1")?.addEventListener("click", focusPhone);
+
+  // Continue stays grey until a valid 10-digit Indian mobile is in (autofilled "+91 …" counts).
+  const phoneEl = document.getElementById(`${id}-phone`);
+  const sendBtn = getEl("send-otp");
+  if (phoneEl) {
+    phoneEl.placeholder = "Enter mobile number";
+    const valid = () => { if (sendBtn) sendBtn.disabled = !/^[6-9]\d{9}$/.test(String(phoneEl.value).replace(/\D/g, "").slice(-10)); };
+    phoneEl.addEventListener("input", valid);
+    valid();
+  }
 
   function showStep(n) {
     getEl("step1").style.display = n === 1 ? "block" : "none";
@@ -143,19 +191,20 @@ const MAX_ATTEMPTS = 3;
     let secs = Math.max(0, Math.ceil(fromSeconds));
     if (secs <= 0) {
       btn.disabled = false;
-      label.textContent = "Resend code";
+      label.textContent = "Resend SMS";
       return;
     }
-    label.textContent = `Resend code (${secs}s)`;
+    const fmt = (n) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
+    label.innerHTML = `Didn't get it? Resend SMS in <b>${fmt(secs)}</b>`;
     clearInterval(countdownTimer);
     countdownTimer = setInterval(() => {
       secs--;
       if (secs <= 0) {
         clearInterval(countdownTimer);
         btn.disabled = false;
-        label.textContent = "Resend code";
+        label.textContent = "Resend SMS";
       } else {
-        label.textContent = `Resend code (${secs}s)`;
+        label.innerHTML = `Didn't get it? Resend SMS in <b>${fmt(secs)}</b>`;
       }
     }, 1000);
   }
@@ -168,6 +217,7 @@ const MAX_ATTEMPTS = 3;
     getEl("verify-otp").disabled = false;
     clearOTPCells();
     showStep(2);
+    if ("OTPCredential" in window) getEl("auto")?.removeAttribute("hidden");
     const elapsed = (Date.now() - sentAtMs) / 1000;
     startCountdown(RESEND_COOLDOWN - elapsed);
   }
@@ -269,7 +319,7 @@ const MAX_ATTEMPTS = 3;
       window.v2Toast?.("error", "Failed to send OTP", err.message);
     } finally {
       btn.disabled = false;
-      btn.textContent = "Send OTP";
+      btn.textContent = "Continue";
     }
   });
 
@@ -398,7 +448,7 @@ const MAX_ATTEMPTS = 3;
     } catch (err) {
       window.v2Toast?.("error", "Resend failed", err.message || "Try again");
       btn.disabled = false;
-      getEl("resend-label").textContent = "Resend code";
+      getEl("resend-label").textContent = "Resend SMS";
     }
   });
 
