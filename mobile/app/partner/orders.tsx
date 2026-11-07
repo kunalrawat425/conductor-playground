@@ -1,14 +1,20 @@
 import { useCallback, useState } from "react";
 import { Alert, FlatList, Linking, Modal, Platform, Pressable, RefreshControl, TextInput, View } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BADGE, CLOSED, planFor, qtyLabel, sellerPost, STATUS_FOR, type Act } from "../../src/partner";
 import { POD_REFUSED_REASON } from "../../../src/lib/pay-on-delivery";
 import { slotDayLabel, slotTimeLabel } from "../../../src/lib/delivery-slots";
 import { font, radius, useTheme } from "../../src/theme";
 import { api, getSession } from "../../src/api";
-import { Badge, Button, Card, Loading, s, Text } from "../../src/ui";
+import { Button, Card, Loading, s, Text } from "../../src/ui";
+import { paymentMethodLabel } from "../../../src/lib/order-payment-state";
+import { DashboardHero, DashboardTabs } from "../../src/ui/chrome";
+import { SellerOrderCard, type OcBadge } from "../../src/ui/dashboard";
+
+const RANGES = [["Today", 1], ["Last 7 days", 7], ["Last 30 days", 30], ["All time", 0]] as const;
+const TYPES = ["All", "Delivery", "Pickup", "Pre-order"] as const;
+const BTONE: Record<string, OcBadge["tone"]> = { blue: "new", purple: "preorder", amber: "urgent", green: "paid", red: "urgent", grey: "done" };
 
 const TABS = [["pending", "New"], ["accepted", "In Progress"], ["completed", "History"]] as const;
 const ASK: Record<string, { title: string; note: string; ok: string }> = {
@@ -28,6 +34,9 @@ export default function PartnerOrders() {
   const [stats, setStats] = useState(false);
   const [name, setName] = useState("");
   const insets = useSafeAreaInsets();
+  const [q, setQ] = useState("");
+  const [range, setRange] = useState(2);
+  const [type, setType] = useState(0);
 
   const load = useCallback(async (which = tab) => {
     const me = await getSession();
@@ -72,47 +81,41 @@ export default function PartnerOrders() {
   }
 
   if (!data) return <Loading />;
+  // Web filter bar: search by order ID or the buyer's last 4 digits; date range; type.
+  const days = RANGES[range][1];
+  const shown = data.orders.filter((o) => {
+    const k = q.trim().toLowerCase();
+    if (k && !String(o.id).toLowerCase().startsWith(k.replace(/^#/, "")) && !String(o.buyer_phone || "").endsWith(k)) return false;
+    if (days && Date.now() - new Date(o.created_at).getTime() > days * 86400_000) return false;
+    const ty = TYPES[type];
+    if (ty === "Delivery" && o.order_type !== "delivery") return false;
+    if (ty === "Pickup" && o.order_type === "delivery") return false;
+    if (ty === "Pre-order" && !(o.is_preorder || o.placement_kind === "preorder" || o.status === "pre_order")) return false;
+    return true;
+  });
   const kind = { primary: "primary", danger: "danger", secondary: "secondary", success: "primary" } as const;
   return (
     <View style={{ flex: 1, backgroundColor: t.page }}>
-      {/* .v2-dash-hero: green pipeline header with the stats toggle, then underlined tabs with red counts */}
-      <LinearGradient colors={[t.green, "#10B981"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ paddingTop: insets.top + 16, paddingHorizontal: 16, paddingBottom: 16 }}>
-        <View style={[s.row, { justifyContent: "space-between" }]}>
-          <View>
-            <Text style={{ fontSize: 12, color: t.onBrand, opacity: 0.9 }}>Good day, {name || "seller"}</Text>
-            <Text style={{ fontSize: 20, fontWeight: "800", color: t.onBrand, marginTop: 2 }}>Today's pipeline</Text>
-          </View>
-          <Pressable onPress={() => setStats(!stats)} style={{ backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12 }}>
-            <Text style={{ fontSize: 11, fontWeight: "600", color: t.onBrand }}>Stats {stats ? "▲" : "▼"}</Text>
-          </Pressable>
+      <DashboardHero shop={name || "seller"} statsOpen={stats} onStats={() => setStats(!stats)} />
+      {stats ? (
+        <View style={[s.row, { gap: 8, padding: 12, backgroundColor: t.green }]}>
+          {[[data.counts?.pending ?? 0, "New"], [data.counts?.accepted ?? 0, "In Progress"], [`₹${(data.today_gmv || 0).toLocaleString("en-IN")}`, "Today"]].map(([v, l]) => (
+            <View key={l} style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, padding: 10, alignItems: "center" }}>
+              <Text style={{ fontSize: 18, fontWeight: "800", color: "#FFFFFF" }}>{v}</Text>
+              <Text style={{ fontSize: 10, fontWeight: "500", color: "#FFFFFF", opacity: 0.9, marginTop: 1 }}>{l}</Text>
+            </View>
+          ))}
         </View>
-        {stats ? (
-          <View style={[s.row, { gap: 8, marginTop: 12 }]}>
-            {[[data.counts?.pending ?? 0, "New"], [data.counts?.accepted ?? 0, "In Progress"], [`₹${(data.today_gmv || 0).toLocaleString("en-IN")}`, "Today"]].map(([v, l]) => (
-              <View key={l} style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, padding: 10, alignItems: "center" }}>
-                <Text style={{ fontSize: 18, fontWeight: "800", color: t.onBrand }}>{v}</Text>
-                <Text style={{ fontSize: 10, fontWeight: "500", color: t.onBrand, opacity: 0.9, marginTop: 1 }}>{l}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-      </LinearGradient>
-      <View style={[s.row, { backgroundColor: t.card, borderBottomWidth: 1, borderBottomColor: t.border }]}>
-        {TABS.map(([k, label]) => {
-          const on = tab === k;
-          const n = k === "completed" ? (data.counts?.completed || 0) + (data.counts?.declined || 0) : data.counts?.[k] || 0;
-          return (
-            <Pressable key={k} onPress={() => { setTab(k); setData({ ...data, orders: [] }); load(k); }} style={{ flex: 1, height: 46, alignItems: "center", justifyContent: "center", borderBottomWidth: 2, borderBottomColor: on ? t.brand : "transparent", flexDirection: "row", gap: 6 }}>
-              <Text style={{ fontSize: 12, fontWeight: "600", color: on ? t.brand : t.ink3 }}>{label}</Text>
-              {n ? <View style={{ backgroundColor: t.red, borderRadius: 10, paddingHorizontal: 6, minWidth: 20, alignItems: "center" }}><Text style={{ fontSize: 11, fontWeight: "700", color: t.onBrand }}>{n}</Text></View> : null}
-            </Pressable>
-          );
-        })}
-      </View>
+      ) : null}
+      <DashboardTabs active={tab} onTab={(k) => { setTab(k); setData({ ...data, orders: [] }); load(k); }}
+        tabs={TABS.map(([k, label]) => ({ key: k, label, count: (k === "completed" ? (data.counts?.completed || 0) + (data.counts?.declined || 0) : data.counts?.[k] || 0) || undefined }))}
+        search={q} onSearch={setQ} range={RANGES[range][0]} type={TYPES[type]} onRange={() => setRange((range + 1) % RANGES.length)} onType={() => setType((type + 1) % TYPES.length)}
+        onCsv={() => Linking.openURL("https://www.relifish.com/dashboard/orders")} countText={`${shown.length} ${tab === "pending" ? "pending" : tab === "accepted" ? "in progress" : "orders"}`} />
       <FlatList
-        data={data.orders}
+        data={shown}
         keyExtractor={(o) => o.id}
         contentContainerStyle={{ paddingTop: 12, paddingBottom: 24 }}
+        keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => load()} />}
         ListEmptyComponent={<Card><Text style={{ color: t.ink2 }}>{tab === "pending" ? "No new orders right now. Pull down to refresh." : "Nothing here yet."}</Text></Card>}
         renderItem={({ item: o }) => {
@@ -124,46 +127,40 @@ export default function PartnerOrders() {
           const addr = rows.map((r) => r.delivery_address).find(Boolean);
           const area = addr ? null : rows.map((r) => r.delivery_area).find(Boolean);
           const where = addr ? [addr.flat, addr.building, addr.landmark, addr.location_name].filter(Boolean).join(", ") : area ? [area.name, area.km != null ? `~${area.km} km away` : ""].filter(Boolean).join(" · ") : "";
-          const tone = { green: [t.greenBg, t.green], amber: [t.amberSoft, t.amber], purple: [t.purpleSoft, t.purple], grey: [t.bg3, t.ink2] } as const;
-          return (
-            // .v2-seller-order inside #v2-orders-list (8 px list padding on the 16 px page gutter)
-            <Card testID={`order-${o.id}`} style={{ marginHorizontal: 24, marginTop: 0, marginBottom: 12, shadowColor: "#0F172A", shadowOffset: { width: 0, height: 8 }, shadowRadius: 18, shadowOpacity: 0.06 }}>
-              <View style={[s.row, { justifyContent: "space-between" }]}>
-                <Text style={{ fontSize: 12, fontWeight: "700", color: t.ink3 }}>#{String(o.id).slice(0, 8).toUpperCase()} · {new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</Text>
-                <Badge text={bt} kind={bk} />
-              </View>
-              {rows.map((r) => (
-                <View key={r.id} style={[s.row, { justifyContent: "space-between", marginTop: 8, gap: 8 }]}>
-                  <Text style={{ flex: 1, fontSize: 14, fontWeight: "700", textTransform: "capitalize", ...(CLOSED.includes(r.status) && o.cart_items ? { textDecorationLine: "line-through", color: t.ink3 } : {}) }}>{r.listing?.species || r.species} · {qtyLabel(r)}</Text>
-                  <Text style={{ fontSize: 14, fontWeight: "700" }}>₹{(Number(r.total_price || r.final_price) || 0).toLocaleString("en-IN")}</Text>
-                </View>
-              ))}
-              <View style={[s.row, { justifyContent: "space-between", marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: t.border }]}>
-                <Text style={{ fontSize: 12, color: t.ink3 }}>{o.order_type === "delivery" ? "Delivery" : "Pickup"}{o.buyer_phone ? ` · buyer ••${o.buyer_phone}` : ""}</Text>
-                <Text style={{ fontSize: 16, fontWeight: "800" }}>₹{total.toLocaleString("en-IN")}</Text>
-              </View>
-              {o.delivery_slot_start ? <Text style={{ fontSize: 12, fontWeight: "600", color: t.ink2, marginTop: 4 }}>🕒 {slotTimeLabel(o.delivery_slot_start, o.delivery_slot_end)}, {slotDayLabel(o.delivery_slot_start)}</Text> : null}
-              {where ? (
-                <Pressable disabled={!addr} onPress={() => Linking.openURL(addr?.lat && addr?.lng ? `https://www.google.com/maps/dir/?api=1&destination=${addr.lat},${addr.lng}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(where)}`)}>
-                  <Text style={{ fontSize: 12, color: addr ? t.link : t.ink3, marginTop: 4 }}>📍 {where}</Text>
-                </Pressable>
-              ) : null}
-              {o.cancel_reason && ["cancelled", "declined"].includes(o.status) ? <Text style={{ fontSize: 12, color: t.ink2, marginTop: 6 }}>Reason: {o.cancel_reason}</Text> : null}
-              {plan.note ? <View style={{ marginTop: 10, padding: 10, borderRadius: radius.sm, backgroundColor: tone[plan.note.tone][0] }}><Text style={{ fontSize: 12, fontWeight: "600", lineHeight: 17, color: tone[plan.note.tone][1] }}>{plan.note.text}</Text></View> : null}
-              {plan.hint ? <Text style={{ fontSize: 12, fontWeight: "600", color: t.ink3, marginTop: 8 }}>{plan.hint}</Text> : null}
+          const pre = o.is_preorder || o.placement_kind === "preorder" || o.status === "pre_order";
+          const lineBadge = (r: any): OcBadge | undefined => { const x = BADGE[r.status]; return o.cart_items && x ? { text: x[0], tone: BTONE[x[1]] } : undefined; };
+          const tone = { green: [t.greenBg, t.green], amber: [t.amberL, t.amber], purple: [t.purpleL, t.purple], grey: [t.bg3, t.ink2] } as const;
+          const extra = (
+            <>
+              {plan.note && plan.note.tone !== "green" ? <View style={{ padding: 10, borderRadius: 8, backgroundColor: tone[plan.note.tone][0] }}><Text style={{ fontSize: 12, fontWeight: "600", lineHeight: 17, color: tone[plan.note.tone][1] }}>{plan.note.text}</Text></View> : null}
+              {o.delivery_slot_start ? <Text style={{ fontSize: 12, fontWeight: "600", color: t.ink2 }}>🕒 {slotTimeLabel(o.delivery_slot_start, o.delivery_slot_end)}, {slotDayLabel(o.delivery_slot_start)}</Text> : null}
+              {o.cut_style || o.buyer_notes ? <Text style={{ fontSize: 11, fontWeight: "500", color: t.ink2 }}>{[o.cut_style ? `✂️ ${o.cut_style}` : "", o.buyer_notes ? `📝 ${o.buyer_notes}` : ""].filter(Boolean).join(" · ")}</Text> : null}
+              {addr ? <Pressable onPress={() => Linking.openURL(addr.lat && addr.lng ? `https://www.google.com/maps/dir/?api=1&destination=${addr.lat},${addr.lng}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(where)}`)}><Text style={{ fontSize: 12, fontWeight: "600", color: t.link }}>Open in Maps →</Text></Pressable> : null}
+              {o.cancel_reason && ["cancelled", "declined"].includes(o.status) ? <Text style={{ fontSize: 12, color: t.ink2 }}>Reason: {o.cancel_reason}</Text> : null}
               {plan.finalPrice ? (
-                <View style={[s.row, { gap: 8, marginTop: 8 }]}>
+                <View style={[s.row, { gap: 8 }]}>
                   <TextInput value={price[o.id] || ""} onChangeText={(v) => setPrice({ ...price, [o.id]: v.replace(/[^\d.]/g, "") })} keyboardType="numeric" placeholder="Final price (₹)" placeholderTextColor={t.ink4}
                     style={{ flex: 1, minHeight: 40, borderWidth: 1.5, borderColor: t.border, borderRadius: radius.sm, paddingHorizontal: 10, color: t.ink, backgroundColor: t.card, ...font(500) }} />
                   <Button title="Set price" size="sm" onPress={() => run(o, { action: "set_final_price", label: "", kind: "primary" })} loading={busy === o.id + "set_final_price"} />
                 </View>
               ) : null}
-              {plan.acts.length ? (
-                <View style={{ gap: 8, marginTop: 10, flexDirection: plan.row ? "row" : "column" }}>
-                  {plan.acts.map((a) => <Button key={a.action} title={a.label} size="sm" kind={kind[a.kind]} disabled={a.disabled} loading={busy === o.id + a.action} onPress={() => press(o, a)} style={{ ...(plan.row ? { flex: 1 } : {}), ...(a.kind === "success" && !a.disabled ? { backgroundColor: t.green, borderColor: t.green } : {}) }} />)}
-                </View>
-              ) : null}
-            </Card>
+            </>
+          );
+          return (
+            <View testID={`order-${o.id}`} style={{ marginBottom: 12 }}>
+              <SellerOrderCard
+                id={`#${String(o.id).slice(0, 8).toUpperCase()}${o.buyer_phone ? ` · ${String(o.buyer_phone).slice(-4)}` : ""}`}
+                time={new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
+                badges={[...(o.razorpay_payment_id && !CLOSED.includes(o.status) && o.status !== "paid" ? [{ text: "Paid", tone: "paid" as const }] : []), { text: bt, tone: BTONE[bk] }]}
+                itemsLine={rows.length > 1 ? `${rows.length} items` : undefined}
+                lines={rows.map((r) => ({ text: `${r.listing?.species || r.species} · ${qtyLabel(r)}${r.pricing_label ? ` · ${r.pricing_label}` : ""}`, price: `₹${(Number(r.total_price || r.final_price) || 0).toLocaleString("en-IN")}`, badge: lineBadge(r), struck: !!o.cart_items && CLOSED.includes(r.status) }))}
+                tags={[{ text: pre ? "Pre-order" : "Same day", kind: pre ? "preorder" : "order" }, { text: o.order_type === "delivery" ? "Delivery" : "Pickup", kind: o.order_type === "delivery" ? "delivery" : "pickup" }]}
+                location={where || undefined} locationNote={!addr && area ? "(full address after you accept)" : undefined}
+                total={`₹${total.toLocaleString("en-IN")}`} payment={paymentMethodLabel(o) || undefined} paymentRef={o.razorpay_payment_id || undefined}
+                next={plan.hint || undefined} paidLine={plan.note?.tone === "green" ? plan.note.text : undefined}
+                actions={plan.acts.map((a) => ({ title: busy === o.id + a.action ? "…" : a.label, kind: a.kind === "success" ? "green" : (a.kind as any), disabled: a.disabled, onPress: () => press(o, a) }))}
+                extra={extra} />
+            </View>
           );
         }}
       />

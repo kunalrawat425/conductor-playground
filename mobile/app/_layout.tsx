@@ -6,15 +6,21 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold, Inter_900Black } from "@expo-google-fonts/inter";
 import { VARIANT } from "../src/api";
 import { CartProvider } from "../src/cart";
-import { loadFestive, useTheme } from "../src/theme";
+import { Splash } from "../src/Splash";
+import { loadFestive, loadThemePref, ThemeMode, useThemePref, useTheme } from "../src/theme";
 import { HeaderBackground, headerTitleStyle, Loading } from "../src/ui";
 
 export default function Root() {
+  const pref = useThemePref();
+  return <ThemeMode.Provider value={pref ? { dark: pref === "dark" } : null}><RootStack /></ThemeMode.Provider>;
+}
+
+function RootStack() {
   const t = useTheme();
   // Inter, like the site; render nothing styled until it's loaded (a missing font family crashes some Android builds).
   const [loaded, error] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold, Inter_900Black });
   // Push: real builds only (Expo Go dropped remote push on Android), loaded lazily so Expo Go never imports it.
-  useEffect(() => { loadFestive(); }, []);
+  useEffect(() => { loadFestive(); loadThemePref(); }, []);
   useEffect(() => {
     if (Constants.executionEnvironment === "storeClient") return;
     let sub: { remove(): void } | undefined;
@@ -37,11 +43,13 @@ export default function Root() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="partner" options={{ headerShown: false }} />
           <Stack.Screen name="listing/[id]" options={{ title: "Edit fish" }} />
-          <Stack.Screen name="seller/[id]" options={{ title: "" }} />
-          <Stack.Screen name="checkout" options={{ title: "Checkout" }} />
-          <Stack.Screen name="order/[id]" options={{ title: "Order details" }} />
-          <Stack.Screen name="login" options={{ title: VARIANT === "partner" ? "Relifish Partner" : "Log in", presentation: VARIANT === "partner" ? "card" : "modal", headerBackVisible: VARIANT !== "partner" }} />
+          <Stack.Screen name="seller/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="checkout" options={{ headerShown: false, presentation: "transparentModal", animation: "slide_from_bottom", contentStyle: { backgroundColor: "transparent" } }} />
+          <Stack.Screen name="order/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="dev/gallery" options={{ headerShown: false }} />
+          <Stack.Screen name="login" options={{ headerShown: false, presentation: VARIANT === "partner" ? "card" : "transparentModal", animation: "slide_from_bottom", contentStyle: { backgroundColor: "transparent" } }} />
         </Stack>
+        <Splash />
       </CartProvider>
     </SafeAreaProvider>
   );

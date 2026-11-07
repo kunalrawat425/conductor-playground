@@ -30,7 +30,8 @@ export async function ensureChannels() {
 }
 
 /**
- * Ask for notifications as soon as the app opens (the native "Allow notifications?" prompt), then, once logged in,
+ * Partner app: ask for notifications as soon as it opens (new orders must ring). Buyer app: only when the buyer taps
+ * "Allow" on the Home banner, like the website (shop.astro); at launch it just re-saves the token if already allowed. Then, once logged in,
  * save this phone's FCM token as the buyer's / seller's push subscription `{ endpoint: "fcm", fcm }` so the
  * website's senders reach the app (Firebase project "relifish"; google-services.json per app in mobile/firebase/).
  * Quietly does nothing in Expo Go.
@@ -39,7 +40,7 @@ export async function registerPush() {
   try {
     if (Constants.executionEnvironment === "storeClient") return;
     await ensureChannels();
-    const { status } = await Notifications.requestPermissionsAsync();
+    const { status } = ROLE === "seller" ? await Notifications.requestPermissionsAsync() : await Notifications.getPermissionsAsync();
     if (status !== "granted") return;
     const me = await getSession();
     if (!me) return;

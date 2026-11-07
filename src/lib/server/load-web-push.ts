@@ -30,6 +30,19 @@ function pickWebPushApi(mod: unknown): WebPushApi | null {
 }
 
 export async function loadWebPush(): Promise<WebPushApi> {
+  const web = await loadWebPushModule();
+  // App subscriptions ({ endpoint: "fcm", fcm: token }) go through Firebase; browsers through web-push.
+  return {
+    setVapidDetails: (...a) => web.setVapidDetails(...a),
+    sendNotification: async (sub, payload, options) => {
+      const s = sub as { endpoint?: string; fcm?: string } | null;
+      if (s?.endpoint === "fcm" && s.fcm) return (await import("./fcm")).sendFcm(s.fcm, String(payload ?? ""));
+      return web.sendNotification(sub, payload, options);
+    },
+  };
+}
+
+async function loadWebPushModule(): Promise<WebPushApi> {
   const mod: unknown = await import("web-push");
   const api = pickWebPushApi(mod);
   if (!api) {

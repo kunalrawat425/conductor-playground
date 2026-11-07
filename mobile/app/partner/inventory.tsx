@@ -1,12 +1,12 @@
 import { useCallback, useState } from "react";
-import { Alert, FlatList, Image, Linking, Pressable, RefreshControl, View } from "react-native";
+import { Alert, FlatList, Linking, RefreshControl, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { getSession, supabase } from "../../src/api";
 import { packSize, sellerPost } from "../../src/partner";
 import { getSpeciesDisplay } from "../../../src/lib/species";
-import { radius, useTheme } from "../../src/theme";
-import { Button, Card, Loading, s, Text } from "../../src/ui";
+import { useTheme } from "../../src/theme";
+import { Button, Card, Loading, Text } from "../../src/ui";
+import { ListingCard } from "../../src/ui/dashboard";
 
 /** The website's /dashboard/listings: menu order, status, stock, and Edit / Pause / Delete / move. */
 export default function Inventory() {
@@ -50,51 +50,17 @@ export default function Inventory() {
         const unit = (opts[0] || {}).unit || "piece";
         const stock = Number(l.weight_avail) || 0;
         const head = opts.reduce((m: any, o: any) => (!m || Number(o.price) < Number(m.price) ? o : m), null);
-        // .v2-lc-pill / .v2-lc-chip: 11/600 pills, the dashboard's colours.
-        const status: [string, string, string] = !l.is_available ? ["Paused", t.amber, t.orangeL] : l.is_order_paused ? ["Orders paused", t.amber, t.orangeL] : stock <= 0 ? ["Out of stock", t.red, t.redL] : ["Live", t.green, t.greenL];
-        const pill = (text: string, fg: string, bg: string, chip = false) => (
-          <View key={text} style={{ backgroundColor: chip ? t.bg2 : bg, borderRadius: 999, paddingVertical: chip ? 4 : 5, paddingHorizontal: 8, borderWidth: chip ? 1 : 0, borderColor: t.border }}>
-            <Text style={{ fontSize: 11, lineHeight: 11, fontWeight: "600", color: fg }}>{text}</Text>
-          </View>
-        );
-        const iconBtn = (name: keyof typeof Ionicons.glyphMap, label: string, onPress: () => void, color: string = t.ink2, disabled = false, border: string = t.border) => (
-          <Pressable accessibilityLabel={label} disabled={disabled} onPress={onPress} style={{ flex: 1, height: 40, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: border, borderRadius: 10, backgroundColor: t.card, opacity: disabled ? 0.6 : 1 }}>
-            <Ionicons name={name} size={18} color={color} /><Text style={{ fontSize: 13, fontWeight: "600", color }}>{label}</Text>
-          </Pressable>
-        );
+        const chips = [!l.is_available ? "Paused" : l.is_order_paused ? "Orders paused" : stock <= 0 ? "Out of stock" : "", `${stock} ${unit === "kg" ? "kg" : "pc"} in stock`, opts.length > 1 ? `${opts.length} packs` : ""].filter(Boolean);
         return (
-          <Card style={{ padding: 0, overflow: "hidden", marginTop: 0, marginBottom: 12, shadowOpacity: 0, elevation: 0, boxShadow: undefined } as any}>
-            {/* .v2-lc-top: 10/12/10/4 padding, 32×40 move buttons, 60 px photo, info column with 4 px gaps */}
-            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 4, paddingTop: 10, paddingBottom: 10, paddingRight: 12, paddingLeft: 4 }}>
-              <View>
-                <Pressable accessibilityLabel="Move up" disabled={index === 0 || !!busy} onPress={() => act(l.id + "up", { action: "move", listing_id: l.id, direction: "up" })} style={{ width: 32, height: 40, alignItems: "center", justifyContent: "center", opacity: index === 0 ? 0.25 : 1 }}><Ionicons name="chevron-up" size={18} color={t.ink2} /></Pressable>
-                <Pressable accessibilityLabel="Move down" disabled={index === rows.length - 1 || !!busy} onPress={() => act(l.id + "down", { action: "move", listing_id: l.id, direction: "down" })} style={{ width: 32, height: 40, alignItems: "center", justifyContent: "center", opacity: index === rows.length - 1 ? 0.25 : 1 }}><Ionicons name="chevron-down" size={18} color={t.ink2} /></Pressable>
-              </View>
-              <Pressable onPress={() => router.push(`/listing/${l.id}`)} style={{ flex: 1, flexDirection: "row", alignItems: "flex-start", gap: 12, opacity: l.is_available ? 1 : 0.6 }}>
-                <View style={{ width: 60, height: 60, borderRadius: radius.base, backgroundColor: t.bg3, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
-                  {l.photo_url ? <Image source={{ uri: l.photo_url }} style={{ width: 60, height: 60 }} /> : <Text style={{ fontSize: 26 }}>{(l.species || "").includes("prawn") ? "🦐" : (l.species || "").includes("crab") ? "🦀" : (l.species || "").includes("squid") ? "🦑" : "🐟"}</Text>}
-                </View>
-                <View style={{ flex: 1, gap: 4 }}>
-                  <Text style={{ fontSize: 15, lineHeight: 19.5, fontWeight: "700" }} numberOfLines={2}>{getSpeciesDisplay(l.species)}</Text>
-                  {l.size_label ? <Text style={{ fontSize: 12, lineHeight: 16.2, fontWeight: "500", color: t.ink3 }} numberOfLines={2}>{l.size_label}</Text> : null}
-                  <Text style={{ fontSize: 14, lineHeight: 18.2, fontWeight: "700", marginTop: 2 }}>{head ? `₹${Number(head.price) || 0} / ${packSize(head)}` : "No price set"}</Text>
-                  <View style={[s.row, { gap: 6, flexWrap: "wrap" }]}>
-                    {pill(...status)}
-                    {l.is_preorder_enabled ? pill("Pre-order", t.indigo, t.indigoL) : null}
-                    {pill(`${stock} ${unit === "kg" ? "kg" : "pc"} in stock`, stock <= 0 ? t.red : t.ink2, "", true)}
-                    {opts.length > 1 ? pill(`${opts.length} packs`, t.ink2, "", true) : null}
-                  </View>
-                </View>
-              </Pressable>
-            </View>
-            <View style={[s.row, { gap: 8, paddingVertical: 10, paddingHorizontal: 12, borderTopWidth: 1, borderTopColor: t.border, backgroundColor: t.bg2 }]}>
-              {iconBtn("create-outline", "Edit", () => router.push(`/listing/${l.id}`))}
-              {iconBtn(l.is_available ? "pause" : "play", l.is_available ? "Pause" : "Resume", () => act(l.id + "toggle", { action: "update", listing_id: l.id, updates: { is_available: !l.is_available } }), l.is_available ? t.ink2 : t.amber, !!busy, l.is_available ? t.border : t.orange)}
-              {iconBtn("trash-outline", "Delete", () => Alert.alert(`Delete "${getSpeciesDisplay(l.species)}"?`, "This cannot be undone.", [
-                { text: "Keep", style: "cancel" }, { text: "Delete", style: "destructive", onPress: () => act(l.id + "del", { action: "delete", listing_id: l.id }) },
-              ]), t.red, !!busy, t.redL)}
-            </View>
-          </Card>
+          <View style={{ marginBottom: 12, opacity: busy.startsWith(l.id) ? 0.6 : 1 }}>
+            <ListingCard photo={l.photo_url} emoji={(l.species || "").includes("prawn") ? "🦐" : (l.species || "").includes("crab") ? "🦀" : "🐟"} name={getSpeciesDisplay(l.species)} note={l.size_label || l.description}
+              price={head ? `₹${Number(head.price) || 0} / ${packSize(head)}` : "No price set"} live={!!l.is_available && !l.is_order_paused && stock > 0} preorder={!!l.is_preorder_enabled} chips={chips}
+              upDisabled={index === 0 || !!busy} downDisabled={index === rows.length - 1 || !!busy}
+              onUp={() => act(l.id + "up", { action: "move", listing_id: l.id, direction: "up" })} onDown={() => act(l.id + "down", { action: "move", listing_id: l.id, direction: "down" })}
+              onPress={() => router.push(`/listing/${l.id}`)} onEdit={() => router.push(`/listing/${l.id}`)} paused={!l.is_available}
+              onPause={() => act(l.id + "toggle", { action: "update", listing_id: l.id, updates: { is_available: !l.is_available } })}
+              onDelete={() => Alert.alert(`Delete "${getSpeciesDisplay(l.species)}"?`, "This cannot be undone.", [{ text: "Keep", style: "cancel" }, { text: "Delete", style: "destructive", onPress: () => act(l.id + "del", { action: "delete", listing_id: l.id }) }])} />
+          </View>
         );
       }}
     />

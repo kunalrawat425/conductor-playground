@@ -348,7 +348,8 @@
 
 <div class="topnav">
   <h1>Relifish Design System</h1>
-  <a href="#tokens" class="active">Tokens</a>
+  <a href="#library" class="active">Component library (live)</a>
+  <a href="#tokens">Tokens</a>
   <a href="#atoms">Atoms</a>
   <a href="#molecules">Molecules</a>
   <a href="#organisms">Organisms</a>
@@ -359,6 +360,53 @@
 </div>
 
 <div class="page">
+
+<!-- ================================================================ -->
+<!-- SECTION: COMPONENT LIBRARY (live, the site's real CSS + markup) -->
+<!-- Generated data: design-system/components.json + design-system/live.html (scripts/design-system/build.mjs). -->
+<!-- ================================================================ -->
+<div class="section" id="library">
+  <div class="section-label">Source of truth · web ↔ app</div>
+  <div class="section-title">Component library (live)</div>
+  <div class="section-sub">Every UI component the website uses, rendered with the site's real CSS and markup (copied from the live pages), with its React Native twin in <code>mobile/src/ui</code>. The older sections below are kept for history; where they differ, this section wins.</div>
+  <div id="lib-modes" style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px">
+    <button data-m="light,diwali">Light · Diwali</button><button data-m="light,normal">Light · normal</button><button data-m="dark,diwali">Dark · Diwali</button><button data-m="dark,normal">Dark · normal</button>
+    <a href="design-system/live.html" style="margin-left:auto;font:600 13px Inter;color:var(--brand)">Open all components on one page →</a>
+  </div>
+  <div id="lib-groups"></div>
+</div>
+<style>
+  #lib-modes button { font: 700 12px Inter; padding: 7px 14px; border-radius: 999px; border: 1.5px solid var(--border); background: #fff; color: var(--ink2); cursor: pointer; }
+  #lib-modes button.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .lib-group h3 { font: 800 16px Inter; margin: 24px 0 10px; }
+  .lib-card { display: grid; grid-template-columns: 410px 1fr; gap: 20px; background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+  .lib-card iframe { width: 390px; border: 1px solid var(--border); border-radius: 12px; display: block; background: var(--bg2); }
+  .lib-card h4 { font: 800 15px Inter; margin-bottom: 2px; }
+  .lib-card .rn { font: 600 12px Inter; color: var(--brand); margin-bottom: 8px; }
+  .lib-card dl { display: grid; grid-template-columns: 90px 1fr; gap: 4px 10px; font: 400 12.5px/1.5 Inter; color: var(--ink2); }
+  .lib-card dt { font-weight: 700; color: var(--ink3); }
+  @media (max-width: 900px) { .lib-card { grid-template-columns: 1fr; } }
+</style>
+<script>
+  (function () {
+    var mode = ["light", "diwali"], data = [];
+    var esc = function (s) { return String(s || "—").replace(/&/g, "&amp;").replace(/</g, "&lt;"); };
+    function render() {
+      var groups = {}; data.forEach(function (c) { (groups[c.group] = groups[c.group] || []).push(c); });
+      document.getElementById("lib-groups").innerHTML = Object.keys(groups).map(function (g) {
+        return '<div class="lib-group"><h3>' + esc(g) + '</h3>' + groups[g].map(function (c) {
+          return '<div class="lib-card" id="c-' + c.id + '"><div><iframe loading="lazy" title="' + c.id + '" src="design-system/live.html?c=' + c.id + '&theme=' + mode[0] + '&fest=' + mode[1] + '" onload="this.style.height=(this.contentDocument.body.scrollHeight+2)+\'px\'"></iframe></div>' +
+            '<div><h4>' + esc(c.id) + '</h4><div class="rn">React Native: ' + esc(c.rn) + '</div><dl>' +
+            '<dt>Web</dt><dd><code>' + esc(c.src) + '</code></dd><dt>Anatomy</dt><dd>' + esc(c.anatomy) + '</dd><dt>States</dt><dd>' + esc(c.states) + '</dd><dt>Sizes</dt><dd>' + esc(c.sizes) + '</dd><dt>Tokens</dt><dd>' + esc(c.tokens) + '</dd>' +
+            (c.do ? '<dt>Do</dt><dd>' + esc(c.do) + '</dd>' : '') + (c.dont ? '<dt>Don\'t</dt><dd>' + esc(c.dont) + '</dd>' : '') + '</dl></div></div>';
+        }).join("") + '</div>';
+      }).join("");
+      document.querySelectorAll("#lib-modes button").forEach(function (b) { b.classList.toggle("on", b.dataset.m === mode.join(",")); });
+    }
+    document.querySelectorAll("#lib-modes button").forEach(function (b) { b.addEventListener("click", function () { mode = b.dataset.m.split(","); render(); }); });
+    fetch("design-system/components.json").then(function (r) { return r.json(); }).then(function (d) { data = d; render(); });
+  })();
+</script>
 
 <!-- ================================================================ -->
 <!-- SECTION: DESIGN TOKENS -->

@@ -15,7 +15,7 @@ const { id = "otp", length = 6, error, helper, autoSubmitFormId } = Astro.props;
         type="text"
         inputmode="numeric"
         pattern="[0-9]"
-        maxlength={1}
+        maxlength={i === 0 ? length : 1}
         autocomplete={i === 0 ? "one-time-code" : "off"}
         class:list={["v2-otp-cell", error && "v2-input-error"]}
         aria-label={`OTP digit ${i + 1}`}
@@ -47,11 +47,27 @@ const { id = "otp", length = 6, error, helper, autoSubmitFormId } = Astro.props;
       }
     }
 
+    // Several digits at once (keyboard SMS autofill, WebOTP, paste): spread them over the cells from `from`.
+    function fill(text: string, from = 0) {
+      const d = text.replace(/\D/g, "").slice(0, len - from);
+      d.split("").forEach((ch, i) => { if (cells[from + i]) cells[from + i].value = ch; });
+      cells[Math.min(from + d.length, len - 1)]?.focus();
+      syncHidden();
+    }
+    // WebOTP (Android Chrome): reads the code from the SMS when it ends with "@www.relifish.com #123456".
+    let asked = false;
+    cells[0]?.addEventListener("focus", () => {
+      if (asked || !("OTPCredential" in window)) return;
+      asked = true;
+      (navigator.credentials as any).get({ otp: { transport: ["sms"] } }).then((c: any) => c?.code && fill(c.code)).catch(() => {});
+    });
+
     cells.forEach((cell, idx) => {
       cell.addEventListener("input", (e) => {
-        const v = cell.value.replace(/\D/g, "").slice(0, 1);
-        cell.value = v;
-        if (v && idx < len - 1) cells[idx + 1].focus();
+        const raw = cell.value.replace(/\D/g, "");
+        if (raw.length > 1) { fill(raw, idx); return; }
+        cell.value = raw;
+        if (raw && idx < len - 1) cells[idx + 1].focus();
         syncHidden();
       });
       cell.addEventListener("keydown", (e) => {
@@ -63,13 +79,7 @@ const { id = "otp", length = 6, error, helper, autoSubmitFormId } = Astro.props;
       });
       cell.addEventListener("paste", (e) => {
         e.preventDefault();
-        const text = (e.clipboardData?.getData("text") || "").replace(/\D/g, "").slice(0, len);
-        text.split("").forEach((ch, i) => {
-          if (cells[i]) cells[i].value = ch;
-        });
-        const last = Math.min(text.length, len - 1);
-        cells[last]?.focus();
-        syncHidden();
+        fill(e.clipboardData?.getData("text") || "");
       });
     });
   });

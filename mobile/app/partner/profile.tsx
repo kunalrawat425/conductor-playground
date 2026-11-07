@@ -6,12 +6,16 @@ import { sellerPost } from "../../src/partner";
 import { timeLabel } from "../../../src/lib/order-timing";
 import { font, radius, useTheme } from "../../src/theme";
 import { Badge, Button, Card, Label, Loading, s, Text } from "../../src/ui";
+import { LocationBox } from "../../src/ui/dashboard";
+import { myLocation } from "../../src/catalog";
+import Constants from "expo-constants";
 
 /** The website's /dashboard/profile, the parts a seller changes from the phone; the rest links to the site. */
 export default function PartnerProfile() {
   const t = useTheme();
   const [me, setMe] = useState<any>(null);
   const [form, setForm] = useState<Record<string, string>>({});
+  const [locBusy, setLocBusy] = useState(false);
   const load = useCallback(async () => {
     const sess = await getSession();
     const r = await api(`/api/seller/profile?seller_id=${sess?.seller_id}`).catch((e) => { Alert.alert("Couldn't load your shop", e.message); return null; });
@@ -60,6 +64,10 @@ export default function PartnerProfile() {
         <Text style={{ fontSize: 15, fontWeight: "700", marginTop: 18 }}>📍 Location</Text>
         {input("location_name", "Area / Neighborhood")}
         {input("location", "Full address / landmark")}
+        <View style={{ marginTop: 12 }}>
+          <LocationBox set={me.lat != null && me.lng != null} coords={me.lat != null ? `${me.location_name || ""} · ${Number(me.lat).toFixed(5)}, ${Number(me.lng).toFixed(5)}` : undefined} busy={locBusy}
+            onUse={async () => { setLocBusy(true); const at = await myLocation(); if (at.fromPhone) await update({ lat: at.lat, lng: at.lng }); else Alert.alert("Location is off", "Allow location for Relifish Partner, then try again."); setLocBusy(false); }} />
+        </View>
         <Text style={{ fontSize: 15, fontWeight: "700", marginTop: 18 }}>Owner contact</Text>
         <View style={[s.row, { gap: 10 }]}>{input("first_name", "First name", true)}{input("last_name", "Last name", true)}</View>
         <Text style={{ fontSize: 13, fontWeight: "600", color: t.ink2, marginTop: 12 }}>Email (for order notifications)</Text>
@@ -83,6 +91,7 @@ export default function PartnerProfile() {
       <View style={{ paddingHorizontal: 16, marginTop: 16, gap: 10 }}>
         <Button title="Edit hours, slots, fees and photos on the website" kind="secondary" onPress={() => Linking.openURL("https://www.relifish.com/dashboard/profile")} />
         <Button title="Call Relifish support" kind="ghost" onPress={() => Linking.openURL("tel:+919152207607") /* SUPPORT_PHONE_TEL in src/lib/brand.ts, which uses import.meta (no Hermes) */} />
+        <Text style={{ textAlign: "center", fontSize: 10, color: t.ink4 }}>Relifish Partner · v{Constants.expoConfig?.version}</Text>
         <Button title="Log out" kind="danger" onPress={async () => { await setSession(null); router.replace("/login"); }} />
       </View>
     </ScrollView>

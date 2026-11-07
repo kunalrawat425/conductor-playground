@@ -62,7 +62,39 @@ export const tokens = {
     "headerFrom": "#B3123B",
     "headerTo": "#8B0A2E",
     "headerBorder": "#D4A24C",
-    "logo": "#F5D27A"
+    "logo": "#F5D27A",
+    "headerFromDark": "#8B0A2E",
+    "headerToDark": "#5A0620",
+    "locSub": "#FDE7B0",
+    "iconBorder": "rgba(245, 210, 122, 0.45)",
+    "wire": "rgba(245, 210, 122, 0.55)",
+    "bulbs": [
+      "#FFD86B",
+      "#FFB347",
+      "#FFF1C1"
+    ],
+    "diyaFrom": "#E8852E",
+    "diyaTo": "#A8430F",
+    "rimFrom": "#FFC36B",
+    "rimTo": "#D9741F",
+    "flame": [
+      "#FFF7D6",
+      "#FFD45A",
+      "#FF8A1F"
+    ],
+    "bannerBorder": "#D4A24C",
+    "bannerBg": [
+      "#FFF1D0",
+      "#FBE3A6"
+    ],
+    "bannerInk": "#7A0A26",
+    "bannerBgDark": [
+      "#3B0A17",
+      "#5A0F24"
+    ],
+    "bannerInkDark": "#FDE7B0",
+    "bannerBorderDark": "rgba(212, 162, 76, 0.7)",
+    "cardBorder": "#D4A24C"
   },
   "radius": {
     "xs": 4,
@@ -84,10 +116,46 @@ export const tokens = {
     "12": 48
   },
   "shadow": {
-    "sm": {},
-    "base": {},
-    "md": {},
-    "lg": {}
+    "sm": {
+      "shadowColor": "rgb(0, 0, 0)",
+      "shadowOffset": {
+        "width": 0,
+        "height": 1
+      },
+      "shadowRadius": 2,
+      "shadowOpacity": 0.05,
+      "elevation": 1
+    },
+    "base": {
+      "shadowColor": "rgb(0, 0, 0)",
+      "shadowOffset": {
+        "width": 0,
+        "height": 1
+      },
+      "shadowRadius": 3,
+      "shadowOpacity": 0.1,
+      "elevation": 2
+    },
+    "md": {
+      "shadowColor": "rgb(0, 0, 0)",
+      "shadowOffset": {
+        "width": 0,
+        "height": 4
+      },
+      "shadowRadius": 6,
+      "shadowOpacity": 0.07,
+      "elevation": 3
+    },
+    "lg": {
+      "shadowColor": "rgb(0, 0, 0)",
+      "shadowOffset": {
+        "width": 0,
+        "height": 10
+      },
+      "shadowRadius": 15,
+      "shadowOpacity": 0.1,
+      "elevation": 8
+    }
   },
   "font": {
     "400": "Inter_400Regular",

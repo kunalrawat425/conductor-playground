@@ -1,3 +1,4 @@
+import { track } from "../../src/track";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, Linking, RefreshControl, ScrollView, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -7,7 +8,15 @@ import { resolveBuyerStepper } from "../../../src/lib/buyer-order-stepper";
 import { paymentMethodLabel } from "../../../src/lib/order-payment-state";
 import { cancelledByText, cancelReasonText } from "../../../src/lib/order-cancel";
 import { rupees, useTheme } from "../../src/theme";
-import { Button, Card, Label, Loading, Pill, s, Text } from "../../src/ui";
+import { useCart } from "../../src/cart";
+import { formatOptionMenuLabel, getListingPriceOptions, optionBundleAmount } from "../../../src/lib/listing-pricing";
+import { cleanSellerName, stripContactInfo } from "../../../src/lib/seller-display";
+import { areaNameForPoint } from "../../../src/lib/areas";
+import { AppHeader, BottomNav, BUYER_NAV } from "../../src/ui/chrome";
+import { BillSummary, InfoSection, Stepper, StatusHero } from "../../src/ui/orders";
+import { Button } from "../../src/ui/atoms";
+import { lh, row, Text } from "../../src/ui/base";
+import { ActivityIndicator, Pressable } from "react-native";
 
 const LABEL: Record<string, string> = {
   pending: "Almost done", pending_payment: "Almost done", pre_order: "Pre-order placed", confirmed: "Confirmed ✓",
@@ -22,6 +31,7 @@ export default function OrderScreen() {
   const [o, setO] = useState<any>(null);
   const [pod, setPod] = useState<any>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const cart = useCart();
 
   const load = useCallback(async () => {
     const me = await getSession();
@@ -33,7 +43,7 @@ export default function OrderScreen() {
     setPod(unpaid ? await api(`/api/orders/pay-on-delivery?order_id=${id}&buyer_id=${me.buyer_id}`).catch(() => null) : null);
   }, [id]);
   useEffect(() => { load(); const iv = setInterval(load, 15000); return () => clearInterval(iv); }, [load]);
-  if (!o) return <Loading />;
+  if (!o) return <View style={{ flex: 1, backgroundColor: t.bg2 }}><AppHeader variant="page" title="Order details" onBack={() => router.back()} /><ActivityIndicator style={{ marginTop: 48 }} size="large" color={t.brand} /></View>;
 
   const items: any[] = o.cart?.items?.filter((i: any) => !["cancelled", "declined"].includes(i.status)) || [o];
   const fee = items.reduce((n, i) => n + (Number(i.delivery_fee) || 0), 0);
@@ -46,7 +56,7 @@ export default function OrderScreen() {
   const heroColor = closed ? t.red : unpaidNew && !o.pay_on_delivery ? t.amber : t.green;
 
   async function pay() {
-    setBusy("pay");
+    setBusy("pay"); track("pay_opened");
     try {
       const r = await payOrder(o.id);
       if (r !== "cancelled") Alert.alert("Payment received", "Thank you! We'll keep you posted.");
@@ -77,92 +87,91 @@ export default function OrderScreen() {
     } catch (e: any) { Alert.alert("Cancel", e.message); } finally { setBusy(null); }
   }
 
+  const tone = closed ? "red" : ["confirmed", "paid", "ready_for_pickup", "out_for_delivery", "picked_up", "completed"].includes(o.status) ? "green" : ["pending_payment", "payment_required"].includes(o.status) && !o.pay_on_delivery ? "amber" : o.status === "refunded" ? "indigo" : o.status === "pre_order" ? "purple" : "brand";
+  const statusText = o.pay_on_delivery && unpaidNew ? "Waiting for the seller" : closed ? (o.status === "declined" ? "Declined" : "Cancelled") : LABEL[o.status] || o.status;
+  const sellerArea = areaNameForPoint(o.seller?.lat, o.seller?.lng) || stripContactInfo(o.seller?.location_name) || "";
+  const addr = o.delivery_address || o.address || null;
+  const finalPrice = o.final_price != null && Number(o.final_price) !== Number(o.total_price) ? Number(o.final_price) : null;
+  function reorder() {
+    const sid = o.seller?.id || o.listing?.seller_id;
+    for (const i of items) {
+      const L = i.listing || o.listing; if (!L) continue;
+      const opts = getListingPriceOptions(L); const k = Math.max(0, opts.findIndex((x: any) => x.id === i.pricing_option_id)); const opt: any = opts[k]; if (!opt) continue;
+      const bundle = optionBundleAmount(opt) || 1;
+      cart.setPacks({ id: sid, name: o.seller?.name || "" }, { listing_id: L.id, species: L.species, option_id: opt.id || `opt_${k}`, option_label: opt.label || formatOptionMenuLabel(opt), unit: opt.unit || "kg", bundle, price: Number(opt.price) || 0 }, Math.max(1, Math.round(Number(i.quantity) / bundle)));
+    }
+    router.push(`/seller/${sid}`);
+  }
+
   return (
-    <ScrollView style={{ backgroundColor: t.page }} contentContainerStyle={{ paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
-      <View style={{ margin: 16, marginBottom: 0, borderRadius: 18, padding: 18, backgroundColor: heroColor }}>
-        <Text style={{ color: "#fff", fontSize: 22, fontWeight: "900" }}>
-          {o.pay_on_delivery && unpaidNew ? "Waiting for the seller" : LABEL[o.status] || o.status}
-        </Text>
-        <Text style={{ color: "#fff", opacity: 0.9, marginTop: 4 }}>Order #{String(o.id).slice(0, 8).toUpperCase()}</Text>
-        {podDue ? <View style={{ marginTop: 8 }}><Pill text="Pay on delivery" tone="amber" /></View> : null}
-      </View>
-
-      {!closed ? (
-        <Card>
-          <View style={[s.row, { justifyContent: "space-between" }]}>
-            {steps.labels.map((l, i) => (
-              <View key={l} style={{ alignItems: "center", flex: 1 }}>
-                <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: i <= steps.step ? t.green : t.border, alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ color: "#fff", fontWeight: "900", fontSize: 12 }}>{i <= steps.step ? "✓" : i + 1}</Text>
-                </View>
-                <Text style={{ color: t.ink3, fontSize: 10, marginTop: 4, textAlign: "center" }}>{l}</Text>
-              </View>
-            ))}
-          </View>
-        </Card>
-      ) : null}
-
-      <Card>
-        <Label>From {o.seller?.name || ""}</Label>
-        {items.map((i) => (
-          <View key={i.id || "one"} style={[s.row, { justifyContent: "space-between", marginTop: 4 }]}>
-            <Text style={{ color: t.ink, textTransform: "capitalize", flex: 1 }}>{i.species || o.listing?.species} · {i.pricing_label || `${i.quantity} ${i.quantity_unit}`}</Text>
-            <Text style={{ color: t.ink, fontWeight: "700" }}>{rupees(Number(i.total_price) || 0)}</Text>
-          </View>
-        ))}
-        <View style={{ height: 1, backgroundColor: t.border, marginVertical: 10 }} />
-        {fee > 0 ? <View style={[s.row, { justifyContent: "space-between" }]}><Text style={{ color: t.ink2 }}>Delivery</Text><Text style={{ color: t.ink }}>{rupees(fee)}</Text></View> : null}
-        <View style={[s.row, { justifyContent: "space-between", marginTop: 4 }]}><Text style={[s.h2, { color: t.ink }]}>Total</Text><Text style={[s.h2, { color: t.ink }]}>{rupees(subtotal + fee)}</Text></View>
-        <Text style={{ color: t.ink3, marginTop: 6, fontSize: 12 }}>{paymentMethodLabel(o) || "Payment pending"}</Text>
-      </Card>
-
-      {unpaidNew && !o.pay_on_delivery ? (
-        <Card style={{ borderColor: t.brand, borderWidth: 1.5 }}>
-          <Text style={[s.h2, { color: t.ink }]}>How would you like to pay?</Text>
-          <Text style={{ color: t.ink3, marginTop: 4 }}>Pay within 2 hours, or the order is cancelled.</Text>
-          <Button title={`Pay ${rupees(due)} now`} onPress={pay} loading={busy === "pay"} style={{ marginTop: 14 }} />
-          {pod?.eligible ? (
-            <>
-              <Text style={{ textAlign: "center", color: t.ink3, marginVertical: 8 }}>or</Text>
-              <Button title={`Pay ${rupees(Number(pod.amount) || due)} on delivery`} kind="secondary" onPress={choosePod} loading={busy === "pod"} />
-              <Text style={{ textAlign: "center", color: t.ink3, fontSize: 12, marginTop: 6 }}>Pay in the Relifish app when your fish arrives. No cash.</Text>
-            </>
-          ) : pod?.block?.code === "open_order" ? (
-            <View style={{ marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: t.amberSoft }}>
-              <Text style={{ color: t.amber }}>You already have a pay-on-delivery order #{String(pod.block.order_id).slice(0, 8).toUpperCase()}. Pay or cancel it to use pay on delivery again.</Text>
-              <Button title="Open that order →" kind="ghost" onPress={() => router.push(`/order/${pod.block.order_id}`)} />
+    <View style={{ flex: 1, backgroundColor: t.bg2 }}>
+      <AppHeader variant="page" title="Order details" onBack={() => (router.canGoBack() ? router.back() : router.replace("/orders"))} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 24, gap: 12 }} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
+        <StatusHero status={statusText} id={`#${String(o.id).slice(0, 8).toUpperCase()}`} time={new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} tone={tone as any} />
+        <InfoSection>
+          <Stepper size={26} labelSize={9} failLine={t.green} steps={closed ? [{ label: "Placed", state: "done" }, { label: o.status === "declined" ? "Declined" : "Cancelled", state: "fail" }] : steps.labels.map((l: string, i: number) => ({ label: l, state: i <= steps.step ? "done" : "todo" as const }))} />
+        </InfoSection>
+        <InfoSection title="From">
+          <Text style={{ fontSize: 14, lineHeight: lh(14), fontWeight: "700" }}>{cleanSellerName(o.seller?.name) || "Seller"}</Text>
+          {sellerArea ? <Text style={{ marginTop: 2, fontSize: 12, lineHeight: lh(12), color: t.ink2 }}>{sellerArea}</Text> : null}
+        </InfoSection>
+        <InfoSection title="Items">
+          {items.map((i: any, k: number) => (
+            <View key={i.id || k} style={[row, { justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: k < items.length - 1 ? 1 : 0, borderBottomColor: t.border }]}>
+              <View><Text style={{ fontSize: 13, fontWeight: "600", textTransform: "capitalize" }}>{i.species || o.listing?.species}</Text><Text style={{ marginTop: 2, fontSize: 11, color: t.ink3 }}>{i.pricing_label || (i.quantity_unit === "kg" && Number(i.quantity) < 1 ? `${Math.round(Number(i.quantity) * 1000)} grams` : `${i.quantity} ${i.quantity_unit}`)}</Text></View>
+              <Text style={{ fontSize: 13, fontWeight: "700" }}>{rupees(Number(i.total_price) || 0)}</Text>
             </View>
-          ) : pod?.block?.code === "over_limit" ? (
-            <Text style={{ textAlign: "center", color: t.ink3, fontSize: 12, marginTop: 8 }}>{pod.block.message}</Text>
-          ) : null}
-        </Card>
-      ) : null}
+          ))}
+        </InfoSection>
+        {o.order_type === "delivery" ? (
+          <InfoSection title="Deliver to">
+            <Text style={{ fontSize: 13, fontWeight: "700" }}>{addr?.label || "Home"}</Text>
+            <Text style={{ marginTop: 2, fontSize: 12, color: t.ink2 }}>{addr ? [addr.flat, addr.building, addr.landmark, addr.location_name].filter(Boolean).join(", ") : o.buyer_addr || ""}</Text>
+          </InfoSection>
+        ) : null}
+        <BillSummary rows={[{ k: "Subtotal", v: rupees(subtotal) }, ...(fee > 0 ? [{ k: "Delivery", v: rupees(fee) }] : []), { k: "Total", v: rupees(subtotal + fee), strong: true, rule: true }, ...(finalPrice != null ? [{ k: "Final price", v: rupees(finalPrice), rule: true }] : [])]} note={paymentMethodLabel(o) || "Payment pending"} />
 
-      {o.pay_on_delivery && unpaidNew ? (
-        <Card style={{ borderColor: t.green, borderWidth: 1.5 }}>
-          <Text style={[s.h2, { color: t.green }]}>✅ Order placed</Text>
-          <Text style={{ color: t.ink2, marginTop: 4 }}>Waiting for {o.seller?.name || "the seller"} to confirm. You'll pay {rupees(due)} here in the app when your fish arrives. No cash accepted.</Text>
-          <Button title={`Pay ${rupees(due)} now instead`} kind="secondary" onPress={pay} loading={busy === "pay"} style={{ marginTop: 12 }} />
-        </Card>
-      ) : null}
-
-      {podDue && ["confirmed", "ready_for_pickup", "out_for_delivery"].includes(o.status) ? (
-        <Card style={{ borderColor: t.brand, borderWidth: 1.5 }}>
-          <Text style={[s.h2, { color: t.ink }]}>{o.status === "out_for_delivery" ? "🛵 Pay when your fish arrives" : "💵 You pay on delivery"}</Text>
-          <Text style={{ color: t.ink2, marginTop: 4 }}>Pay here in the app (UPI or card) when your fish arrives. No cash accepted.</Text>
-          <Button title={`Pay ${rupees(due)}`} onPress={pay} loading={busy === "pay"} style={{ marginTop: 12 }} />
-        </Card>
-      ) : null}
-
-      {closed ? (
-        <Card style={{ borderColor: t.red }}>
-          <Text style={[s.h2, { color: t.red }]}>{cancelledByText(o.cancelled_by, "buyer", o.cancel_reason)}</Text>
-          {cancelReasonText(o.cancel_reason) ? <Text style={{ color: t.ink2, marginTop: 4 }}>Reason: {cancelReasonText(o.cancel_reason)}</Text> : null}
-        </Card>
-      ) : null}
-
-      {unpaidNew ? <Button title="Cancel order" kind="danger" onPress={cancel} loading={busy === "cancel"} style={{ marginHorizontal: 16, marginTop: 12 }} /> : null}
-      <Button title="📞 Call us about this order" kind="ghost" onPress={() => Linking.openURL("tel:+919152207607")} style={{ marginHorizontal: 16, marginTop: 6 }} />
-    </ScrollView>
+        {unpaidNew && !o.pay_on_delivery ? (
+          <InfoSection>
+            <Text style={{ fontSize: 15, fontWeight: "800" }}>How would you like to pay?</Text>
+            <Text style={{ marginTop: 4, fontSize: 12, color: t.ink3 }}>Pay within 2 hours, or the order is cancelled.</Text>
+            <Button title={`Pay ${rupees(due)} now`} full onPress={pay} loading={busy === "pay"} style={{ marginTop: 14 }} />
+            {pod?.eligible ? (
+              <>
+                <Text style={{ textAlign: "center", color: t.ink3, marginVertical: 8 }}>or</Text>
+                <Button title={`Pay ${rupees(Number(pod.amount) || due)} on delivery`} variant="secondary" full onPress={choosePod} loading={busy === "pod"} />
+                <Text style={{ textAlign: "center", color: t.ink3, fontSize: 12, marginTop: 6 }}>Pay in the Relifish app when your fish arrives. No cash.</Text>
+              </>
+            ) : pod?.block?.code === "open_order" ? (
+              <View style={{ marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: t.amberL }}>
+                <Text style={{ color: t.amber }}>You already have a pay-on-delivery order #{String(pod.block.order_id).slice(0, 8).toUpperCase()}. Pay or cancel it to use pay on delivery again.</Text>
+                <Button title="Open that order →" variant="ghost" onPress={() => router.push(`/order/${pod.block.order_id}`)} />
+              </View>
+            ) : pod?.block?.code === "over_limit" ? <Text style={{ textAlign: "center", color: t.ink3, fontSize: 12, marginTop: 8 }}>{pod.block.message}</Text> : null}
+          </InfoSection>
+        ) : null}
+        {o.pay_on_delivery && unpaidNew ? (
+          <InfoSection>
+            <Text style={{ fontSize: 15, fontWeight: "800", color: t.green }}>✅ Order placed</Text>
+            <Text style={{ marginTop: 4, color: t.ink2 }}>Waiting for {o.seller?.name || "the seller"} to confirm. You'll pay {rupees(due)} here in the app when your fish arrives. No cash accepted.</Text>
+            <Button title={`Pay ${rupees(due)} now instead`} variant="secondary" full onPress={pay} loading={busy === "pay"} style={{ marginTop: 12 }} />
+          </InfoSection>
+        ) : null}
+        {podDue && ["confirmed", "ready_for_pickup", "out_for_delivery"].includes(o.status) ? (
+          <InfoSection>
+            <Text style={{ fontSize: 15, fontWeight: "800" }}>{o.status === "out_for_delivery" ? "🛵 Pay when your fish arrives" : "💵 You pay on delivery"}</Text>
+            <Text style={{ marginTop: 4, color: t.ink2 }}>Pay here in the app (UPI or card) when your fish arrives. No cash accepted.</Text>
+            <Button title={`Pay ${rupees(due)}`} full onPress={pay} loading={busy === "pay"} style={{ marginTop: 12 }} />
+          </InfoSection>
+        ) : null}
+        {closed && cancelReasonText(o.cancel_reason) ? <View style={{ marginHorizontal: 16 }}><Text style={{ fontSize: 12, color: t.ink3 }}>{cancelledByText(o.cancelled_by, "buyer", o.cancel_reason)} · Reason: {cancelReasonText(o.cancel_reason)}</Text></View> : null}
+        <View style={{ marginHorizontal: 16, gap: 12 }}>
+          {unpaidNew ? <Pressable onPress={cancel} style={{ padding: 14, borderRadius: 12, borderWidth: 1, borderColor: t.redL, backgroundColor: t.bg, alignItems: "center" }}><Text style={{ fontSize: 14, fontWeight: "700", color: t.red }}>{busy === "cancel" ? "Cancelling…" : "Cancel order"}</Text></Pressable> : null}
+          {DONE.includes(o.status) ? <Pressable onPress={reorder} style={{ padding: 14, borderRadius: 12, backgroundColor: t.brand, alignItems: "center" }}><Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>Re-order from {cleanSellerName(o.seller?.name) || "this seller"}</Text></Pressable> : null}
+          <Button title="📞 Call us about this order" variant="secondary" full onPress={() => Linking.openURL("tel:+919152207607")} />
+        </View>
+      </ScrollView>
+      <BottomNav items={BUYER_NAV} active="orders" onPress={(k) => router.navigate(k === "home" ? "/" : `/${k}` as any)} />
+    </View>
   );
 }

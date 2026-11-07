@@ -353,7 +353,7 @@ const MAX_ATTEMPTS = 3;
         } catch {}
       }
 
-      btn.textContent = "✓ Signed in!";
+      btn.textContent = "Signed in";
       window.v2Toast?.("success", "Signed in", "Welcome to Relifish");
       // The page asked to finish something here (e.g. the "+" that opened login): do it, no reload.
       const after = typeof window.v2AfterLogin === "function" ? window.v2AfterLogin : null;
