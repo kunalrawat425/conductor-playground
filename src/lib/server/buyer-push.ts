@@ -158,7 +158,7 @@ export async function sendBuyerOrderPush(payload: BuyerPushPayload): Promise<Buy
     await supabase.from("buyers").update({ push_enabled: true }).eq("id", effectiveBuyerId);
   }
 
-  if (!vapidPublicKey || !vapidPrivateKey) {
+  if ((!vapidPublicKey || !vapidPrivateKey) && (subscription as any)?.endpoint !== "fcm") {
     console.error("buyer-push: VAPID keys not configured");
     return { ok: false, error: "VAPID keys not configured" };
   }
@@ -237,7 +237,7 @@ export async function sendCustomBuyerPush(
     await supabase.from("buyers").update({ push_enabled: true }).eq("id", buyerId);
   }
 
-  if (!vapidPublicKey || !vapidPrivateKey) {
+  if ((!vapidPublicKey || !vapidPrivateKey) && (subscription as any)?.endpoint !== "fcm") {
     console.error("buyer-push: VAPID keys not configured");
     return { ok: false, error: "VAPID keys not configured" };
   }

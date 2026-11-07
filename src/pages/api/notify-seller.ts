@@ -130,7 +130,8 @@ export const POST: APIRoute = async ({ request }) => {
       await supabase.from("sellers").update({ push_enabled: true }).eq("id", seller_id);
     }
 
-    if (!vapidPublicKey || !vapidPrivateKey) {
+    // App subscriptions go through Firebase (FCM_SERVICE_ACCOUNT), not web-push: no VAPID needed.
+    if ((!vapidPublicKey || !vapidPrivateKey) && (subscription as any)?.endpoint !== "fcm") {
       console.error("notify-seller: VAPID keys not configured");
       await log("skipped", "VAPID keys not configured");
       return new Response(JSON.stringify({ skipped: true, reason: "vapid not configured" }), {
