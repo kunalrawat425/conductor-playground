@@ -11,6 +11,7 @@ import { myLocation, reverseArea, saveBuyerLocation, type BuyerLocation } from "
 import { useTheme } from "./theme";
 import { Button, Input, SheetHeader } from "./ui/atoms";
 import { Text } from "./ui/base";
+import { MapPin } from "./MapPin";
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -58,6 +59,8 @@ export function LocationSheet({ visible, current, onClose, onPicked }: { visible
           {sugg.length ? <View style={{ borderWidth: 1, borderColor: t.border, borderRadius: 12, overflow: "hidden" }}>{sugg.map((s) => (
             <Pressable key={s.area} onPress={() => { setQ(s.area); setPick(s); }} style={{ paddingVertical: 12, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: t.border, backgroundColor: pick?.area === s.area ? t.brandL : t.bg }}><Text style={{ fontSize: 14, fontWeight: "600" }}>{s.area}</Text><Text style={{ fontSize: 12, color: t.ink3 }}>Thane</Text></Pressable>
           ))}</View> : null}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><View style={{ flex: 1, height: 1, backgroundColor: t.border }} /><Text style={{ fontSize: 11, fontWeight: "700", letterSpacing: 0.88, color: t.ink3, textTransform: "uppercase" }}>or move the pin</Text><View style={{ flex: 1, height: 1, backgroundColor: t.border }} /></View>
+          <MapPin lat={(pick ?? current)?.lat ?? 19.2183} lng={(pick ?? current)?.lng ?? 72.9781} onMove={async (lat, lng) => { setPick({ lat, lng, area: "…" }); const area = await reverseArea(lat, lng); setPick({ lat, lng, area }); setQ(area); }} />
           {err ? <Text style={{ fontSize: 12, color: t.red }}>{err}</Text> : null}
           {current ? <Text style={{ fontSize: 12, color: t.ink3 }}>Now: {current.area}</Text> : null}
           <Button title="Confirm area" full disabled={!chosen && q.trim().length < 3} loading={busy && !!q} onPress={async () => { if (chosen) { await saveBuyerLocation(chosen); onPicked(chosen); } else await search(); }} />
