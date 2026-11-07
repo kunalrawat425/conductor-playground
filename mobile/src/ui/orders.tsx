@@ -102,3 +102,41 @@ export function BillSummary({ rows, note }: { rows: BillLine[]; note?: string })
     </InfoSection>
   );
 }
+
+export type TimelineStep = { label: string; sub?: string; state: "done" | "now" | "todo" | "fail" };
+/** Order tracking timeline (preview "Tracking"): green ticks for done, a numbered blue dot for now, grey for next; 2 px rail. */
+export function Timeline({ steps }: { steps: TimelineStep[] }) {
+  const t = useTheme();
+  return (
+    <View style={{ marginHorizontal: 16, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: t.border, backgroundColor: t.bg }}>
+      {steps.map((s, i) => {
+        const c = s.state === "done" ? t.green : s.state === "fail" ? t.red : s.state === "now" ? t.brand : t.bg3;
+        return (
+          <View key={i} style={{ flexDirection: "row", gap: 14 }}>
+            <View style={{ alignItems: "center", width: 24 }}>
+              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: s.state === "now" ? t.bg : c, borderWidth: s.state === "now" ? 2 : 0, borderColor: c, alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontSize: 12, fontWeight: "800", color: s.state === "now" ? t.brand : s.state === "todo" ? t.ink4 : "#FFFFFF" }}>{s.state === "done" ? "✓" : s.state === "fail" ? "✕" : String(i + 1)}</Text>
+              </View>
+              {i < steps.length - 1 ? <View style={{ flex: 1, width: 2, minHeight: 22, backgroundColor: s.state === "done" ? t.green : t.bg3 }} /> : null}
+            </View>
+            <View style={{ flex: 1, paddingBottom: i < steps.length - 1 ? 16 : 0 }}>
+              <Text style={{ fontSize: 16, lineHeight: 22, fontWeight: "800", color: s.state === "todo" ? t.ink3 : s.state === "fail" ? t.red : t.ink }}>{s.label}</Text>
+              {s.sub ? <Text style={{ marginTop: 2, fontSize: 13, color: t.ink3 }}>{s.sub}</Text> : null}
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Tracking hero: tinted card with a caps kicker, a 24/800 headline and one line under it. */
+export function TrackHero({ kicker, title, sub, tone }: { kicker: string; title: string; sub?: string; tone: keyof typeof lit.odHero }) {
+  return (
+    <View style={[{ marginHorizontal: 16, marginTop: 16, padding: 18, borderRadius: 16 }, grad(lit.odHero[tone])]}>
+      <Text style={{ fontSize: 12, fontWeight: "800", letterSpacing: 0.9, color: "#FFFFFF", opacity: 0.9 }}>{kicker}</Text>
+      <Text style={{ marginTop: 4, fontSize: 24, lineHeight: 30, fontWeight: "800", color: "#FFFFFF" }}>{title}</Text>
+      {sub ? <Text style={{ marginTop: 4, fontSize: 14, lineHeight: 20, color: "#FFFFFF", opacity: 0.92 }}>{sub}</Text> : null}
+    </View>
+  );
+}

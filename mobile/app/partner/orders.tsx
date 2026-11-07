@@ -10,7 +10,7 @@ import { api, getSession } from "../../src/api";
 import { Button, Card, Loading, s, Text } from "../../src/ui";
 import { paymentMethodLabel } from "../../../src/lib/order-payment-state";
 import { DashboardHero, DashboardTabs } from "../../src/ui/chrome";
-import { SellerOrderCard, type OcBadge } from "../../src/ui/dashboard";
+import { KpiStrip, PrepList, SellerOrderCard, type OcBadge } from "../../src/ui/dashboard";
 
 const RANGES = [["Today", 1], ["Last 7 days", 7], ["Last 30 days", 30], ["All time", 0]] as const;
 const TYPES = ["All", "Delivery", "Pickup", "Pre-order"] as const;
@@ -81,6 +81,15 @@ export default function PartnerOrders() {
   }
 
   if (!data) return <Loading />;
+  // Next delivery slot among open orders, and what to prepare for it (preview "Prep list").
+  const open = data.orders.filter((o) => !CLOSED.includes(o.status) && o.delivery_slot_start && Date.parse(o.delivery_slot_start) > Date.now() - 3600_000);
+  const nextSlot = open.map((o) => o.delivery_slot_start).sort()[0] as string | undefined;
+  const nextEnd = open.find((o) => o.delivery_slot_start === nextSlot)?.delivery_slot_end;
+  const prepMap = new Map<string, number>();
+  for (const o of open.filter((x) => x.delivery_slot_start === nextSlot)) for (const r of (o.cart_items || [o]).filter((x: any) => !CLOSED.includes(x.status))) {
+    const k = `${r.listing?.species || r.species} · ${r.pricing_label || qtyLabel(r)}`; prepMap.set(k, (prepMap.get(k) || 0) + 1);
+  }
+  const prep: [string, string][] = [...prepMap].map(([k, n]) => { const [sp, size] = k.split(" · "); return [sp, `${n} × ${size}`]; });
   // Web filter bar: search by order ID or the buyer's last 4 digits; date range; type.
   const days = RANGES[range][1];
   const shown = data.orders.filter((o) => {
@@ -97,20 +106,12 @@ export default function PartnerOrders() {
   return (
     <View style={{ flex: 1, backgroundColor: t.page }}>
       <DashboardHero shop={name || "seller"} statsOpen={stats} onStats={() => setStats(!stats)} />
-      {stats ? (
-        <View style={[s.row, { gap: 8, padding: 12, backgroundColor: t.green }]}>
-          {[[data.counts?.pending ?? 0, "New"], [data.counts?.accepted ?? 0, "In Progress"], [`₹${(data.today_gmv || 0).toLocaleString("en-IN")}`, "Today"]].map(([v, l]) => (
-            <View key={l} style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, padding: 10, alignItems: "center" }}>
-              <Text style={{ fontSize: 18, fontWeight: "800", color: "#FFFFFF" }}>{v}</Text>
-              <Text style={{ fontSize: 10, fontWeight: "500", color: "#FFFFFF", opacity: 0.9, marginTop: 1 }}>{l}</Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
+      <View style={{ backgroundColor: "#10B981" }}><KpiStrip items={[{ v: String(data.counts?.pending ?? 0), l: "to confirm" }, { v: String(data.counts?.accepted ?? 0), l: "in progress" }, stats ? { v: `₹${(data.today_gmv || 0).toLocaleString("en-IN")}`, l: "today" } : { v: nextSlot ? slotDayLabel(nextSlot).replace(/^(\w+) (\d+).*/, "$1 $2") : "None", l: "next slot" }]} /></View>
       <DashboardTabs active={tab} onTab={(k) => { setTab(k); setData({ ...data, orders: [] }); load(k); }}
         tabs={TABS.map(([k, label]) => ({ key: k, label, count: (k === "completed" ? (data.counts?.completed || 0) + (data.counts?.declined || 0) : data.counts?.[k] || 0) || undefined }))}
         search={q} onSearch={setQ} range={RANGES[range][0]} type={TYPES[type]} onRange={() => setRange((range + 1) % RANGES.length)} onType={() => setType((type + 1) % TYPES.length)}
         onCsv={() => Linking.openURL("https://www.relifish.com/dashboard/orders")} countText={`${shown.length} ${tab === "pending" ? "pending" : tab === "accepted" ? "in progress" : "orders"}`} />
+      <PrepList title={`Prep list${nextSlot ? ` · ${slotDayLabel(nextSlot)}, ${slotTimeLabel(nextSlot, nextEnd)}` : ""}`} rows={prep} />
       <FlatList
         data={shown}
         keyExtractor={(o) => o.id}
@@ -159,7 +160,9 @@ export default function PartnerOrders() {
                 total={`₹${total.toLocaleString("en-IN")}`} payment={paymentMethodLabel(o) || undefined} paymentRef={o.razorpay_payment_id || undefined}
                 next={plan.hint || undefined} paidLine={plan.note?.tone === "green" ? plan.note.text : undefined}
                 actions={plan.acts.map((a) => ({ title: busy === o.id + a.action ? "…" : a.label, kind: a.kind === "success" ? "green" : (a.kind as any), disabled: a.disabled, onPress: () => press(o, a) }))}
-                extra={extra} />
+                extra={extra}
+                waiting={plan.acts.some((a) => a.action === "accept") ? (() => { const m = Math.max(0, Math.floor((Date.now() - Date.parse(o.created_at)) / 1000)); return m >= 3600 ? `${Math.floor(m / 3600)} h ${Math.floor((m % 3600) / 60)} min` : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`; })() : undefined}
+                paid={o.razorpay_payment_id ? `₹${total.toLocaleString("en-IN")}` : undefined} />
             </View>
           );
         }}

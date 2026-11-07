@@ -14,7 +14,9 @@ import { formatOptionMenuLabel, getListingPriceOptions, optionBundleAmount } fro
 import { cleanSellerName, stripContactInfo } from "../../../src/lib/seller-display";
 import { areaNameForPoint } from "../../../src/lib/areas";
 import { AppHeader, BottomNav, BUYER_NAV } from "../../src/ui/chrome";
-import { BillSummary, InfoSection, Stepper, StatusHero } from "../../src/ui/orders";
+import { BillSummary, InfoSection, Timeline, TrackHero, type TimelineStep } from "../../src/ui/orders";
+import { orderSlotText } from "../../../src/lib/delivery-slots";
+import { Icon } from "../../src/ui/icons";
 import { Button } from "../../src/ui/atoms";
 import { lh, row, Text } from "../../src/ui/base";
 import { ActivityIndicator, Pressable } from "react-native";
@@ -107,14 +109,22 @@ export default function OrderScreen() {
     router.push(`/seller/${sid}`);
   }
 
+  const when = (iso?: string | null) => (iso ? new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "");
+  const slot = o.order_type === "delivery" ? orderSlotText(o) : null;
+  // Tracking timeline (preview): the stepper's steps, with what each means for the buyer.
+  const SUB: Record<string, string> = { Placed: when(o.created_at), Confirmed: "The seller accepted your order", Preparing: "Cleaning & packing", "Out for delivery": "We'll notify you", Delivered: o.pay_on_delivery ? "Pay in the app on delivery, no cash" : "Enjoy your fish", "Picked up": "Collected from the shop", Ready: "Ready at the shop" };
+  const timeline: TimelineStep[] = closed
+    ? [{ label: "Order placed", sub: when(o.created_at), state: "done" }, { label: o.status === "declined" ? "Declined by the seller" : "Cancelled", sub: cancelledByText(o.cancelled_by, "buyer", o.cancel_reason), state: "fail" }]
+    : steps.labels.map((l: string, i: number) => ({ label: l, sub: SUB[l] || (i === steps.step + 1 && slot ? slot.value : undefined), state: i < steps.step ? "done" : i === steps.step ? (i === steps.labels.length - 1 ? "done" : "now") : "todo" }));
+
   return (
     <View style={{ flex: 1, backgroundColor: t.bg2 }}>
-      <AppHeader variant="page" title="Order details" onBack={() => (router.canGoBack() ? router.back() : router.replace("/orders"))} />
+      <AppHeader variant="page" title={`Order #${String(o.id).slice(0, 8).toUpperCase()}`} onBack={() => (router.canGoBack() ? router.back() : router.replace("/orders"))} />
       <ScrollView contentContainerStyle={{ paddingBottom: 24, gap: 12 }} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
-        <StatusHero status={statusText} id={`#${String(o.id).slice(0, 8).toUpperCase()}`} time={new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} tone={tone as any} />
-        <InfoSection>
-          <Stepper size={26} labelSize={9} failLine={t.green} steps={closed ? [{ label: "Placed", state: "done" }, { label: o.status === "declined" ? "Declined" : "Cancelled", state: "fail" }] : steps.labels.map((l: string, i: number) => ({ label: l, state: i <= steps.step ? "done" : "todo" as const }))} />
-        </InfoSection>
+        <TrackHero tone={tone as any} kicker={`${o.is_preorder || o.placement_kind === "preorder" ? "PRE-ORDER" : "ORDER"} #${String(o.id).slice(0, 8).toUpperCase()} · ${statusText.toUpperCase()}`}
+          title={slot ? `${o.status === "out_for_delivery" ? "Arriving" : "Arrives"} ${slot.value}` : statusText}
+          sub={closed ? cancelReasonText(o.cancel_reason) || undefined : slot ? `${slot.label} · ${cleanSellerName(o.seller?.name) || "The seller"} is buying your fish fresh that morning` : `Placed ${when(o.created_at)}`} />
+        <Timeline steps={timeline} />
         <InfoSection title="From">
           <Text style={{ fontSize: 14, lineHeight: lh(14), fontWeight: "700" }}>{cleanSellerName(o.seller?.name) || "Seller"}</Text>
           {sellerArea ? <Text style={{ marginTop: 2, fontSize: 12, lineHeight: lh(12), color: t.ink2 }}>{sellerArea}</Text> : null}
@@ -175,6 +185,10 @@ export default function OrderScreen() {
           <Button title="📞 Call us about this order" variant="secondary" full onPress={() => Linking.openURL("tel:+919152207607")} />
         </View>
       </ScrollView>
+      <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: t.bg, borderTopWidth: 1, borderTopColor: t.border }}>
+        {o.order_type === "delivery" ? <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, height: 44, borderRadius: 999, borderWidth: 1, borderColor: t.border }}><Icon name="qaPin" size={16} color={t.ink} /><Text numberOfLines={1} style={{ fontSize: 14, fontWeight: "700" }}>{(addr?.label || "Home") + (addr?.location_name ? ` · ${String(addr.location_name).split(",")[0]}` : "")}</Text></View> : null}
+        <Pressable onPress={() => Linking.openURL("tel:+919152207607")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, height: 44, borderRadius: 999, borderWidth: 1.5, borderColor: t.brand }}><Icon name="help" size={16} color={t.brand} /><Text style={{ fontSize: 14, fontWeight: "700", color: t.brand }}>Need help?</Text></Pressable>
+      </View>
       <PushPrePrompt />
       <BottomNav items={BUYER_NAV} active="orders" onPress={(k) => router.navigate(k === "home" ? "/" : `/${k}` as any)} />
     </View>
