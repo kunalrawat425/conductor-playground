@@ -50,7 +50,53 @@ async function loadWebPushModule(): Promise<WebPushApi> {
     console.error("web-push module keys:", keys);
     throw new Error("web-push: could not resolve setVapidDetails (bundler interop)");
   }
-  return api;
+  return withExpo(api);
+}
+
+/**
+ * The Relifish apps (mobile/) save `{ endpoint: EXPO_PUSH_URL, expo: "ExponentPushToken[…]" }` as the
+ * push subscription, so every existing `subscription.endpoint` check and sender works unchanged:
+ * an Expo subscription goes to Expo's push service, a browser one to web-push as before.
+ * Errors look like web-push's: a token the phone no longer has (DeviceNotRegistered) is statusCode 410,
+ * so push-error-classify clears it exactly like an expired browser subscription.
+ */
+export const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+/** notify-seller tags (`seller-<kind>-<ts>`) for an order the seller has to act on. */
+export const RINGING_TAG = /^seller-(new_order|payment_confirmed|pay_on_delivery)-/;
+
+export function withExpo(api: WebPushApi, fetchImpl: typeof fetch = fetch): WebPushApi {
+  return {
+    setVapidDetails: (...a) => api.setVapidDetails(...a),
+    async sendNotification(subscription, payload, options) {
+      const token = (subscription as { expo?: unknown } | null)?.expo;
+      if (typeof token !== "string" || !token) return api.sendNotification(subscription, payload, options);
+      let msg: Record<string, any> = {};
+      try { msg = typeof payload === "string" ? JSON.parse(payload) : {}; } catch { msg = { body: String(payload) }; }
+      const { title, body, url, image, tag } = msg;
+      // A new order for a seller rings like a call: the Partner app's "orders" channel and bundled ringtone.
+      const ring = typeof tag === "string" && RINGING_TAG.test(tag);
+      const res = await fetchImpl(EXPO_PUSH_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          to: token, title, body, priority: "high",
+          ...(ring ? { channelId: "orders", sound: "new_order.wav" } : { channelId: "default", sound: "default" }),
+          ttl: (options as { TTL?: number } | undefined)?.TTL ?? PUSH_SEND_OPTIONS.TTL,
+          data: { url, tag, ...(image ? { image } : {}) },
+          ...(image ? { richContent: { image } } : {}),
+        }),
+      });
+      const out: any = await res.json().catch(() => ({}));
+      const ticket = Array.isArray(out?.data) ? out.data[0] : out?.data;
+      if (!res.ok || ticket?.status === "error" || out?.errors?.length) {
+        const code = ticket?.details?.error || out?.errors?.[0]?.code || "";
+        const err: any = new Error(`expo push: ${ticket?.message || out?.errors?.[0]?.message || res.status} ${code}`.trim());
+        err.statusCode = code === "DeviceNotRegistered" ? 410 : res.ok ? 400 : res.status;
+        throw err;
+      }
+      return ticket;
+    },
+  };
 }
 
 /**
