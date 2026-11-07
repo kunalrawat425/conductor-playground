@@ -25,5 +25,10 @@ export function assertInternalCaller(request: Request): Response | null {
 }
 
 export function internalHeaders(): Record<string, string> {
-  return INTERNAL_API_SECRET ? { [INTERNAL_HEADER]: INTERNAL_API_SECRET } : {};
+  const h: Record<string, string> = INTERNAL_API_SECRET ? { [INTERNAL_HEADER]: INTERNAL_API_SECRET } : {};
+  // Stage sits behind Vercel deployment protection: a self-call (e.g. notify-seller) needs the
+  // automation bypass, or it gets the login wall (401) and the seller's push/ring never goes.
+  const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  if (bypass) h["x-vercel-protection-bypass"] = bypass;
+  return h;
 }
