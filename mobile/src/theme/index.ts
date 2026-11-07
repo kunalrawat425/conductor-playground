@@ -53,7 +53,8 @@ export async function loadFestive() {
   if (saved) setFestive(saved === "diwali");
   try {
     const r = await fetch(`${API}/api/theme`, { headers: STAGE_HEADERS });
-    if (!r.ok) return;
+    // Prod has no /api/theme yet (404): the date window decides, not a stale saved value.
+    if (!r.ok) { setFestive(festiveFor(new Date()) === "diwali"); return; }
     const { festive: f } = await r.json();
     setFestive(f === "diwali");
     await save(f === "diwali" ? "diwali" : "off");

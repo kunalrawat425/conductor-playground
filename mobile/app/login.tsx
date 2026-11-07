@@ -5,7 +5,7 @@
  */
 import { track } from "../src/track";
 import { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
+import { KeyboardAvoidingView, Pressable, View } from "react-native";
 import Constants from "expo-constants";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -50,7 +50,8 @@ export default function Login() {
   return (
     <View style={{ flex: 1, justifyContent: "flex-end" }}>
       <Pressable style={{ position: "absolute", inset: 0, backgroundColor: seller ? t.bg2 : "rgba(15, 23, 42, 0.5)" } as any} onPress={() => close()} />
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      {/* Android is edge-to-edge (SDK 58): the window no longer resizes for the keyboard, so pad on both platforms or the panel hides under it. */}
+      <KeyboardAvoidingView behavior="padding">
         <View style={{ backgroundColor: t.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: insets.bottom + 16 }}>
           <SheetHeader title={sent ? "Enter the code" : seller ? "Log in to Relifish Partner" : "Log in to Relifish"} />
           <View style={{ padding: 16, gap: 14 }}>
@@ -58,7 +59,7 @@ export default function Login() {
               {sent ? `We sent a 6-digit code to +91 ${digits}. It fills in by itself when the SMS arrives.` : seller ? "Your shop's registered number. We'll send you a one-time code." : "We'll send you a one-time code. No password needed."}
             </Text>
             {!sent
-              ? <PhoneInput value={phone} onChangeText={setPhone} autoFocus error={err || undefined} onSubmitEditing={() => /^[6-9]\d{9}$/.test(digits) && send()} />
+              ? <PhoneInput value={phone} onChangeText={(v) => setPhone(v.replace(/\D/g, "").slice(-10))} autoFocus error={err || undefined} onSubmitEditing={() => /^[6-9]\d{9}$/.test(digits) && send()} />
               : <OTPInput value={code} onChange={setCode} onComplete={(c) => verify(c)} error={err || undefined} helper="Expires in 10 minutes" />}
             {!sent
               ? <Button title="Send code" full loading={busy} disabled={!/^[6-9]\d{9}$/.test(digits)} onPress={send} />

@@ -1,4 +1,4 @@
-import { track } from "../../src/track";
+import { ga, track } from "../../src/track";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, Linking, RefreshControl, ScrollView, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -56,18 +56,20 @@ export default function OrderScreen() {
   const heroColor = closed ? t.red : unpaidNew && !o.pay_on_delivery ? t.amber : t.green;
 
   async function pay() {
-    setBusy("pay"); track("pay_opened");
+    setBusy("pay"); track("pay_opened"); ga("payment_started", { order_id: o.id, value: due });
     try {
       const r = await payOrder(o.id);
+      if (r === "cancelled") ga("payment_dismissed", { order_id: o.id });
       if (r !== "cancelled") Alert.alert("Payment received", "Thank you! We'll keep you posted.");
       await load();
-    } catch (e: any) { Alert.alert("Payment", e.message); } finally { setBusy(null); }
+    } catch (e: any) { ga("payment_failed", { order_id: o.id }); Alert.alert("Payment", e.message); } finally { setBusy(null); }
   }
   async function choosePod() {
     setBusy("pod");
     try {
       const me = await getSession();
       await api("/api/orders/pay-on-delivery", { order_id: o.id, buyer_id: me!.buyer_id });
+      ga("pay_on_delivery_chosen", { order_id: o.id });
       await load();
     } catch (e: any) {
       if (e.data?.block?.code === "open_order") setPod({ eligible: false, block: e.data.block });
@@ -93,6 +95,7 @@ export default function OrderScreen() {
   const addr = o.delivery_address || o.address || null;
   const finalPrice = o.final_price != null && Number(o.final_price) !== Number(o.total_price) ? Number(o.final_price) : null;
   function reorder() {
+    ga("reorder_clicked", { order_id: o.id });
     const sid = o.seller?.id || o.listing?.seller_id;
     for (const i of items) {
       const L = i.listing || o.listing; if (!L) continue;

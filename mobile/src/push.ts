@@ -45,6 +45,8 @@ export async function registerPush() {
     const me = await getSession();
     if (!me) return;
     const { data: token } = await Notifications.getDevicePushTokenAsync();
+    // QA builds point at stage: print the token so push can be tested on an emulator (never in a prod build).
+    if (/stage/.test(String(process.env.EXPO_PUBLIC_API_BASE))) console.log("RLF_FCM_TOKEN", String(token));
     const subscription = { endpoint: "fcm", fcm: String(token), platform: Platform.OS };
     if (ROLE === "seller") await api("/api/seller/profile", { seller_id: me.seller_id, seller_phone: me.phone, updates: { push_subscription: subscription, push_enabled: true } });
     else await api("/api/buyer/push-subscribe", { buyer_id: me.buyer_id, subscription });

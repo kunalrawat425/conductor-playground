@@ -37,6 +37,7 @@ const config: ExpoConfig = {
   plugins: [
     "expo-router",
     "./plugins/with-notifee",
+    "@react-native-firebase/app", // Firebase Analytics (GA4 property 539604989, linked to project "relifish")
     "expo-secure-store",
     // Native splash = the site's #rf-splash wordmark: gold logo on maroon in the Diwali window (28 Oct–15 Nov IST, the
     // same window as src/lib/festive-window.ts), white logo on brand blue otherwise. Fixed at build time; the JS splash

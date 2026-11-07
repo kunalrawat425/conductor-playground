@@ -46,7 +46,7 @@ export const Input = forwardRef<any, TextInputProps & { label?: string; required
 );
 /** PhoneInput: Input with the +91 prefix, 10 digits, phone keypad. */
 export const PhoneInput = forwardRef<any, TextInputProps & { label?: string; error?: string; helper?: string }>(function PhoneInput({ label = "Phone number", ...p }, ref) {
-  return <Input ref={ref} label={label} required prefix="+91" keyboardType="phone-pad" maxLength={10} placeholder="98XXX XXXXX" textContentType="telephoneNumber" autoComplete="tel" {...p} />;
+  return <Input ref={ref} label={label} required prefix="+91" keyboardType="phone-pad" maxLength={14} placeholder="98XXX XXXXX" textContentType="telephoneNumber" autoComplete="tel" {...p} />;
 });
 
 /**
@@ -70,7 +70,7 @@ export function OTPInput({ value, onChange, onComplete, helper, error, autoFocus
       </Pressable>
       <TextInput ref={ref} value={value} autoFocus={autoFocus} keyboardType="number-pad" maxLength={6} textContentType="oneTimeCode" autoComplete="sms-otp"
         onChangeText={(v) => { const d = v.replace(/\D/g, "").slice(0, 6); onChange(d); if (d.length === 6) onComplete?.(d); }}
-        style={{ position: "absolute", opacity: 0, width: 1, height: 1 }} />
+        caretHidden style={{ position: "absolute", left: 0, right: 0, top: 0, height: cell + 8, opacity: 0.01, color: "transparent" }} />
       {error || helper ? <Text style={{ marginTop: 4, textAlign: "center", fontSize: 11, lineHeight: lh(11), color: error ? t.red : t.ink4 }}>{error || helper}</Text> : null}
     </View>
   );
