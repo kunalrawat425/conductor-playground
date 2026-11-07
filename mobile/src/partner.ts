@@ -46,14 +46,14 @@ export function planFor(o: any, cartRows?: any[]): Plan {
     if (paidRzp) return { note: { text: "Payment received, confirm to start preparing", tone: "green" }, hint: "Next: Confirm the order.", acts: [{ action: "accept", label: "✓ Confirm order", kind: "primary" }] };
     return {
       note: { text: "⏳ Waiting for buyer to complete Razorpay payment.", tone: "grey" }, hint: "Waiting for buyer to complete Razorpay payment.",
-      acts: [...(o.razorpay_order_id ? [{ action: "reconcile", label: "🔄 Check Razorpay for payment", kind: "secondary" as const }] : []), { action: "decline", label: "Can't fulfill", kind: "danger" }],
+      acts: [...(o.razorpay_order_id ? [{ action: "reconcile", label: "Check Razorpay for payment", kind: "secondary" as const }] : []), { action: "decline", label: "Can't fulfill", kind: "danger" }],
     };
   }
   if (s === "paid") return { note: { text: `Buyer paid ₹${paidTotal.toLocaleString("en-IN")}, confirm to accept the order`, tone: "green" }, hint: "Next: Confirm the order (or decline, the buyer is refunded in full).", row: true, acts: [{ action: "accept", label: "✓ Confirm order", kind: "primary" }, { action: "decline", label: "Can't fulfill", kind: "danger" }] };
   if (s === "confirmed") {
     // A cart sets the price per item on the website; the app only offers it on a single order.
     if (needsPrice) return { note: podNote, hint: "Next: Set final price before delivery or pickup.", finalPrice: !cartRows, acts: [cancel] };
-    return { note: podNote, hint: isDelivery ? "Next: Mark as out for delivery." : "Next: Mark as ready for pickup.", acts: [isDelivery ? { action: "out_for_delivery", label: "🚲 Out for delivery", kind: "primary" } : { action: "ready", label: "📦 Ready for pickup", kind: "primary" }, cancel] };
+    return { note: podNote, hint: isDelivery ? "Next: Mark as out for delivery." : "Next: Mark as ready for pickup.", acts: [isDelivery ? { action: "out_for_delivery", label: "Out for delivery", kind: "primary" } : { action: "ready", label: "Ready for pickup", kind: "primary" }, cancel] };
   }
   if (s === "ready_for_pickup" || s === "out_for_delivery") {
     const done = s === "ready_for_pickup" ? { action: "picked_up", label: "✓ Picked up" } : { action: "delivered", label: "✓ Delivered" };
@@ -61,7 +61,7 @@ export function planFor(o: any, cartRows?: any[]): Plan {
       note: podNote ?? (pod.length ? { text: "Paid in the app, hand it over", tone: "green" } : undefined),
       hint: podUnpaid ? "Next: The buyer pays in the app. Hand it over once this shows Paid." : s === "ready_for_pickup" ? "Next: Mark as picked up when handed over." : "Next: Mark as delivered after drop-off.",
       acts: [
-        ...(podUnpaid && o.razorpay_order_id ? [{ action: "reconcile", label: "🔄 Check payment", kind: "secondary" as const }] : []),
+        ...(podUnpaid && o.razorpay_order_id ? [{ action: "reconcile", label: "Check payment", kind: "secondary" as const }] : []),
         podUnpaid ? { ...done, label: `${done.label} (after payment)`, kind: "success" as const, disabled: true } : { ...done, kind: "success" as const },
         ...(podUnpaid ? [{ action: "pod_refused", label: "Buyer didn't pay", kind: "danger" as const }] : []),
         cancel,

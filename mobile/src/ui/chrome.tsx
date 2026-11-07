@@ -10,6 +10,7 @@ import { router } from "expo-router";
 import { festive as F, lit, setThemePref, useFestive, useIsDark, useTheme } from "../theme";
 import { grad, lh, row, shadowCss, Text } from "./base";
 import { Icon, type IconName } from "./icons";
+import { pal } from "../theme/palette";
 
 /** .fd-lights: a 1 px gold wire with 24 bulbs (6×8) in three warm colours, twinkling 1.6 s; `still` for screenshots. */
 export function DiwaliLights({ height = 14, still }: { height?: number; still?: boolean }) {
@@ -40,7 +41,7 @@ export function Diya() {
   return (
     <View style={[{ width: 28, height: 12, marginTop: 16, borderTopLeftRadius: 2, borderTopRightRadius: 2, borderBottomLeftRadius: 14, borderBottomRightRadius: 14 }, grad(`linear-gradient(180deg, ${F.diyaFrom}, ${F.diyaTo})`)]}>
       <View style={[{ position: "absolute", left: -1, right: -1, top: -2, height: 5, borderRadius: 15 }, grad(`linear-gradient(180deg, ${F.rimFrom}, ${F.rimTo})`)]} />
-      <View style={{ position: "absolute", left: 14 - 14, top: -18, width: 28, height: 28, borderRadius: 14, ...grad("radial-gradient(circle, rgba(255, 190, 80, 0.55), transparent 70%)") }} />
+      <View style={{ position: "absolute", left: 14 - 14, top: -18, width: 28, height: 28, borderRadius: 14, ...grad(`radial-gradient(circle, ${pal.a255_190_80_055}, transparent 70%)`) }} />
       <View style={[{ position: "absolute", left: 14 - 4.5, bottom: 9, width: 9, height: 9, borderTopLeftRadius: 0, borderTopRightRadius: 4.5, borderBottomLeftRadius: 4.5, borderBottomRightRadius: 4.5, transform: [{ rotate: "45deg" }] }, grad(`radial-gradient(circle at 60% 60%, ${F.flame[0]} 0 25%, ${F.flame[1]} 45%, ${F.flame[2]} 85%)`)]} />
     </View>
   );
@@ -57,7 +58,7 @@ export function DiwaliBanner() {
     <View style={[{ ...row, justifyContent: "center", gap: 14, marginTop: 10, marginHorizontal: 16, paddingTop: 6, paddingBottom: 8, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1, borderColor: dark ? F.bannerBorderDark : F.bannerBorder }, grad(`linear-gradient(90deg, ${a}, ${b} 50%, ${a})`)]}>
       <Diya />
       <View style={{ alignItems: "center" }}>
-        <Text style={{ fontSize: 15, lineHeight: 18.75, fontWeight: "800", color: ink }}>Happy Diwali 🪔</Text>
+        <Text style={{ fontSize: 15, lineHeight: 18.75, fontWeight: "800", color: ink }}>Happy Diwali</Text>
         <Text style={{ fontSize: 12, lineHeight: 15.6, fontWeight: "500", color: ink }}>Wishing you light, joy and good health</Text>
       </View>
       <Diya />
@@ -69,7 +70,7 @@ export function DiwaliBanner() {
 function HeaderIcon({ name, onPress, label, festive }: { name: IconName; onPress?: () => void; label: string; festive: boolean }) {
   return (
     <Pressable accessibilityLabel={label} onPress={onPress} hitSlop={4} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: lit.iconBtnBg, borderWidth: 1, borderColor: festive ? F.iconBorder : lit.iconBtnBorder, alignItems: "center", justifyContent: "center" }}>
-      <Icon name={name} size={18} color="#FFFFFF" />
+      <Icon name={name} size={18} color={pal.white} />
     </Pressable>
   );
 }
@@ -94,20 +95,20 @@ export function AppHeader({ variant = "default", title, area = "Set location", o
       <View style={[row, { gap: 8, height: 40 }]}>
         {variant === "page" ? (
           <Pressable accessibilityLabel="Back" onPress={onBack} style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: lit.backBg, alignItems: "center", justifyContent: "center" }}>
-            <Icon name="back" size={20} color="#FFFFFF" />
+            <Icon name="back" size={20} color={pal.white} />
           </Pressable>
         ) : (
-          <Text style={{ fontSize: 19, lineHeight: 19, fontWeight: "800", letterSpacing: -0.57, color: on ? F.logo : "#FFFFFF" }}>Relifish</Text>
+          <Text style={{ fontSize: 19, lineHeight: 19, fontWeight: "800", letterSpacing: -0.57, color: on ? F.logo : pal.white }}>Relifish</Text>
         )}
         {variant === "page" ? (
           title === "Relifish"
-            ? <View style={{ flex: 1 }}><Text style={{ alignSelf: "flex-start", fontSize: 19, lineHeight: 19, fontWeight: "800", letterSpacing: -0.57, color: on ? F.logo : "#FFFFFF" }}>Relifish</Text></View>
-            : <Text numberOfLines={1} style={{ flex: 1, fontSize: 14, lineHeight: lh(14), fontWeight: "700", color: "#FFFFFF" }}>{title}</Text>
+            ? <View style={{ flex: 1 }}><Text style={{ alignSelf: "flex-start", fontSize: 19, lineHeight: 19, fontWeight: "800", letterSpacing: -0.57, color: on ? F.logo : pal.white }}>Relifish</Text></View>
+            : <Text numberOfLines={1} style={{ flex: 1, fontSize: 14, lineHeight: lh(14), fontWeight: "700", color: pal.white }}>{title}</Text>
         ) : (
           <Pressable accessibilityRole="button" accessibilityLabel="Change location" onPress={onLocation} style={[row, { flex: 1, gap: 4 }]}>
-            <Icon name="pin" size={14} color={on ? F.logo : "#FFFFFF"} />
-            <Text numberOfLines={1} style={{ flexShrink: 1, fontSize: 14, lineHeight: lh(14), fontWeight: "700", color: "#FFFFFF" }}>{area}</Text>
-            <Icon name="chevronDown" size={10} color="#FFFFFF" />
+            <Icon name="pin" size={14} color={on ? F.logo : pal.white} />
+            <Text numberOfLines={1} style={{ flexShrink: 1, fontSize: 14, lineHeight: lh(14), fontWeight: "700", color: pal.white }}>{area}</Text>
+            <Icon name="chevronDown" size={10} color={pal.white} />
           </Pressable>
         )}
         <HeaderIcon name={dark ? "moon" : "sun"} label="Toggle theme" onPress={onTheme ?? (() => setThemePref(dark ? "light" : "dark"))} festive={on} />
@@ -124,7 +125,7 @@ export function BottomNav({ items, active, onPress, safeBottom = true }: { items
   const inset = useSafeAreaInsets().bottom;
   const bottom = safeBottom ? inset : 0;
   return (
-    <View style={[{ flexDirection: "row", height: 64 + bottom, paddingBottom: bottom, backgroundColor: t.bg, borderTopWidth: 1, borderTopColor: t.border }, shadowCss("0px -4px 16px 0px rgba(0, 0, 0, 0.06)")]}>
+    <View style={[{ flexDirection: "row", height: 64 + bottom, paddingBottom: bottom, backgroundColor: t.bg, borderTopWidth: 1, borderTopColor: t.border }, shadowCss(`0px -4px 16px 0px ${pal.a0_0_0_006}`)]}>
       {items.map((it) => {
         const on = it.key === active;
         const color = on ? t.brand : t.ink4;
@@ -134,7 +135,7 @@ export function BottomNav({ items, active, onPress, safeBottom = true }: { items
               <Icon name={`${it.icon}${on ? "F" : "O"}` as IconName} size={on ? 23 : 22} color={color} />
             </View>
             <Text style={{ marginTop: on ? 3 : 3, fontSize: 12, lineHeight: 12, letterSpacing: 0.12, fontWeight: on ? "700" : "500", color }}>{it.label}</Text>
-            {it.badge ? <View style={{ position: "absolute", top: 6, right: "30%", minWidth: 16, height: 16, borderRadius: 8, backgroundColor: t.red, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "700" }}>{it.badge}</Text></View> : null}
+            {it.badge ? <View style={{ position: "absolute", top: 6, right: "30%", minWidth: 16, height: 16, borderRadius: 8, backgroundColor: t.red, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 }}><Text style={{ color: pal.white, fontSize: 10, fontWeight: "700" }}>{it.badge}</Text></View> : null}
           </Pressable>
         );
       })}
@@ -150,11 +151,11 @@ export function DashboardHero({ shop, statsOpen, onStats, safeTop = true }: { sh
   return (
     <View style={[{ padding: 16, paddingTop: 16 + (safeTop ? top : 0), ...row, justifyContent: "space-between" }, grad(lit.dashGrad)]}>
       <View>
-        <Text style={{ fontSize: 12, lineHeight: lh(12), color: "#FFFFFF", opacity: 0.9 }}>Good day, {shop}</Text>
-        <Text style={{ marginTop: 2, fontSize: 20, lineHeight: lh(20), fontWeight: "800", color: "#FFFFFF" }}>Today's pipeline</Text>
+        <Text style={{ fontSize: 12, lineHeight: lh(12), color: pal.white, opacity: 0.9 }}>Good day, {shop}</Text>
+        <Text style={{ marginTop: 2, fontSize: 20, lineHeight: lh(20), fontWeight: "800", color: pal.white }}>Today's pipeline</Text>
       </View>
-      <Pressable onPress={onStats} style={{ backgroundColor: "rgba(255, 255, 255, 0.2)", borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12 }}>
-        <Text style={{ fontSize: 11, lineHeight: lh(11), fontWeight: "600", color: "#FFFFFF" }}>Stats {statsOpen ? "▲" : "▼"}</Text>
+      <Pressable onPress={onStats} style={{ backgroundColor: pal.a255_255_255_02, borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12 }}>
+        <Text style={{ fontSize: 11, lineHeight: lh(11), fontWeight: "600", color: pal.white }}>Stats {statsOpen ? "▲" : "▼"}</Text>
       </Pressable>
     </View>
   );
@@ -168,14 +169,14 @@ export function DashboardTabs({ tabs, active, onTab, search, onSearch, range, ty
   const t = useTheme();
   const sel = { backgroundColor: t.bg2, borderWidth: 1, borderColor: t.border, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 8 };
   return (
-    <View style={[{ backgroundColor: t.bg }, shadowCss("0px 4px 10px 0px rgba(15, 23, 42, 0.08)")]}>
+    <View style={[{ backgroundColor: t.bg }, shadowCss(`0px 4px 10px 0px ${pal.a15_23_42_008}`)]}>
       <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: t.border }}>
         {tabs.map((x) => {
           const on = x.key === active;
           return (
             <Pressable key={x.key} onPress={() => onTab(x.key)} style={[row, { flex: 1, justifyContent: "center", gap: 6, paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: on ? t.brand : "transparent", marginBottom: -1 }]}>
               <Text style={{ fontSize: 12, lineHeight: lh(12), fontWeight: "600", color: on ? t.brand : t.ink3 }}>{x.label}</Text>
-              {x.count != null ? <View style={{ backgroundColor: t.red, borderRadius: 9999, paddingVertical: 1, paddingHorizontal: 6 }}><Text style={{ fontSize: 10, lineHeight: 12, fontWeight: "600", color: "#FFFFFF" }}>{x.count}</Text></View> : null}
+              {x.count != null ? <View style={{ backgroundColor: t.red, borderRadius: 9999, paddingVertical: 1, paddingHorizontal: 6 }}><Text style={{ fontSize: 10, lineHeight: 12, fontWeight: "600", color: pal.white }}>{x.count}</Text></View> : null}
             </Pressable>
           );
         })}

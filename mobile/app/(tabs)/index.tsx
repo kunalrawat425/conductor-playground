@@ -51,10 +51,10 @@ export default function Home() {
   // The banner asks for notifications while that is undecided (shop.astro maybeAskNotifications), says how when blocked,
   // and otherwise is the pre-order banner that switches the Pre-order filter on.
   const banner = perm === "undetermined"
-    ? { icon: "🔔", title: "Allow notifications", text: "Get the latest updates on fresh listings and prices", cta: "Allow", onPress: async () => { const N = await import("expo-notifications"); await N.requestPermissionsAsync(); const p = await notifPerm(); setPerm(p); if (p === "granted") import("../../src/push").then((m) => m.registerPush()); } }
+    ? { icon: "bell" as const, title: "Allow notifications", text: "Get the latest updates on fresh listings and prices", cta: "Allow", onPress: async () => { const N = await import("expo-notifications"); await N.requestPermissionsAsync(); const p = await notifPerm(); setPerm(p); if (p === "granted") import("../../src/push").then((m) => m.registerPush()); } }
     : perm === "denied"
-      ? { icon: "🔕", title: "Notifications are off", text: "Turn them on to get fresh listings and prices first", cta: "How", onPress: () => Linking.openSettings() }
-      : { icon: "🌙", title: "Pre-order fresh fish", text: "Pre-order for tomorrow or later · pick a delivery time", cta: "Browse", onPress: () => setF((x) => ({ ...x, time: x.time === "preorder" ? null : "preorder" })) };
+      ? { icon: "bell" as const, title: "Notifications are off", text: "Turn them on to get fresh listings and prices first", cta: "How", onPress: () => Linking.openSettings() }
+      : { icon: "moon" as const, title: "Pre-order fresh fish", text: "Pre-order for tomorrow or later · pick a delivery time", cta: "Browse", onPress: () => setF((x) => ({ ...x, time: x.time === "preorder" ? null : "preorder" })) };
 
   const isActive = (k: string) => (k === "all" ? !f.time && !f.fulfill && !f.topRated : k === "open" || k === "preorder" ? f.time === k : k === "pickup" || k === "delivery" ? f.fulfill === k : f.topRated);
   const tap = (k: string) => setF((x) => (k === "all" ? { ...x, time: null, fulfill: null, topRated: false } : k === "open" || k === "preorder" ? { ...x, time: x.time === k ? null : (k as any) } : k === "pickup" || k === "delivery" ? { ...x, fulfill: x.fulfill === k ? null : (k as any) } : { ...x, topRated: !x.topRated }));
@@ -75,7 +75,7 @@ export default function Home() {
         {!groups ? (
           <View style={{ alignItems: "center", gap: 12, paddingVertical: 48 }}><ActivityIndicator size="large" color={t.brand} /><Text style={{ fontSize: 14, fontWeight: "600", color: t.ink3 }}>Finding sellers near you…</Text></View>
         ) : shown.length === 0 ? (
-          <EmptyState icon="🎣" title="Not serviceable in your area yet" desc="We're adding new sellers. Join the waitlist and we'll notify you when a seller goes live near you." cta="Join waitlist →" onCta={() => Linking.openURL("https://www.relifish.com/#wl-form")} ghost="📞 Call us →" onGhost={() => Linking.openURL("tel:+919152207607")} />
+          <EmptyState icon="pin" title="Not serviceable in your area yet" desc="We're adding new sellers. Join the waitlist and we'll notify you when a seller goes live near you." cta="Join waitlist →" onCta={() => Linking.openURL("https://www.relifish.com/#wl-form")} ghost="Call us →" onGhost={() => Linking.openURL("tel:+919152207607")} />
         ) : (
           <View style={{ gap: 12 }}>{shown.map((g) => { const m = sellerCardModel(g); return <SellerCard key={m.id} {...m} onPress={() => router.push(`/seller/${m.id}`)} />; })}</View>
         )}

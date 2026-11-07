@@ -15,6 +15,7 @@ import { AppHeader } from "../../src/ui/chrome";
 import { Button, EmptyState, Input, SheetHeader } from "../../src/ui/atoms";
 import { lh, row, Text } from "../../src/ui/base";
 import { Icon, type IconName } from "../../src/ui/icons";
+import { pal } from "../../src/theme/palette";
 
 export default function Account() {
   const t = useTheme();
@@ -124,8 +125,8 @@ export default function Account() {
 
         {cap("Updates")}
         <View style={card}>
-          {listRow("bell", "Order updates (notifications)", () => toggleNotif(!notif), <Switch value={notif} onValueChange={toggleNotif} trackColor={{ true: t.green, false: t.bg3 }} thumbColor="#FFFFFF" />, true)}
-          {listRow("msg", "WhatsApp updates", () => toggleWa(!wa), <Switch value={wa} onValueChange={toggleWa} trackColor={{ true: t.green, false: t.bg3 }} thumbColor="#FFFFFF" />)}
+          {listRow("bell", "Order updates (notifications)", () => toggleNotif(!notif), <Switch value={notif} onValueChange={toggleNotif} trackColor={{ true: t.green, false: t.bg3 }} thumbColor={pal.white} />, true)}
+          {listRow("msg", "WhatsApp updates", () => toggleWa(!wa), <Switch value={wa} onValueChange={toggleWa} trackColor={{ true: t.green, false: t.bg3 }} thumbColor={pal.white} />)}
         </View>
 
         {cap("More")}
@@ -138,7 +139,7 @@ export default function Account() {
         <Text style={{ textAlign: "center", fontSize: 11, color: t.ink4, paddingTop: 12 }}>Made in Mumbai · v{Constants.expoConfig?.version}</Text>
       </ScrollView>
       <Modal visible={edit} transparent animationType="slide" onRequestClose={() => setEdit(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.5)" }} onPress={() => setEdit(false)} />
+        <Pressable style={{ flex: 1, backgroundColor: pal.a15_23_42_05 }} onPress={() => setEdit(false)} />
         <View style={{ backgroundColor: t.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 24 }}>
           <SheetHeader title="Edit profile" onClose={() => setEdit(false)} />
           <View style={{ padding: 16, gap: 12 }}>

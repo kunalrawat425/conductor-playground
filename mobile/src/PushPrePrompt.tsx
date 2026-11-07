@@ -12,6 +12,7 @@ import { Button } from "./ui/atoms";
 import { Text } from "./ui/base";
 import { Icon, type IconName } from "./ui/icons";
 import { ga } from "./track";
+import { pal } from "./theme/palette";
 
 const KEY = "rlf_push_preprompt";
 export function PushPrePrompt({ preview }: { /** gallery: always open */ preview?: boolean } = {}) {
@@ -36,7 +37,7 @@ export function PushPrePrompt({ preview }: { /** gallery: always open */ preview
   const rows: [IconName, string][] = [["check", "Seller confirmed your order, with the delivery slot"], ["truck", "Out for delivery, with the time"], ["card", "Refund updates if an order can't go ahead"]];
   return (
     <Modal visible={show} transparent animationType="slide" onRequestClose={() => done("later")} statusBarTranslucent>
-      <Pressable style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.5)" }} onPress={() => done("later")} />
+      <Pressable style={{ flex: 1, backgroundColor: pal.a15_23_42_05 }} onPress={() => done("later")} />
       <View style={{ backgroundColor: t.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 24, paddingHorizontal: 20, paddingBottom: insets.bottom + 16 }}>
         <View style={{ alignSelf: "center", width: 64, height: 64, borderRadius: 32, backgroundColor: t.brandL, alignItems: "center", justifyContent: "center" }}><Icon name="bell" size={28} color={t.brand} /></View>
         <Text style={{ marginTop: 14, textAlign: "center", fontSize: 21, lineHeight: 27, fontWeight: "800" }}>Know the moment your fish is on its way</Text>

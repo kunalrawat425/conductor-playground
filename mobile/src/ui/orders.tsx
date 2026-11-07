@@ -3,19 +3,20 @@ import { Pressable, View } from "react-native";
 import { lit, useTheme } from "../theme";
 import { grad, lh, row, Text } from "./base";
 import { Badge } from "./shop";
+import { pal } from "../theme/palette";
 
 export type StepDot = { label: string; state: "done" | "fail" | "todo" | "now" };
 /** .v2-stepper: dots (done ✓ green, failed ✕ red, todo grey) joined by 2 px lines, labels under (11/500, last bold coloured). */
 export function Stepper({ steps, size = 22, labelSize = 11, failLine }: { steps: StepDot[]; size?: number; labelSize?: number; failLine?: string }) {
   const t = useTheme();
-  const col = (s: StepDot["state"]) => (s === "done" ? t.green : s === "fail" ? t.red : s === "now" ? t.brand : "#CBD5E1");
+  const col = (s: StepDot["state"]) => (s === "done" ? t.green : s === "fail" ? t.red : s === "now" ? t.brand : pal.hCBD5E1);
   return (
     <View>
       <View style={row}>
         {steps.map((s, i) => (
           <View key={i} style={[row, { flex: i ? 1 : 0 }]}>
-            {i ? <View style={{ flex: 1, height: 2, marginHorizontal: 4, backgroundColor: s.state === "fail" ? failLine ?? t.green : s.state === "todo" || s.state === "now" ? "#CBD5E1" : t.green }} /> : null}
-            <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: col(s.state), alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 11, fontWeight: "700", color: "#FFFFFF" }}>{s.state === "done" ? "✓" : s.state === "fail" ? "✕" : String(i + 1)}</Text></View>
+            {i ? <View style={{ flex: 1, height: 2, marginHorizontal: 4, backgroundColor: s.state === "fail" ? failLine ?? t.green : s.state === "todo" || s.state === "now" ? pal.hCBD5E1 : t.green }} /> : null}
+            <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: col(s.state), alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 11, fontWeight: "700", color: pal.white }}>{s.state === "done" ? "✓" : s.state === "fail" ? "✕" : String(i + 1)}</Text></View>
           </View>
         ))}
       </View>
@@ -40,7 +41,7 @@ export function BuyerOrderCard({ status, tone, seller, line, steps, onPress, pil
       <Text style={{ marginTop: 6, fontSize: 15, lineHeight: lh(15), fontWeight: "800" }}>{seller}</Text>
       <Text style={{ marginTop: 2, fontSize: 11, lineHeight: lh(11), color: t.ink3 }}>{line}</Text>
       <View style={{ marginTop: 10 }}><Stepper steps={steps} failLine={lit.redSoftBorder} /></View>
-      {refund ? <View style={{ marginTop: 10, paddingVertical: 8, paddingHorizontal: 10, backgroundColor: "#F5F3FF", borderRadius: 6 }}><Text style={{ fontSize: 11, fontWeight: "600", color: "#7C3AED" }}>{refund}</Text></View> : null}
+      {refund ? <View style={{ marginTop: 10, paddingVertical: 8, paddingHorizontal: 10, backgroundColor: pal.hF5F3FF, borderRadius: 6 }}><Text style={{ fontSize: 11, fontWeight: "600", color: pal.h7C3AED }}>{refund}</Text></View> : null}
     </Pressable>
   );
 }
@@ -53,12 +54,12 @@ export function OrderPill({ text, bg, fg, border }: { text: string; bg: string; 
 /** .v2-active-order: light-blue gradient card, #93C5FD border, pills row, seller 16/800, sub 12, slot / prep lines, stepper. */
 export function ActiveOrderCard({ pills, seller, sub, slot, prep, steps, onPress }: { pills: React.ReactNode; seller: string; sub: string; slot?: string | null; prep?: string | null; steps: StepDot[]; onPress?: () => void }) {
   return (
-    <Pressable onPress={onPress} style={[{ marginHorizontal: 16, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: "#93C5FD" }, grad("linear-gradient(135deg, #E6F0FF, #DBEAFE)")]}>
+    <Pressable onPress={onPress} style={[{ marginHorizontal: 16, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: pal.h93C5FD }, grad(`linear-gradient(135deg, ${pal.hE6F0FF}, ${pal.hDBEAFE})`)]}>
       <View style={[row, { gap: 4, flexWrap: "wrap", marginBottom: 6 }]}>{pills}</View>
-      <Text style={{ fontSize: 16, lineHeight: lh(16), fontWeight: "800", color: "#1E293B" }}>{seller}</Text>
-      <Text style={{ marginTop: 4, fontSize: 12, lineHeight: lh(12), color: "#475569" }}>{sub}</Text>
-      {slot ? <Text style={{ marginTop: 4, fontSize: 12, fontWeight: "700", color: "#0F172A" }}>🕘 {slot}</Text> : null}
-      {prep ? <Text style={{ marginTop: 4, fontSize: 11, fontWeight: "500", color: "#475569" }}>{prep}</Text> : null}
+      <Text style={{ fontSize: 16, lineHeight: lh(16), fontWeight: "800", color: pal.h1E293B }}>{seller}</Text>
+      <Text style={{ marginTop: 4, fontSize: 12, lineHeight: lh(12), color: pal.h475569 }}>{sub}</Text>
+      {slot ? <Text style={{ marginTop: 4, fontSize: 12, fontWeight: "700", color: pal.h0F172A }}>{slot}</Text> : null}
+      {prep ? <Text style={{ marginTop: 4, fontSize: 11, fontWeight: "500", color: pal.h475569 }}>{prep}</Text> : null}
       <View style={{ marginTop: 16 }}><Stepper steps={steps} /></View>
     </Pressable>
   );
@@ -68,9 +69,9 @@ export function ActiveOrderCard({ pills, seller, sub, slot, prep, steps, onPress
 export function StatusHero({ status, id, time, tone }: { status: string; id: string; time?: string; tone: keyof typeof lit.odHero }) {
   return (
     <View style={[{ marginHorizontal: 16, marginTop: 16, paddingVertical: 20, paddingHorizontal: 16, borderRadius: 16, alignItems: "center" }, grad(lit.odHero[tone])]}>
-      <Text style={{ fontSize: 18, lineHeight: lh(18), fontWeight: "800", color: "#FFFFFF" }}>{status}</Text>
-      <Text style={{ marginTop: 8, fontSize: 12, lineHeight: lh(12), fontWeight: "600", color: "#FFFFFF", opacity: 0.9 }}>Order {id}</Text>
-      {time ? <Text style={{ marginTop: 2, fontSize: 11, lineHeight: lh(11), color: "#FFFFFF", opacity: 0.8 }}>{time}</Text> : null}
+      <Text style={{ fontSize: 18, lineHeight: lh(18), fontWeight: "800", color: pal.white }}>{status}</Text>
+      <Text style={{ marginTop: 8, fontSize: 12, lineHeight: lh(12), fontWeight: "600", color: pal.white, opacity: 0.9 }}>Order {id}</Text>
+      {time ? <Text style={{ marginTop: 2, fontSize: 11, lineHeight: lh(11), color: pal.white, opacity: 0.8 }}>{time}</Text> : null}
     </View>
   );
 }
@@ -115,7 +116,7 @@ export function Timeline({ steps }: { steps: TimelineStep[] }) {
           <View key={i} style={{ flexDirection: "row", gap: 14 }}>
             <View style={{ alignItems: "center", width: 24 }}>
               <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: s.state === "now" ? t.bg : c, borderWidth: s.state === "now" ? 2 : 0, borderColor: c, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontSize: 12, fontWeight: "800", color: s.state === "now" ? t.brand : s.state === "todo" ? t.ink4 : "#FFFFFF" }}>{s.state === "done" ? "✓" : s.state === "fail" ? "✕" : String(i + 1)}</Text>
+                <Text style={{ fontSize: 12, fontWeight: "800", color: s.state === "now" ? t.brand : s.state === "todo" ? t.ink4 : pal.white }}>{s.state === "done" ? "✓" : s.state === "fail" ? "✕" : String(i + 1)}</Text>
               </View>
               {i < steps.length - 1 ? <View style={{ flex: 1, width: 2, minHeight: 22, backgroundColor: s.state === "done" ? t.green : t.bg3 }} /> : null}
             </View>
@@ -134,9 +135,9 @@ export function Timeline({ steps }: { steps: TimelineStep[] }) {
 export function TrackHero({ kicker, title, sub, tone }: { kicker: string; title: string; sub?: string; tone: keyof typeof lit.odHero }) {
   return (
     <View style={[{ marginHorizontal: 16, marginTop: 16, padding: 18, borderRadius: 16 }, grad(lit.odHero[tone])]}>
-      <Text style={{ fontSize: 12, fontWeight: "800", letterSpacing: 0.9, color: "#FFFFFF", opacity: 0.9 }}>{kicker}</Text>
-      <Text style={{ marginTop: 4, fontSize: 24, lineHeight: 30, fontWeight: "800", color: "#FFFFFF" }}>{title}</Text>
-      {sub ? <Text style={{ marginTop: 4, fontSize: 14, lineHeight: 20, color: "#FFFFFF", opacity: 0.92 }}>{sub}</Text> : null}
+      <Text style={{ fontSize: 12, fontWeight: "800", letterSpacing: 0.9, color: pal.white, opacity: 0.9 }}>{kicker}</Text>
+      <Text style={{ marginTop: 4, fontSize: 24, lineHeight: 30, fontWeight: "800", color: pal.white }}>{title}</Text>
+      {sub ? <Text style={{ marginTop: 4, fontSize: 14, lineHeight: 20, color: pal.white, opacity: 0.92 }}>{sub}</Text> : null}
     </View>
   );
 }

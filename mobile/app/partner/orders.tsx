@@ -11,6 +11,7 @@ import { Button, Card, Loading, s, Text } from "../../src/ui";
 import { paymentMethodLabel, refundableAmount, refundDueRupees, refundStatus, wasActuallyPaid } from "../../../src/lib/order-payment-state";
 import { DashboardHero, DashboardTabs } from "../../src/ui/chrome";
 import { KpiStrip, PrepList, SellerOrderCard, type OcBadge } from "../../src/ui/dashboard";
+import { pal } from "../../src/theme/palette";
 
 const RANGES = [["Today", 1], ["Last 7 days", 7], ["Last 30 days", 30], ["All time", 0]] as const;
 const TYPES = ["All", "Delivery", "Pickup", "Pre-order"] as const;
@@ -121,7 +122,7 @@ export default function PartnerOrders() {
   return (
     <View style={{ flex: 1, backgroundColor: t.page }}>
       <DashboardHero shop={name || "seller"} statsOpen={stats} onStats={() => setStats(!stats)} />
-      <View style={{ backgroundColor: "#10B981" }}><KpiStrip items={[{ v: String(data.counts?.pending ?? 0), l: "to confirm" }, { v: String(data.counts?.accepted ?? 0), l: "in progress" }, stats ? { v: `₹${(data.today_gmv || 0).toLocaleString("en-IN")}`, l: "today" } : { v: nextSlot ? slotDayLabel(nextSlot).replace(/^(\w+) (\d+).*/, "$1 $2") : "None", l: "next slot" }]} /></View>
+      <View style={{ backgroundColor: pal.h10B981 }}><KpiStrip items={[{ v: String(data.counts?.pending ?? 0), l: "to confirm" }, { v: String(data.counts?.accepted ?? 0), l: "in progress" }, stats ? { v: `₹${(data.today_gmv || 0).toLocaleString("en-IN")}`, l: "today" } : { v: nextSlot ? slotDayLabel(nextSlot).replace(/^(\w+) (\d+).*/, "$1 $2") : "None", l: "next slot" }]} /></View>
       <DashboardTabs active={tab} onTab={(k) => { setTab(k); setData({ ...data, orders: [] }); load(k); }}
         tabs={TABS.map(([k, label]) => ({ key: k, label, count: (k === "completed" ? (data.counts?.completed || 0) + (data.counts?.declined || 0) : data.counts?.[k] || 0) || undefined }))}
         search={q} onSearch={setQ} range={RANGES[range][0]} type={TYPES[type]} onRange={() => setRange((range + 1) % RANGES.length)} onType={() => setType((type + 1) % TYPES.length)}
@@ -149,8 +150,8 @@ export default function PartnerOrders() {
           const extra = (
             <>
               {plan.note && plan.note.tone !== "green" ? <View style={{ padding: 10, borderRadius: 8, backgroundColor: tone[plan.note.tone][0] }}><Text style={{ fontSize: 12, fontWeight: "600", lineHeight: 17, color: tone[plan.note.tone][1] }}>{plan.note.text}</Text></View> : null}
-              {o.delivery_slot_start ? <Text style={{ fontSize: 12, fontWeight: "600", color: t.ink2 }}>🕒 {slotTimeLabel(o.delivery_slot_start, o.delivery_slot_end)}, {slotDayLabel(o.delivery_slot_start)}</Text> : null}
-              {o.cut_style || o.buyer_notes ? <Text style={{ fontSize: 11, fontWeight: "500", color: t.ink2 }}>{[o.cut_style ? `✂️ ${o.cut_style}` : "", o.buyer_notes ? `📝 ${o.buyer_notes}` : ""].filter(Boolean).join(" · ")}</Text> : null}
+              {o.delivery_slot_start ? <Text style={{ fontSize: 12, fontWeight: "600", color: t.ink2 }}>{slotTimeLabel(o.delivery_slot_start, o.delivery_slot_end)}, {slotDayLabel(o.delivery_slot_start)}</Text> : null}
+              {o.cut_style || o.buyer_notes ? <Text style={{ fontSize: 11, fontWeight: "500", color: t.ink2 }}>{[o.cut_style ? `${o.cut_style}` : "", o.buyer_notes ? `${o.buyer_notes}` : ""].filter(Boolean).join(" · ")}</Text> : null}
               {addr ? <Pressable onPress={() => Linking.openURL(addr.lat && addr.lng ? `https://www.google.com/maps/dir/?api=1&destination=${addr.lat},${addr.lng}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(where)}`)}><Text style={{ fontSize: 12, fontWeight: "600", color: t.link }}>Open in Maps →</Text></Pressable> : null}
               {o.cancel_reason && ["cancelled", "declined"].includes(o.status) ? <Text style={{ fontSize: 12, color: t.ink2 }}>Reason: {o.cancel_reason}</Text> : null}
               {plan.finalPrice ? (
@@ -182,7 +183,7 @@ export default function PartnerOrders() {
         }}
       />
       <Modal visible={!!ask} transparent animationType="fade" onRequestClose={() => setAsk(null)}>
-        <View style={{ flex: 1, backgroundColor: "rgba(15,23,42,0.5)", justifyContent: "center", padding: 24 }}>
+        <View style={{ flex: 1, backgroundColor: pal.a15_23_42_05, justifyContent: "center", padding: 24 }}>
           <View style={{ backgroundColor: t.card, borderRadius: radius.lg, padding: 18 }}>
             <Text style={{ fontSize: 17, fontWeight: "800" }}>{ask && ASK[ask.act.action].title}</Text>
             <Text style={{ fontSize: 13, color: t.ink3, marginTop: 4 }}>{ask && ASK[ask.act.action].note}</Text>

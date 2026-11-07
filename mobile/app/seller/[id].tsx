@@ -25,6 +25,8 @@ import { AppHeader, BottomNav, BUYER_NAV } from "../../src/ui/chrome";
 import { CartBubble, ItemCard, MenuHeader, ScheduleStrip, SellerHero, TierRow } from "../../src/ui/shop";
 import { EmptyState } from "../../src/ui/atoms";
 import { Text } from "../../src/ui/base";
+import { Icon } from "../../src/ui/icons";
+import { pal } from "../../src/theme/palette";
 
 export default function SellerPage() {
   const { id, checkout } = useLocalSearchParams<{ id: string; checkout?: string }>();
@@ -85,7 +87,7 @@ export default function SellerPage() {
   const items = mine.reduce((n, l) => n + l.packs, 0);
   const minGap = Number(seller.min_order_amount) > 0 ? Number(seller.min_order_amount) - cart.total : 0;
   const freeHit = Number(seller.free_delivery_above) > 0 && cart.total >= Number(seller.free_delivery_above);
-  const chip = minGap > 0 ? { text: `Add ₹${minGap} more to checkout`, color: t.orange } : m.nextSlot ? { text: `${m.pre ? "🌙" : "🛵"} Next delivery slot: ${m.nextSlot}${freeHit ? " · free delivery" : ""}`, color: m.pre ? "#7C3AED" : t.green } : null;
+  const chip = minGap > 0 ? { text: `Add ₹${minGap} more to checkout`, color: t.orange } : m.nextSlot ? { text: `${m.pre ? "" : ""} Next delivery slot: ${m.nextSlot}${freeHit ? " · free delivery" : ""}`, color: m.pre ? pal.h7C3AED : t.green } : null;
   const opensAt = timeLabel(seller.opens_at) || "5 AM", closesAt = timeLabel(seller.closes_at) || "11 AM";
 
   return (
@@ -97,15 +99,15 @@ export default function SellerPage() {
           stats={[{ v: String(m.listings.length), l: "Items" }, m.open ? { v: "Open", l: `Until ${closesAt}`, live: true } : m.pre ? { v: "Pre-order now", l: `for ${m.deliveryFor}`, live: true } : { v: "Closed", l: m.closedLabel || `Opens ${opensAt}` }]} />
         <ScheduleStrip sameDay={m.sameDay} preorder={m.preSchedule} />
         {m.pre && !m.slotLine ? (
-          <View style={{ marginTop: 12, marginHorizontal: 16, padding: 12, paddingHorizontal: 14, backgroundColor: "#F3E8FF", borderWidth: 1, borderColor: "#DDD6FE", borderRadius: 12, flexDirection: "row", gap: 10, alignItems: "center" }}>
-            <Text style={{ fontSize: 20 }}>🌙</Text>
-            <View style={{ flex: 1 }}><Text style={{ fontSize: 13, fontWeight: "700", color: "#7C3AED" }}>{m.preorderLine || `Pre-ordering for ${m.deliveryFor}`}</Text><Text style={{ marginTop: 2, fontSize: 11, color: "#6D28D9" }}>For {m.deliveryFor}. Your order is reserved from that morning's fresh catch.</Text></View>
+          <View style={{ marginTop: 12, marginHorizontal: 16, padding: 12, paddingHorizontal: 14, backgroundColor: pal.hF3E8FF, borderWidth: 1, borderColor: pal.hDDD6FE, borderRadius: 12, flexDirection: "row", gap: 10, alignItems: "center" }}>
+            <Icon name="moon" size={20} color={pal.h7C3AED} />
+            <View style={{ flex: 1 }}><Text style={{ fontSize: 13, fontWeight: "700", color: pal.h7C3AED }}>{m.preorderLine || `Pre-ordering for ${m.deliveryFor}`}</Text><Text style={{ marginTop: 2, fontSize: 11, color: pal.h6D28D9 }}>For {m.deliveryFor}. Your order is reserved from that morning's fresh catch.</Text></View>
           </View>
         ) : !m.pre && m.preorderLine && !m.open ? (
-          <View style={{ marginTop: 12, marginHorizontal: 16, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: "#F3E8FF", borderWidth: 1, borderColor: "#DDD6FE", borderRadius: 12 }}><Text style={{ fontSize: 13, fontWeight: "700", color: "#7C3AED" }}>🌙 {m.preorderLine}</Text></View>
+          <View style={{ marginTop: 12, marginHorizontal: 16, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: pal.hF3E8FF, borderWidth: 1, borderColor: pal.hDDD6FE, borderRadius: 12 }}><Text style={{ fontSize: 13, fontWeight: "700", color: pal.h7C3AED }}>{m.preorderLine}</Text></View>
         ) : null}
         {m.listings.length === 0 ? (
-          <View style={{ marginTop: 16 }}><EmptyState icon="🔍" title="No items available" desc={seller.accepts_preorder ? "Pre-order for tomorrow or later instead." : "Check back during opening hours."} cta={seller.accepts_preorder ? "Pre-order" : "Browse sellers"} onCta={() => router.replace("/")} /></View>
+          <View style={{ marginTop: 16 }}><EmptyState icon="search" title="No items available" desc={seller.accepts_preorder ? "Pre-order for tomorrow or later instead." : "Check back during opening hours."} cta={seller.accepts_preorder ? "Pre-order" : "Browse sellers"} onCta={() => router.replace("/")} /></View>
         ) : (
           <>
             <MenuHeader title={m.closed ? (m.preorderOnly ? "Menu (pre-orders paused)" : "Menu (Closed)") : m.pre ? "Pre-order Menu" : "Today's Menu"} count={m.count} />
@@ -127,16 +129,16 @@ export default function SellerPage() {
                         <Text style={{ fontSize: 13, lineHeight: 19, fontWeight: "700" }}>{getSpeciesDisplay(l.species)}</Text>
                         <Text style={{ marginTop: 4, marginBottom: 6, fontSize: 12, lineHeight: 18.6, color: t.ink3 }}>{r.parts.join(" + ")}</Text>
                         <Text style={{ fontSize: 16, fontWeight: "800" }}>₹{price.toLocaleString("en-IN")}{Number(o.compare_at_price) > price ? <Text style={{ fontSize: 12, fontWeight: "500", color: t.ink4, textDecorationLine: "line-through" }}>  ₹{Number(o.compare_at_price).toLocaleString("en-IN")}</Text> : null}</Text>
-                        {optionHasDealDisplay({ ...o, price } as any) ? <View style={{ alignSelf: "flex-start", marginTop: 4, backgroundColor: t.brand, borderRadius: 5, paddingVertical: 2, paddingHorizontal: 6 }}><Text style={{ fontSize: 11, fontWeight: "800", letterSpacing: 0.22, color: "#FFFFFF" }}>{optionDiscountPercentDisplay({ ...o, price } as any)}% OFF</Text></View> : null}
+                        {optionHasDealDisplay({ ...o, price } as any) ? <View style={{ alignSelf: "flex-start", marginTop: 4, backgroundColor: t.brand, borderRadius: 5, paddingVertical: 2, paddingHorizontal: 6 }}><Text style={{ fontSize: 11, fontWeight: "800", letterSpacing: 0.22, color: pal.white }}>{optionDiscountPercentDisplay({ ...o, price } as any)}% OFF</Text></View> : null}
                       </View>
                       {count ? (
                         <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: t.brand, borderRadius: 8, height: 30 }}>
-                          <Pressable accessibilityLabel="Remove one" onPress={() => set(count - 1)} style={{ width: 30, alignItems: "center" }}><Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>−</Text></Pressable>
-                          <Text style={{ paddingHorizontal: 6, fontSize: 12, fontWeight: "700", color: "#FFFFFF" }}>{count} pack</Text>
-                          <Pressable accessibilityLabel="Add one" onPress={() => set(count + 1)} style={{ width: 30, alignItems: "center" }}><Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>+</Text></Pressable>
+                          <Pressable accessibilityLabel="Remove one" onPress={() => set(count - 1)} style={{ width: 30, alignItems: "center" }}><Text style={{ fontSize: 16, fontWeight: "700", color: pal.white }}>−</Text></Pressable>
+                          <Text style={{ paddingHorizontal: 6, fontSize: 12, fontWeight: "700", color: pal.white }}>{count} pack</Text>
+                          <Pressable accessibilityLabel="Add one" onPress={() => set(count + 1)} style={{ width: 30, alignItems: "center" }}><Text style={{ fontSize: 16, fontWeight: "700", color: pal.white }}>+</Text></Pressable>
                         </View>
-                      ) : <Pressable accessibilityLabel={`Add ${getSpeciesDisplay(l.species)}`} onPress={() => set(1)} style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: t.brand, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 18, fontWeight: "700", color: "#FFFFFF" }}>+</Text></Pressable>}
-                      {r.ribbon ? <View style={{ position: "absolute", top: -10, right: 10, backgroundColor: r.ribbon === "popular" ? "#EA580C" : "#16A34A", borderRadius: 5, paddingVertical: 3, paddingHorizontal: 8 }}><Text style={{ fontSize: 11, fontWeight: "800", letterSpacing: 0.44, color: "#FFFFFF" }}>{r.ribbon === "popular" ? "MOST POPULAR" : "BEST VALUE"}</Text></View> : null}
+                      ) : <Pressable accessibilityLabel={`Add ${getSpeciesDisplay(l.species)}`} onPress={() => set(1)} style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: t.brand, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 18, fontWeight: "700", color: pal.white }}>+</Text></Pressable>}
+                      {r.ribbon ? <View style={{ position: "absolute", top: -10, right: 10, backgroundColor: r.ribbon === "popular" ? pal.hEA580C : pal.h16A34A, borderRadius: 5, paddingVertical: 3, paddingHorizontal: 8 }}><Text style={{ fontSize: 11, fontWeight: "800", letterSpacing: 0.44, color: pal.white }}>{r.ribbon === "popular" ? "MOST POPULAR" : "BEST VALUE"}</Text></View> : null}
                     </View>
                   );
                 })}

@@ -10,8 +10,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFestive } from "./theme";
 import { grad, Text } from "./ui/base";
 import { DiwaliLights, Diya } from "./ui/chrome";
+import { pal } from "./theme/palette";
 
-const FISH = '<svg viewBox="0 0 64 32"><path d="M4 16c8-11 26-13 40-4l12-8v24l-12-8C30 29 12 27 4 16z" fill="#fff" opacity=".9"/><circle cx="16" cy="14" r="2.4" fill="#0066FF"/></svg>';
+const FISH = `<svg viewBox="0 0 64 32"><path d="M4 16c8-11 26-13 40-4l12-8v24l-12-8C30 29 12 27 4 16z" fill="${pal.white}" opacity=".9"/><circle cx="16" cy="14" r="2.4" fill="${pal.h0066FF}"/></svg>`;
 
 export function Splash({ still }: { /** gallery: no fade */ still?: boolean } = {}) {
   const festive = useFestive();
@@ -27,15 +28,15 @@ export function Splash({ still }: { /** gallery: no fade */ still?: boolean } = 
     return () => { clearTimeout(id); loop.stop(); };
   }, [fade, swim, still]);
   if (!on) return null;
-  const gold = "#FDE7B0";
+  const gold = pal.hFDE7B0;
   return (
-    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { zIndex: 10000, opacity: fade, alignItems: "center", justifyContent: "center", gap: 14, backgroundColor: festive ? "#6E0822" : "#0066FF" },
-      grad(festive ? "radial-gradient(circle at 50% 45%, #B3123B, #6E0822 70%, #4A0618)" : "linear-gradient(160deg, #0066FF, #0047B3)")]}>
+    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { zIndex: 10000, opacity: fade, alignItems: "center", justifyContent: "center", gap: 14, backgroundColor: festive ? pal.h6E0822 : pal.h0066FF },
+      grad(festive ? `radial-gradient(circle at 50% 45%, ${pal.hB3123B}, ${pal.h6E0822} 70%, ${pal.h4A0618})` : `linear-gradient(160deg, ${pal.h0066FF}, ${pal.h0047B3})`)]}>
       {festive ? <View style={{ position: "absolute", top, left: 0, right: 0, height: 22 }}><DiwaliLights height={22} /></View> : null}
       <Image source={festive ? require("../assets/logo-gold.png") : require("../assets/logo-white.png")} style={{ width: "70%", maxWidth: 300, aspectRatio: 600 / 143, height: undefined }} resizeMode="contain" />
-      <Text style={{ marginTop: 2, fontSize: 16, fontWeight: "700", color: festive ? gold : "#FFFFFF" }}>{festive ? "Wishing you light, joy and good health" : "Fresh fish. Cleaned. Cut. At your door."}</Text>
-      <View style={{ width: 140, height: 1, backgroundColor: "rgba(255,255,255,0.35)", marginTop: 8, marginBottom: 2 }} />
-      <Text style={{ fontSize: 11, fontWeight: "700", letterSpacing: 2.42, textTransform: "uppercase", color: festive ? gold : "rgba(255,255,255,0.85)" }}>{festive ? "Happy Diwali" : "From verified Thane & Mumbai sellers"}</Text>
+      <Text style={{ marginTop: 2, fontSize: 16, fontWeight: "700", color: festive ? gold : pal.white }}>{festive ? "Wishing you light, joy and good health" : "Fresh fish. Cleaned. Cut. At your door."}</Text>
+      <View style={{ width: 140, height: 1, backgroundColor: pal.a255_255_255_035, marginTop: 8, marginBottom: 2 }} />
+      <Text style={{ fontSize: 11, fontWeight: "700", letterSpacing: 2.42, textTransform: "uppercase", color: festive ? gold : pal.a255_255_255_085 }}>{festive ? "Happy Diwali" : "From verified Thane & Mumbai sellers"}</Text>
       <View style={{ position: "absolute", bottom: "14%", alignItems: "center" }}>
         {festive ? <Diya /> : <Animated.View style={{ transform: [{ translateY: swim }] }}><SvgXml xml={FISH} width={34} height={17} /></Animated.View>}
       </View>

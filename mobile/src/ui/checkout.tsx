@@ -2,6 +2,9 @@
 import { Image, Pressable, ScrollView, TextInput, View } from "react-native";
 import { lit, useIsDark, useTheme } from "../theme";
 import { grad, lh, row, shadowCss, Text } from "./base";
+import { Icon } from "./icons";
+import { Diya } from "./chrome";
+import { pal } from "../theme/palette";
 
 /** .v2-co-card: 16 radius, 1 px border, 14 pad, 12 px inset from the sheet edges. */
 export function CoCard({ children, title, style }: { children: React.ReactNode; title?: string; style?: any }) {
@@ -21,7 +24,7 @@ export function CheckoutCart({ when, shipment, items, onPickTime, onClear, onQty
   return (
     <CoCard>
       <View style={[row, { gap: 12, minHeight: 61 }]}>
-        <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: t.brandL, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 20 }}>🕗</Text></View>
+        <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: t.brandL, alignItems: "center", justifyContent: "center" }}><Icon name="clock" size={20} color={t.brand} /></View>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 17, lineHeight: 21.25, fontWeight: "800" }}>{when}</Text>
           <Text style={{ marginTop: 3, fontSize: 13, lineHeight: 18, color: t.ink3 }}>{shipment}</Text>
@@ -41,9 +44,9 @@ export function CheckoutCart({ when, shipment, items, onPickTime, onClear, onQty
           </View>
           <View style={{ alignItems: "flex-end", width: 82 }}>
             <View style={[row, { backgroundColor: t.brand, borderRadius: 8, height: 32 }]}>
-              <Pressable accessibilityLabel="Remove one" onPress={() => onQty?.(i, -1)} style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 16, fontWeight: "800", color: "#FFFFFF" }}>−</Text></Pressable>
-              <Text style={{ width: 18, textAlign: "center", fontSize: 13, fontWeight: "800", color: "#FFFFFF" }}>{it.qty}</Text>
-              <Pressable accessibilityLabel="Add one" onPress={() => onQty?.(i, 1)} style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 16, fontWeight: "800", color: "#FFFFFF" }}>+</Text></Pressable>
+              <Pressable accessibilityLabel="Remove one" onPress={() => onQty?.(i, -1)} style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 16, fontWeight: "800", color: pal.white }}>−</Text></Pressable>
+              <Text style={{ width: 18, textAlign: "center", fontSize: 13, fontWeight: "800", color: pal.white }}>{it.qty}</Text>
+              <Pressable accessibilityLabel="Add one" onPress={() => onQty?.(i, 1)} style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 16, fontWeight: "800", color: pal.white }}>+</Text></Pressable>
             </View>
             <Text style={{ marginTop: 6, fontSize: 14, lineHeight: lh(14), fontWeight: "700" }}>
               {it.was ? <Text style={{ fontSize: 12, fontWeight: "500", color: t.ink4, textDecorationLine: "line-through" }}>{it.was} </Text> : null}{it.price}
@@ -60,12 +63,12 @@ export function DiwaliGiftCard({ onOpen }: { onOpen?: () => void }) {
   const t = useTheme();
   return (
     <View style={[row, { marginHorizontal: 12, gap: 12, padding: 14, borderRadius: 16, borderWidth: 1, borderColor: lit.giftBorder }, grad(lit.giftGrad)]}>
-      <Text style={{ fontSize: 36, lineHeight: 36 }}>🪔</Text>
+      <Diya />
       <View style={{ flex: 1 }}>
         <Text style={{ fontSize: 17, lineHeight: lh(17), fontWeight: "800", color: lit.giftTitle }}>Happy Diwali!</Text>
         <Text style={{ marginTop: 3, fontSize: 13, lineHeight: 18, fontWeight: "500", color: lit.giftText }}>Send a Diwali greeting to your family & friends</Text>
       </View>
-      <Pressable onPress={onOpen} style={{ height: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 10, borderWidth: 1, borderColor: t.orange, backgroundColor: "#FFFFFF" }}><Text style={{ fontSize: 14, fontWeight: "800", color: t.orange }}>Open</Text></Pressable>
+      <Pressable onPress={onOpen} style={{ height: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 10, borderWidth: 1, borderColor: t.orange, backgroundColor: pal.white }}><Text style={{ fontSize: 14, fontWeight: "800", color: t.orange }}>Open</Text></Pressable>
     </View>
   );
 }
@@ -81,7 +84,7 @@ export function SuggestRail({ items, onAdd }: { items: Suggest[]; onAdd?: (i: nu
           <View key={i} style={{ width: 118, borderRadius: 14, borderWidth: 1, borderColor: t.border, backgroundColor: t.bg, overflow: "hidden" }}>
             <View style={{ width: 116, height: 116, backgroundColor: t.brandL }}>
               {s.photo ? <Image source={{ uri: s.photo }} style={{ width: 116, height: 116 }} /> : null}
-              <Pressable onPress={() => onAdd?.(i)} style={[{ position: "absolute", left: 26, bottom: 6, width: 64, height: 36, borderRadius: 9, borderWidth: 1, borderColor: t.brand, backgroundColor: t.bg, alignItems: "center", justifyContent: "center" }, shadowCss("0px 2px 6px 0px rgba(0, 0, 0, 0.12)")]}><Text style={{ fontSize: 13, fontWeight: "800", color: t.brand }}>ADD</Text></Pressable>
+              <Pressable onPress={() => onAdd?.(i)} style={[{ position: "absolute", left: 26, bottom: 6, width: 64, height: 36, borderRadius: 9, borderWidth: 1, borderColor: t.brand, backgroundColor: t.bg, alignItems: "center", justifyContent: "center" }, shadowCss(`0px 2px 6px 0px ${pal.a0_0_0_012}`)]}><Text style={{ fontSize: 13, fontWeight: "800", color: t.brand }}>ADD</Text></Pressable>
             </View>
             <View style={{ paddingTop: 8, paddingBottom: 10, paddingHorizontal: 10 }}>
               <Text style={{ fontSize: 15, lineHeight: lh(15), fontWeight: "800" }}>{s.price}{s.was ? <Text style={{ fontSize: 11, fontWeight: "500", color: t.ink4, textDecorationLine: "line-through" }}> {s.was}</Text> : null}</Text>
@@ -142,9 +145,9 @@ export function BillDetails({ rows, toPay, savings }: { rows: BillRow[]; toPay: 
 export function CheckoutFoot({ to, address, total, cta, onChange, onPay, disabled, safeBottom = 0 }: { to: string; address: string; total: string; cta: string; onChange?: () => void; onPay?: () => void; disabled?: boolean; safeBottom?: number }) {
   const t = useTheme();
   return (
-    <View style={[{ backgroundColor: t.bg, borderTopLeftRadius: 16, borderTopRightRadius: 16 }, shadowCss("0px -4px 16px 0px rgba(0, 0, 0, 0.08)")]}>
+    <View style={[{ backgroundColor: t.bg, borderTopLeftRadius: 16, borderTopRightRadius: 16 }, shadowCss(`0px -4px 16px 0px ${pal.a0_0_0_008}`)]}>
       <View style={[row, { gap: 10, paddingVertical: 4, paddingLeft: 16, paddingRight: 12, minHeight: 53, borderBottomWidth: 1, borderBottomColor: t.border }]}>
-        <Text style={{ fontSize: 22 }}>🏠</Text>
+        <Icon name="homeO" size={22} color={t.ink} />
         <View style={{ flex: 1 }}>
           <Text numberOfLines={1} style={{ fontSize: 15, lineHeight: lh(15), fontWeight: "700" }}>{to}</Text>
           <Text numberOfLines={1} style={{ fontSize: 13, lineHeight: lh(13), color: t.ink3 }}>{address}</Text>
@@ -153,8 +156,8 @@ export function CheckoutFoot({ to, address, total, cta, onChange, onPay, disable
       </View>
       <View style={{ padding: 14, paddingBottom: 14 + safeBottom }}>
         <Pressable disabled={disabled} onPress={onPay} style={[row, { justifyContent: "space-between", minHeight: 52, borderRadius: 12, backgroundColor: t.brand, paddingVertical: 8, paddingHorizontal: 14, opacity: disabled ? 0.5 : 1 }]}>
-          <View><Text style={{ fontSize: 15, lineHeight: lh(15), fontWeight: "800", color: "#FFFFFF" }}>{total}</Text><Text style={{ fontSize: 10, lineHeight: lh(10), fontWeight: "600", color: "#FFFFFF", opacity: 0.9 }}>TOTAL</Text></View>
-          <Text style={{ fontSize: 15, lineHeight: lh(15), fontWeight: "800", color: "#FFFFFF" }}>{cta}</Text>
+          <View><Text style={{ fontSize: 15, lineHeight: lh(15), fontWeight: "800", color: pal.white }}>{total}</Text><Text style={{ fontSize: 10, lineHeight: lh(10), fontWeight: "600", color: pal.white, opacity: 0.9 }}>TOTAL</Text></View>
+          <Text style={{ fontSize: 15, lineHeight: lh(15), fontWeight: "800", color: pal.white }}>{cta}</Text>
         </Pressable>
       </View>
     </View>

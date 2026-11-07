@@ -3,6 +3,7 @@ import { Pressable, View } from "react-native";
 import { lit, useTheme } from "../theme";
 import { grad, lh, row, shadowCss, Text } from "./base";
 import { Icon } from "./icons";
+import { pal } from "../theme/palette";
 
 /** .v2-me-hero: blue 160° gradient with 3 faint rings, 80 px avatar, name 22/800, phone 12 (75%), Edit profile pill. */
 export function ProfileHero({ name, phone, onEdit }: { name: string; phone: string; onEdit?: () => void }) {
@@ -10,11 +11,11 @@ export function ProfileHero({ name, phone, onEdit }: { name: string; phone: stri
   return (
     <View style={[{ paddingTop: 32, paddingBottom: 60, paddingHorizontal: 16, alignItems: "center", overflow: "hidden" }, grad(lit.meHero)]}>
       {ring(-60, 111, 220)}{ring(-20, 151, 150)}{ring(190, -40, 180)}
-      <View style={[{ width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255, 255, 255, 0.2)", borderWidth: 2, borderColor: "rgba(255, 255, 255, 0.45)", alignItems: "center", justifyContent: "center" }, shadowCss("0px 4px 16px 0px rgba(0, 0, 0, 0.2)")]}><Icon name="avatar" size={36} /></View>
-      <Text style={{ marginTop: 12, fontSize: 22, lineHeight: lh(22), letterSpacing: -0.4, fontWeight: "800", color: "#FFFFFF" }}>{name}</Text>
-      <Text style={{ marginTop: 4, fontSize: 12, lineHeight: lh(12), color: "#FFFFFF", opacity: 0.75 }}>{phone}</Text>
-      <Pressable onPress={onEdit} style={[row, { marginTop: 12, gap: 4, backgroundColor: "rgba(255, 255, 255, 0.18)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.35)", borderRadius: 9999, paddingVertical: 7, paddingHorizontal: 18 }]}>
-        <Icon name="editProfile" size={11} color="#FFFFFF" /><Text style={{ fontSize: 11, lineHeight: lh(11), fontWeight: "600", color: "#FFFFFF" }}>Edit profile</Text>
+      <View style={[{ width: 80, height: 80, borderRadius: 40, backgroundColor: pal.a255_255_255_02, borderWidth: 2, borderColor: pal.a255_255_255_045, alignItems: "center", justifyContent: "center" }, shadowCss(`0px 4px 16px 0px ${pal.a0_0_0_02}`)]}><Icon name="avatar" size={36} /></View>
+      <Text style={{ marginTop: 12, fontSize: 22, lineHeight: lh(22), letterSpacing: -0.4, fontWeight: "800", color: pal.white }}>{name}</Text>
+      <Text style={{ marginTop: 4, fontSize: 12, lineHeight: lh(12), color: pal.white, opacity: 0.75 }}>{phone}</Text>
+      <Pressable onPress={onEdit} style={[row, { marginTop: 12, gap: 4, backgroundColor: pal.a255_255_255_018, borderWidth: 1, borderColor: pal.a255_255_255_035, borderRadius: 9999, paddingVertical: 7, paddingHorizontal: 18 }]}>
+        <Icon name="editProfile" size={11} color={pal.white} /><Text style={{ fontSize: 11, lineHeight: lh(11), fontWeight: "600", color: pal.white }}>Edit profile</Text>
       </Pressable>
     </View>
   );
@@ -25,7 +26,7 @@ export function QuickTiles({ items }: { items: { icon: "qaPin" | "qaOrders" | "q
   const t = useTheme();
   const tint = { qaPin: lit.qa.pin, qaOrders: lit.qa.orders, qaBell: lit.qa.bell, qaPhone: lit.qa.phone };
   return (
-    <View style={[{ marginTop: -36, marginHorizontal: 16, flexDirection: "row", backgroundColor: t.bg, borderWidth: 1, borderColor: t.border, borderRadius: 16, paddingTop: 14, paddingBottom: 12, paddingHorizontal: 6 }, shadowCss("0px 4px 24px 0px rgba(0, 0, 0, 0.1)")]}>
+    <View style={[{ marginTop: -36, marginHorizontal: 16, flexDirection: "row", backgroundColor: t.bg, borderWidth: 1, borderColor: t.border, borderRadius: 16, paddingTop: 14, paddingBottom: 12, paddingHorizontal: 6 }, shadowCss(`0px 4px 24px 0px ${pal.a0_0_0_01}`)]}>
       {items.map((it) => (
         <Pressable key={it.label} onPress={it.onPress} style={{ flex: 1, alignItems: "center", paddingVertical: 4, paddingHorizontal: 2 }}>
           <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: tint[it.icon][0], alignItems: "center", justifyContent: "center" }}><Icon name={it.icon} size={20} /></View>
@@ -43,7 +44,7 @@ export function EmailPrompt({ onAdd }: { onAdd?: () => void }) {
     <View style={[row, { marginHorizontal: 16, gap: 8, backgroundColor: t.brandL, borderWidth: 1, borderColor: lit.emailBorder, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14 }]}>
       <Icon name="mail" size={16} />
       <Text style={{ fontSize: 12, lineHeight: lh(12), fontWeight: "600", color: lit.emailInk }}>Add email for order updates</Text>
-      <Pressable onPress={onAdd} style={{ backgroundColor: lit.emailBtn, borderRadius: 6, paddingVertical: 5, paddingHorizontal: 12 }}><Text style={{ fontSize: 11, lineHeight: lh(11), fontWeight: "600", color: "#FFFFFF" }}>Add →</Text></Pressable>
+      <Pressable onPress={onAdd} style={{ backgroundColor: lit.emailBtn, borderRadius: 6, paddingVertical: 5, paddingHorizontal: 12 }}><Text style={{ fontSize: 11, lineHeight: lh(11), fontWeight: "600", color: pal.white }}>Add →</Text></Pressable>
     </View>
   );
 }

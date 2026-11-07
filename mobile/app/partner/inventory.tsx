@@ -53,7 +53,7 @@ export default function Inventory() {
         const chips = [!l.is_available ? "Paused" : l.is_order_paused ? "Orders paused" : stock <= 0 ? "Out of stock" : "", `${stock} ${unit === "kg" ? "kg" : "pc"} in stock`, opts.length > 1 ? `${opts.length} packs` : ""].filter(Boolean);
         return (
           <View style={{ marginBottom: 12, opacity: busy.startsWith(l.id) ? 0.6 : 1 }}>
-            <ListingCard photo={l.photo_url} emoji={(l.species || "").includes("prawn") ? "🦐" : (l.species || "").includes("crab") ? "🦀" : "🐟"} name={getSpeciesDisplay(l.species)} note={l.size_label || l.description}
+            <ListingCard photo={l.photo_url} name={getSpeciesDisplay(l.species)} note={l.size_label || l.description}
               price={head ? `₹${Number(head.price) || 0} / ${packSize(head)}` : "No price set"} live={!!l.is_available && !l.is_order_paused && stock > 0} preorder={!!l.is_preorder_enabled} chips={chips}
               upDisabled={index === 0 || !!busy} downDisabled={index === rows.length - 1 || !!busy}
               onUp={() => act(l.id + "up", { action: "move", listing_id: l.id, direction: "up" })} onDown={() => act(l.id + "down", { action: "move", listing_id: l.id, direction: "down" })}

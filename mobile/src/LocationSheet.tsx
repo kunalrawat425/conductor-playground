@@ -12,6 +12,7 @@ import { useTheme } from "./theme";
 import { Button, Input, SheetHeader } from "./ui/atoms";
 import { Text } from "./ui/base";
 import { MapPin } from "./MapPin";
+import { pal } from "./theme/palette";
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -46,13 +47,13 @@ export function LocationSheet({ visible, current, onClose, onPicked }: { visible
   const chosen = pick ?? sugg[0] ?? null;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <Pressable style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.5)" }} onPress={onClose} />
+      <Pressable style={{ flex: 1, backgroundColor: pal.a15_23_42_05 }} onPress={onClose} />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ backgroundColor: t.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: insets.bottom + 12 }}>
         <SheetHeader title="Set your area" onClose={onClose} />
         <View style={{ padding: 16, gap: 12 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Text style={{ flex: 1, fontSize: 13, lineHeight: 18, color: t.ink2 }}>Your area is enough, e.g. <Text style={{ fontWeight: "700" }}>Thane West</Text>, <Text style={{ fontWeight: "700" }}>Majiwada</Text>, <Text style={{ fontWeight: "700" }}>Mulund</Text></Text>
-            <Button title="📍 Use current location" variant="secondary" size="sm" loading={busy && !q} onPress={gps} />
+            <Button title="Use current location" variant="secondary" size="sm" loading={busy && !q} onPress={gps} />
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><View style={{ flex: 1, height: 1, backgroundColor: t.border }} /><Text style={{ fontSize: 11, fontWeight: "700", letterSpacing: 0.88, color: t.ink3, textTransform: "uppercase" }}>or</Text><View style={{ flex: 1, height: 1, backgroundColor: t.border }} /></View>
           <Input label="Type your area, e.g. Thane, Mulund" placeholder="e.g. Thane, Majiwada, Mulund" value={q} onChangeText={(v) => { setQ(v); setPick(null); }} onSubmitEditing={search} returnKeyType="search" />

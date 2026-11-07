@@ -9,6 +9,7 @@ import * as Haptics from "expo-haptics";
 import { lit, useIsDark, useTheme } from "../theme";
 import { grad, lh, row, shadowCss, Text } from "./base";
 import { Icon, ICONS, type IconName } from "./icons";
+import { pal } from "../theme/palette";
 
 /** .v2-btn: primary / secondary / ghost / danger; sm 13/700 (8/16 pad) · md 14/700 (12/24) · lg 16/800 (14/32); min 44 tall; 8 radius. */
 export function Button({ title, onPress, variant = "primary", size = "md", disabled, loading, full, style, color, textColor }: {
@@ -16,7 +17,7 @@ export function Button({ title, onPress, variant = "primary", size = "md", disab
   disabled?: boolean; loading?: boolean; full?: boolean; style?: ViewStyle; /** fill colour override (e.g. orange on PermissionPrompt) */ color?: string; textColor?: string;
 }) {
   const t = useTheme();
-  const v = { primary: [color ?? t.brand, "#FFFFFF", null], secondary: [t.bg, t.brand, t.brand], ghost: ["transparent", t.ink, null], danger: [t.red, "#FFFFFF", null] }[variant] as [string, string, string | null];
+  const v = { primary: [color ?? t.brand, pal.white, null], secondary: [t.bg, t.brand, t.brand], ghost: ["transparent", t.ink, null], danger: [t.red, pal.white, null] }[variant] as [string, string, string | null];
   const z = { sm: [8, 16, 13, "700"], md: [12, 24, 14, "700"], lg: [14, 32, 16, "800"] }[size] as [number, number, number, string];
   return (
     <Pressable accessibilityRole="button" disabled={disabled || loading} onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress?.(); }}
@@ -122,7 +123,7 @@ export function AddressCard({ label, type, text, isDefault, selected, onPress, r
   const t = useTheme();
   return (
     <Pressable onPress={onPress} style={[row, { gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, borderWidth: 1, borderColor: selected ? t.brand : t.border, backgroundColor: selected ? t.brandL : t.bg }]}>
-      <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: selected ? t.brand : t.bg3, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 20 }}>{type === "home" ? "🏠" : type === "office" ? "🏢" : "📍"}</Text></View>
+      <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: selected ? t.brand : t.bg3, alignItems: "center", justifyContent: "center" }}><Icon name={type === "home" ? "homeO" : type === "office" ? "file" : "pin"} size={20} color={selected ? pal.white : t.ink} /></View>
       <View style={{ flex: 1 }}>
         <View style={[row, { gap: 8 }]}>
           <Text style={{ fontSize: 13, lineHeight: lh(13), fontWeight: "700" }}>{label}</Text>
@@ -152,11 +153,11 @@ export function EmptyState({ icon, title, desc, cta, onCta, ghost, onGhost }: { 
 /** .v2-err-card (warning / danger): tinted head (36 px icon tile, title 14/700, desc 12) + actions row (ghost + primary sm). */
 export function ErrorState({ icon, title, desc, primary, onPrimary, secondary, onSecondary, danger }: { icon: string; title: string; desc: string; primary: string; onPrimary?: () => void; secondary?: string; onSecondary?: () => void; danger?: boolean }) {
   const t = useTheme();
-  const tone = danger ? [t.redL, t.red, "#991B1B", "#FECACA"] : [t.orangeL, t.orange, "#9A3412", "#FED7AA"];
+  const tone = danger ? [t.redL, t.red, pal.h991B1B, pal.hFECACA] : [t.orangeL, t.orange, pal.h9A3412, pal.hFED7AA];
   return (
     <View style={{ marginHorizontal: 16, backgroundColor: t.bg, borderWidth: 1, borderColor: tone[3], borderRadius: 12, overflow: "hidden" }}>
       <View style={[row, { alignItems: "flex-start", gap: 12, padding: 16, backgroundColor: tone[0] }]}>
-        <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: tone[1], alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 18, color: "#FFFFFF" }}>{icon}</Text></View>
+        <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: tone[1], alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 18, color: pal.white }}>{icon}</Text></View>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 14, lineHeight: lh(14), fontWeight: "700", color: tone[2] }}>{title}</Text>
           <Text style={{ marginTop: 3, fontSize: 12, lineHeight: 17.4, color: t.ink2 }}>{desc}</Text>
@@ -175,7 +176,7 @@ export function PermissionPrompt({ icon, title, desc, benefits, allow, skip, onA
   const t = useTheme();
   const dark = useIsDark();
   return (
-    <View style={[{ marginHorizontal: 16, padding: 24, backgroundColor: t.bg, borderWidth: 1, borderColor: t.border, borderRadius: 16 }, shadowCss(dark ? "0px 4px 6px 0px rgba(0, 0, 0, 0.35), 0px 2px 4px 0px rgba(0, 0, 0, 0.2)" : "0px 4px 6px 0px rgba(0, 0, 0, 0.07), 0px 2px 4px 0px rgba(0, 0, 0, 0.06)")]}>
+    <View style={[{ marginHorizontal: 16, padding: 24, backgroundColor: t.bg, borderWidth: 1, borderColor: t.border, borderRadius: 16 }, shadowCss(dark ? `0px 4px 6px 0px ${pal.a0_0_0_035}, 0px 2px 4px 0px ${pal.a0_0_0_02}` : `0px 4px 6px 0px ${pal.a0_0_0_007}, 0px 2px 4px 0px ${pal.a0_0_0_006}`)]}>
       <View style={{ alignSelf: "center", width: 72, height: 72, borderRadius: 36, backgroundColor: orange ? t.orangeL : t.brandL, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 36 }}>{icon}</Text></View>
       <Text style={{ marginTop: 16, fontSize: 17, lineHeight: lh(17), fontWeight: "800", textAlign: "center" }}>{title}</Text>
       <Text style={{ marginTop: 6, fontSize: 13, lineHeight: 19.5, color: t.ink2, textAlign: "center" }}>{desc}</Text>
@@ -192,12 +193,12 @@ export function CartBar({ line, total, cta, tone = "brand", onPress }: { line: s
   const dark = useIsDark();
   const bg = { brand: t.brand, orange: t.orange, green: t.green, indigo: t.indigo }[tone];
   return (
-    <Pressable onPress={onPress} style={[row, { alignSelf: "center", gap: 12, borderRadius: 12, backgroundColor: bg, paddingVertical: 12, paddingHorizontal: 16 }, shadowCss(dark ? "0px 10px 15px 0px rgba(0, 0, 0, 0.4), 0px 4px 6px 0px rgba(0, 0, 0, 0.25)" : "0px 10px 15px 0px rgba(0, 0, 0, 0.1), 0px 4px 6px 0px rgba(0, 0, 0, 0.05)")]}>
+    <Pressable onPress={onPress} style={[row, { alignSelf: "center", gap: 12, borderRadius: 12, backgroundColor: bg, paddingVertical: 12, paddingHorizontal: 16 }, shadowCss(dark ? `0px 10px 15px 0px ${pal.a0_0_0_04}, 0px 4px 6px 0px ${pal.a0_0_0_025}` : `0px 10px 15px 0px ${pal.a0_0_0_01}, 0px 4px 6px 0px ${pal.a0_0_0_005}`)]}>
       <View>
-        <Text style={{ fontSize: 12, lineHeight: lh(12), fontWeight: "600", color: "#FFFFFF", opacity: 0.9 }}>{line}</Text>
-        <Text style={{ marginTop: 2, fontSize: 16, lineHeight: lh(16), fontWeight: "800", color: "#FFFFFF" }}>{total}</Text>
+        <Text style={{ fontSize: 12, lineHeight: lh(12), fontWeight: "600", color: pal.white, opacity: 0.9 }}>{line}</Text>
+        <Text style={{ marginTop: 2, fontSize: 16, lineHeight: lh(16), fontWeight: "800", color: pal.white }}>{total}</Text>
       </View>
-      <View style={{ backgroundColor: dark ? t.bg : "#FFFFFF", borderRadius: 8, paddingVertical: 8, paddingHorizontal: 16 }}><Text style={{ fontSize: 12, lineHeight: lh(12), fontWeight: "700", color: bg }}>{cta}</Text></View>
+      <View style={{ backgroundColor: dark ? t.bg : pal.white, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 16 }}><Text style={{ fontSize: 12, lineHeight: lh(12), fontWeight: "700", color: bg }}>{cta}</Text></View>
     </Pressable>
   );
 }
@@ -206,16 +207,16 @@ export function CartBar({ line, total, cta, tone = "brand", onPress }: { line: s
 export function PreorderBannerHero({ variant = "hero", title = "Pre-order fresh fish", desc = "Pre-order for tomorrow or later · pick a delivery time", cta = "Browse", onPress }: { variant?: "hero" | "empty"; title?: string; desc?: string; cta?: string; onPress?: () => void }) {
   const t = useTheme();
   if (variant === "empty") return (
-    <View style={[row, { marginHorizontal: 16, gap: 12, padding: 16, borderRadius: 12 }, grad("linear-gradient(135deg, #FFF7ED, #FEF3C7)")]}>
-      <Text style={{ fontSize: 32, lineHeight: 42 }}>💡</Text>
-      <View style={{ flex: 1 }}><Text style={{ fontSize: 13, lineHeight: lh(13), fontWeight: "700", color: "#92400E" }}>{title}</Text><Text style={{ marginTop: 2, fontSize: 11, lineHeight: 16.5, color: t.amber }}>{desc}</Text></View>
+    <View style={[row, { marginHorizontal: 16, gap: 12, padding: 16, borderRadius: 12 }, grad(`linear-gradient(135deg, ${pal.hFFF7ED}, ${pal.hFEF3C7})`)]}>
+      <Icon name="star" size={28} color={t.amber} />
+      <View style={{ flex: 1 }}><Text style={{ fontSize: 13, lineHeight: lh(13), fontWeight: "700", color: pal.h92400E }}>{title}</Text><Text style={{ marginTop: 2, fontSize: 11, lineHeight: 16.5, color: t.amber }}>{desc}</Text></View>
     </View>
   );
   return (
-    <Pressable onPress={onPress} style={[{ marginHorizontal: 16, padding: 20, borderRadius: 16 }, grad("linear-gradient(135deg, #4F46E5, #7C3AED)")]}>
-      <Text style={{ fontSize: 22, lineHeight: 26.4, fontWeight: "800", color: "#FFFFFF" }}>{title}</Text>
-      <Text style={{ marginTop: 6, fontSize: 13, lineHeight: 19.5, color: "#FFFFFF", opacity: 0.9 }}>{desc}</Text>
-      <View style={{ marginTop: 14, alignSelf: "flex-start", backgroundColor: "#FFFFFF", borderRadius: 8, paddingVertical: 10, paddingHorizontal: 20 }}><Text style={{ fontSize: 13, lineHeight: lh(13), fontWeight: "700", color: t.indigo }}>{cta} →</Text></View>
+    <Pressable onPress={onPress} style={[{ marginHorizontal: 16, padding: 20, borderRadius: 16 }, grad(`linear-gradient(135deg, ${pal.h4F46E5}, ${pal.h7C3AED})`)]}>
+      <Text style={{ fontSize: 22, lineHeight: 26.4, fontWeight: "800", color: pal.white }}>{title}</Text>
+      <Text style={{ marginTop: 6, fontSize: 13, lineHeight: 19.5, color: pal.white, opacity: 0.9 }}>{desc}</Text>
+      <View style={{ marginTop: 14, alignSelf: "flex-start", backgroundColor: pal.white, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 20 }}><Text style={{ fontSize: 13, lineHeight: lh(13), fontWeight: "700", color: t.indigo }}>{cta} →</Text></View>
     </Pressable>
   );
 }
@@ -225,13 +226,13 @@ export function Toast({ variant = "success", title, desc, onClose }: { variant?:
   const t = useTheme();
   const bg = { success: t.green, error: t.red, warning: t.orange, info: t.brand }[variant];
   return (
-    <View style={[row, { marginHorizontal: 16, gap: 10, borderRadius: 12, backgroundColor: bg, paddingVertical: 12, paddingHorizontal: 16 }, shadowCss("0px 10px 15px 0px rgba(0, 0, 0, 0.1), 0px 4px 6px 0px rgba(0, 0, 0, 0.05)")]}>
-      <Text style={{ fontSize: 18, lineHeight: 18, fontWeight: "500", color: "#FFFFFF" }}>{variant === "success" ? "✓" : variant === "error" ? "✕" : variant === "warning" ? "!" : "i"}</Text>
+    <View style={[row, { marginHorizontal: 16, gap: 10, borderRadius: 12, backgroundColor: bg, paddingVertical: 12, paddingHorizontal: 16 }, shadowCss(`0px 10px 15px 0px ${pal.a0_0_0_01}, 0px 4px 6px 0px ${pal.a0_0_0_005}`)]}>
+      <Text style={{ fontSize: 18, lineHeight: 18, fontWeight: "500", color: pal.white }}>{variant === "success" ? "✓" : variant === "error" ? "✕" : variant === "warning" ? "!" : "i"}</Text>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 13, lineHeight: lh(13), fontWeight: "600", color: "#FFFFFF" }}>{title}</Text>
-        {desc ? <Text style={{ marginTop: 1, fontSize: 11, lineHeight: lh(11), color: "#FFFFFF", opacity: 0.85 }}>{desc}</Text> : null}
+        <Text style={{ fontSize: 13, lineHeight: lh(13), fontWeight: "600", color: pal.white }}>{title}</Text>
+        {desc ? <Text style={{ marginTop: 1, fontSize: 11, lineHeight: lh(11), color: pal.white, opacity: 0.85 }}>{desc}</Text> : null}
       </View>
-      <Pressable onPress={onClose} hitSlop={8}><Text style={{ fontSize: 18, lineHeight: 18, color: "rgba(255, 255, 255, 0.6)" }}>×</Text></Pressable>
+      <Pressable onPress={onClose} hitSlop={8}><Text style={{ fontSize: 18, lineHeight: 18, color: pal.a255_255_255_06 }}>×</Text></Pressable>
     </View>
   );
 }

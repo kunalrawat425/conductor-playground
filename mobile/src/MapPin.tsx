@@ -8,6 +8,7 @@ import { Image, PanResponder, View } from "react-native";
 import { useTheme } from "./theme";
 import { Text } from "./ui/base";
 import { Icon } from "./ui/icons";
+import { pal } from "./theme/palette";
 
 const Z = 16, T = 256;
 const toPx = (lat: number, lng: number) => {
@@ -45,7 +46,7 @@ export function MapPin({ lat, lng, onMove, height = 220 }: { lat: number; lng: n
     <View onLayout={(e) => setW(e.nativeEvent.layout.width)} {...pan.panHandlers} style={{ height, borderRadius: 12, overflow: "hidden", backgroundColor: t.bg3 }}>
       {tiles}
       <View pointerEvents="none" style={{ position: "absolute", left: w / 2 - 16, top: height / 2 - 32 }}><Icon name="pin" size={32} color={t.red} /></View>
-      <Text style={{ position: "absolute", right: 4, bottom: 2, fontSize: 9, color: "#334155", backgroundColor: "rgba(255,255,255,.75)", paddingHorizontal: 3 }}>© OpenStreetMap contributors</Text>
+      <Text style={{ position: "absolute", right: 4, bottom: 2, fontSize: 9, color: pal.h334155, backgroundColor: pal.a255_255_255_75, paddingHorizontal: 3 }}>© OpenStreetMap contributors</Text>
     </View>
   );
 }

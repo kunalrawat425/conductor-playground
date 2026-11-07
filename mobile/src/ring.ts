@@ -2,6 +2,7 @@ import notifee, { AndroidCategory, AndroidImportance, AndroidStyle, AndroidVisib
 import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
 import { Platform } from "react-native";
+import { pal } from "./theme/palette";
 
 /**
  * New order with the app closed or the phone locked: rings like a call (Rapido / Uber style).
@@ -64,7 +65,7 @@ export async function showRich(d: RingData) {
     body: d.body || "",
     data: { url: d.url || "" },
     android: {
-      channelId, color: "#0066FF", pressAction: { id: "default", launchActivity: "default" },
+      channelId, color: pal.h0066FF, pressAction: { id: "default", launchActivity: "default" },
       ...(d.image ? { largeIcon: d.image, style: { type: AndroidStyle.BIGPICTURE, picture: d.image } } : d.body ? { style: { type: AndroidStyle.BIGTEXT, text: d.body } } : {}),
       actions: [
         ...(order ? [{ title: "Track order", pressAction: { id: "track", launchActivity: "default" } }] : []),

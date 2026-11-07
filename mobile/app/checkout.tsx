@@ -24,6 +24,7 @@ import { rupees, useFestive, useTheme } from "../src/theme";
 import { AddressCard, Button, Input, SheetHeader, SlotPicker, StepBar } from "../src/ui/atoms";
 import { BillDetails, CheckoutCart, CheckoutFoot, CoCard, DiwaliGiftCard, PrepPrefs, SuggestRail } from "../src/ui/checkout";
 import { lh, row, Text } from "../src/ui/base";
+import { pal } from "../src/theme/palette";
 
 type Address = { id: string; label?: string; flat?: string; building?: string; landmark?: string; location_name?: string; lat?: number; lng?: number; is_default?: boolean };
 type Day = { date: string; kind: "same_day" | "preorder"; label: string; slots: { start: string; end: string; time: string }[] };
@@ -154,10 +155,10 @@ export default function Checkout() {
             ) : null}
             {festive ? <DiwaliGiftCard onOpen={() => Linking.openURL("https://www.relifish.com/diwali-wishes")} /> : null}
             {picks.length ? <SuggestRail onAdd={addPick} items={picks.map((l) => { const o: any = getListingPriceOptions(l)[0] || {}; return { photo: l.photo_url ? resizedImageUrl(l.photo_url, 300) : null, price: rupees(Number(o.price) || 0), was: Number(o.compare_at_price) > Number(o.price) ? rupees(Number(o.compare_at_price)) : null, name: getSpeciesDisplay(l.species), size: o.label || o.unit_label || "" }; })} /> : null}
-            <PrepPrefs options={["🐟 Whole", "✂️ Cleaned", "🔪 Cut"]} value={cut} onChange={(v) => setCut((c) => (c === v ? undefined : v))} note={note} onNote={setNote} />
+            <PrepPrefs options={["Whole", "Cleaned", "Cut"]} value={cut} onChange={(v) => setCut((c) => (c === v ? undefined : v))} note={note} onNote={setNote} />
             <BillDetails toPay={rupees(cart.total + fee)} savings={saved ? rupees(saved) : null}
-              rows={[{ k: "🧾 Items total", v: rupees(cart.total), was: saved ? rupees(mrp) : null, saved: saved ? `Saved ${rupees(saved)}` : null },
-                ...(delivery ? [{ k: "🛵 Delivery charge", v: fee ? rupees(fee) : "FREE", hint: freeAbove && cart.total < freeAbove ? `Shop for ${rupees(freeAbove - cart.total)} more to get FREE delivery` : null }] : [])]} />
+              rows={[{ k: "Items total", v: rupees(cart.total), was: saved ? rupees(mrp) : null, saved: saved ? `Saved ${rupees(saved)}` : null },
+                ...(delivery ? [{ k: "Delivery charge", v: fee ? rupees(fee) : "FREE", hint: freeAbove && cart.total < freeAbove ? `Shop for ${rupees(freeAbove - cart.total)} more to get FREE delivery` : null }] : [])]} />
             {min > cart.total ? <Text style={{ marginHorizontal: 16, fontSize: 12, fontWeight: "600", color: t.orange }}>Add {rupees(min - cart.total)} more: this seller's minimum is {rupees(min)}.</Text> : null}
           </ScrollView>
           <CheckoutFoot to={delivery ? `Delivering to ${chosen?.label || "Home"}` : "Pickup from the shop"} address={delivery ? addrText(chosen) || "Add an address" : cart.seller.name} total={rupees(cart.total + fee)} cta="Next: Delivery ›" disabled={cart.total < min} onChange={() => setStep(1)} onPay={() => setStep(1)} safeBottom={insets.bottom} />
@@ -166,8 +167,8 @@ export default function Checkout() {
         <ScrollView style={{ flexGrow: 0, maxHeight: 640 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 16, gap: 10 }}>
           <Text style={{ fontSize: 14, lineHeight: lh(14), fontWeight: "800" }}>Delivery method</Text>
           <View style={{ gap: 8 }}>
-            {seller?.has_delivery ? <MethodOpt on={delivery} title="🚲 Delivery" desc="To your address · Fee applies" onPress={() => setMethod("delivery")} /> : null}
-            <MethodOpt on={!delivery} title="🧊 Pickup" desc="Collect from the shop · No delivery fee" onPress={() => setMethod("pickup")} />
+            {seller?.has_delivery ? <MethodOpt on={delivery} title="Delivery" desc="To your address · Fee applies" onPress={() => setMethod("delivery")} /> : null}
+            <MethodOpt on={!delivery} title="Pickup" desc="Collect from the shop · No delivery fee" onPress={() => setMethod("pickup")} />
           </View>
           {!seller?.has_delivery ? <Text style={{ textAlign: "center", fontSize: 11, color: t.ink3 }}>This shop offers pickup only.</Text> : null}
           {delivery ? (
@@ -185,7 +186,7 @@ export default function Checkout() {
               {needSlot ? (
                 <>
                   <Text style={{ marginTop: 6, fontSize: 14, fontWeight: "800" }}>When do you want it?</Text>
-                  <View style={[row, { gap: 6, flexWrap: "wrap" }]}>{days!.map((d, i) => <Pressable key={d.date} onPress={() => setDay(i)} style={{ paddingVertical: 7, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: day === i ? t.brand : t.border, backgroundColor: day === i ? t.brand : t.bg }}><Text style={{ fontSize: 12, fontWeight: "600", color: day === i ? "#FFFFFF" : t.ink2 }}>{d.label}</Text></Pressable>)}</View>
+                  <View style={[row, { gap: 6, flexWrap: "wrap" }]}>{days!.map((d, i) => <Pressable key={d.date} onPress={() => setDay(i)} style={{ paddingVertical: 7, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: day === i ? t.brand : t.border, backgroundColor: day === i ? t.brand : t.bg }}><Text style={{ fontSize: 12, fontWeight: "600", color: day === i ? pal.white : t.ink2 }}>{d.label}</Text></Pressable>)}</View>
                   <SlotPicker slots={(days![day]?.slots || []).map((x) => ({ id: x.start, time: x.time }))} selected={slot?.start} onPick={(sid) => setSlot({ start: sid, kind: days![day].kind })} />
                   <Text style={{ fontSize: 12, color: t.ink3 }}>We aim for this time and will let you know if it changes.</Text>
                 </>
@@ -199,7 +200,7 @@ export default function Checkout() {
             <Button title="← Back" variant="ghost" style={{ flex: 1 }} onPress={() => setStep(0)} />
             <Button title="Place Order" style={{ flex: 1 }} loading={busy} disabled={!ready} onPress={place} />
           </View>
-          <Text style={{ textAlign: "center", fontSize: 10, color: t.ink4 }}>🔒 Secure payment · Full refund if your order can't be fulfilled</Text>
+          <Text style={{ textAlign: "center", fontSize: 10, color: t.ink4 }}>Secure payment · Full refund if your order can't be fulfilled</Text>
         </ScrollView>
       )}
     </Sheet>
@@ -221,7 +222,7 @@ function Sheet({ children, onClose, insets }: { children: React.ReactNode; onClo
   const t = useTheme();
   return (
     <View style={{ flex: 1, justifyContent: "flex-end" }}>
-      <Pressable style={{ position: "absolute", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.5)" } as any} onPress={onClose} />
+      <Pressable style={{ position: "absolute", inset: 0, backgroundColor: pal.a15_23_42_05 } as any} onPress={onClose} />
       <View style={{ backgroundColor: t.bg2, borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: "hidden", maxHeight: "92%", paddingBottom: insets }}>
         <View style={{ backgroundColor: t.bg }}><SheetHeader title="Checkout" onClose={onClose} /></View>
         {children}

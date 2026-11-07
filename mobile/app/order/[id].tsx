@@ -20,6 +20,7 @@ import { Icon } from "../../src/ui/icons";
 import { Button } from "../../src/ui/atoms";
 import { lh, row, Text } from "../../src/ui/base";
 import { ActivityIndicator, Pressable } from "react-native";
+import { pal } from "../../src/theme/palette";
 
 const LABEL: Record<string, string> = {
   pending: "Almost done", pending_payment: "Almost done", pre_order: "Pre-order placed", confirmed: "Confirmed ✓",
@@ -176,14 +177,14 @@ export default function OrderScreen() {
         ) : null}
         {o.pay_on_delivery && unpaidNew ? (
           <InfoSection>
-            <Text style={{ fontSize: 15, fontWeight: "800", color: t.green }}>✅ Order placed</Text>
+            <Text style={{ fontSize: 15, fontWeight: "800", color: t.green }}>Order placed</Text>
             <Text style={{ marginTop: 4, color: t.ink2 }}>Waiting for {o.seller?.name || "the seller"} to confirm. You'll pay {rupees(due)} here in the app when your fish arrives. No cash accepted.</Text>
             <Button title={`Pay ${rupees(due)} now instead`} variant="secondary" full onPress={pay} loading={busy === "pay"} style={{ marginTop: 12 }} />
           </InfoSection>
         ) : null}
         {podDue && ["confirmed", "ready_for_pickup", "out_for_delivery"].includes(o.status) ? (
           <InfoSection>
-            <Text style={{ fontSize: 15, fontWeight: "800" }}>{o.status === "out_for_delivery" ? "🛵 Pay when your fish arrives" : "💵 You pay on delivery"}</Text>
+            <Text style={{ fontSize: 15, fontWeight: "800" }}>{o.status === "out_for_delivery" ? "Pay when your fish arrives" : "You pay on delivery"}</Text>
             <Text style={{ marginTop: 4, color: t.ink2 }}>Pay here in the app (UPI or card) when your fish arrives. No cash accepted.</Text>
             <Button title={`Pay ${rupees(due)}`} full onPress={pay} loading={busy === "pay"} style={{ marginTop: 12 }} />
           </InfoSection>
@@ -191,8 +192,8 @@ export default function OrderScreen() {
         {closed && cancelReasonText(o.cancel_reason) ? <View style={{ marginHorizontal: 16 }}><Text style={{ fontSize: 12, color: t.ink3 }}>{cancelledByText(o.cancelled_by, "buyer", o.cancel_reason)} · Reason: {cancelReasonText(o.cancel_reason)}</Text></View> : null}
         <View style={{ marginHorizontal: 16, gap: 12 }}>
           {unpaidNew ? <Pressable onPress={cancel} style={{ padding: 14, borderRadius: 12, borderWidth: 1, borderColor: t.redL, backgroundColor: t.bg, alignItems: "center" }}><Text style={{ fontSize: 14, fontWeight: "700", color: t.red }}>{busy === "cancel" ? "Cancelling…" : "Cancel order"}</Text></Pressable> : null}
-          {DONE.includes(o.status) ? <Pressable onPress={reorder} style={{ padding: 14, borderRadius: 12, backgroundColor: t.brand, alignItems: "center" }}><Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>Re-order from {cleanSellerName(o.seller?.name) || "this seller"}</Text></Pressable> : null}
-          <Button title="📞 Call us about this order" variant="secondary" full onPress={() => Linking.openURL("tel:+919152207607")} />
+          {DONE.includes(o.status) ? <Pressable onPress={reorder} style={{ padding: 14, borderRadius: 12, backgroundColor: t.brand, alignItems: "center" }}><Text style={{ fontSize: 14, fontWeight: "700", color: pal.white }}>Re-order from {cleanSellerName(o.seller?.name) || "this seller"}</Text></Pressable> : null}
+          <Button title="Call us about this order" variant="secondary" full onPress={() => Linking.openURL("tel:+919152207607")} />
         </View>
       </ScrollView>
       <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: t.bg, borderTopWidth: 1, borderTopColor: t.border }}>

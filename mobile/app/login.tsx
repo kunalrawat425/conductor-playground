@@ -16,6 +16,7 @@ import { useFestive, useIsDark, useTheme } from "../src/theme";
 import { Button, OTPInput } from "../src/ui/atoms";
 import { grad, row, shadowCss, Text } from "../src/ui/base";
 import { Icon } from "../src/ui/icons";
+import { pal } from "../src/theme/palette";
 
 const RESEND = 30;
 const fmt = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
@@ -72,22 +73,22 @@ export default function Login() {
 
   // Partner app: the dashboard's green over a dock photo, so it can't be mistaken for the buyer app (founder 7 Nov).
   const shade = seller
-    ? dark ? "linear-gradient(180deg, rgba(6,78,59,.55) 0%, rgba(2,44,34,.85) 70%)" : "linear-gradient(180deg, rgba(5,150,105,.35) 0%, rgba(4,120,87,.75) 70%)"
-    : dark ? "linear-gradient(180deg, rgba(15,23,42,.35) 20%, rgba(15,23,42,.7) 70%)" : "linear-gradient(180deg, rgba(15,23,42,0) 30%, rgba(15,23,42,.35) 70%)";
+    ? dark ? `linear-gradient(180deg, ${pal.a6_78_59_55} 0%, ${pal.a2_44_34_85} 70%)` : `linear-gradient(180deg, ${pal.a5_150_105_35} 0%, ${pal.a4_120_87_75} 70%)`
+    : dark ? `linear-gradient(180deg, ${pal.a15_23_42_35} 20%, ${pal.a15_23_42_7} 70%)` : `linear-gradient(180deg, ${pal.a15_23_42_0} 30%, ${pal.a15_23_42_35} 70%)`;
   const accent = seller ? t.green : t.brand;
   const gold = festive && !seller;
   const link = { color: t.ink2, textDecorationLine: "underline" as const };
   return (
-    <View style={{ flex: 1, backgroundColor: seller ? (dark ? "#064E3B" : "#059669") : dark ? "#0F172A" : t.bg3 }}>
+    <View style={{ flex: 1, backgroundColor: seller ? (dark ? pal.h064E3B : pal.h059669) : dark ? pal.h0F172A : t.bg3 }}>
       <Image source={seller ? require("../assets/seller-login.jpg") : require("../assets/login-collage.jpg")} style={[StyleSheet.absoluteFill, { width: "100%", height: seller ? "75%" : "100%", opacity: dark && !seller ? 0.85 : 1 }]} resizeMode="cover" />
       <Pressable style={[StyleSheet.absoluteFill, grad(shade)]} onPress={() => close()} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: "flex-end" }}>
-        <View style={[{ backgroundColor: t.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: sent ? 40 : 46, paddingHorizontal: 22, paddingBottom: insets.bottom + 18, alignItems: "stretch" }, shadowCss("0px -10px 30px 0px rgba(0, 0, 0, 0.18)")]}>
+        <View style={[{ backgroundColor: t.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: sent ? 40 : 46, paddingHorizontal: 22, paddingBottom: insets.bottom + 18, alignItems: "stretch" }, shadowCss(`0px -10px 30px 0px ${pal.a0_0_0_018}`)]}>
           <View style={[{ position: "absolute", top: -30, alignSelf: "center", width: 200, height: seller ? 66 : 60, borderRadius: 18, alignItems: "center", justifyContent: "center", gap: 2, backgroundColor: accent },
-            gold ? { borderWidth: 2, borderColor: "#D4A24C" } : null, gold ? grad("linear-gradient(135deg, #B3123B, #8B0A2E)") : seller ? grad("linear-gradient(135deg, #059669, #10B981)") : null,
-            shadowCss(gold ? "0px 10px 24px 0px rgba(139, 10, 46, 0.35)" : seller ? "0px 10px 24px 0px rgba(5, 150, 105, 0.35)" : "0px 10px 24px 0px rgba(0, 102, 255, 0.3)")]}>
+            gold ? { borderWidth: 2, borderColor: pal.hD4A24C } : null, gold ? grad(`linear-gradient(135deg, ${pal.hB3123B}, ${pal.h8B0A2E})`) : seller ? grad(`linear-gradient(135deg, ${pal.h059669}, ${pal.h10B981})`) : null,
+            shadowCss(gold ? `0px 10px 24px 0px ${pal.a139_10_46_035}` : seller ? `0px 10px 24px 0px ${pal.a5_150_105_035}` : `0px 10px 24px 0px ${pal.a0_102_255_03}`)]}>
             <Image source={gold ? require("../assets/logo-gold.png") : require("../assets/logo-white.png")} style={{ width: seller ? 132 : 152, height: seller ? 31 : 36 }} resizeMode="contain" />
-            {seller ? <Text style={{ fontSize: 9, fontWeight: "800", letterSpacing: 1.44, color: "#FFFFFF", opacity: 0.92 }}>PARTNER · FOR SELLERS</Text> : null}
+            {seller ? <Text style={{ fontSize: 9, fontWeight: "800", letterSpacing: 1.44, color: pal.white, opacity: 0.92 }}>PARTNER · FOR SELLERS</Text> : null}
           </View>
 
           {!sent ? (
@@ -110,7 +111,7 @@ export default function Login() {
                 style={{ marginTop: 12, height: 54, borderRadius: 12, opacity: 1, ...(!ok ? { backgroundColor: t.bg3 } : {}) }} />
               {!seller ? (
                 <Pressable onPress={() => setWa(!wa)} style={[row, { alignItems: "flex-start", gap: 10, marginTop: 12 }]} accessibilityRole="checkbox" accessibilityState={{ checked: wa }}>
-                  <View style={{ width: 18, height: 18, marginTop: 1, borderRadius: 5, borderWidth: 1.5, borderColor: wa ? t.brand : t.ink4, backgroundColor: wa ? t.brand : t.bg, alignItems: "center", justifyContent: "center" }}>{wa ? <Icon name="check" size={12} color="#FFFFFF" strokeWidth={3} /> : null}</View>
+                  <View style={{ width: 18, height: 18, marginTop: 1, borderRadius: 5, borderWidth: 1.5, borderColor: wa ? t.brand : t.ink4, backgroundColor: wa ? t.brand : t.bg, alignItems: "center", justifyContent: "center" }}>{wa ? <Icon name="check" size={12} color={pal.white} strokeWidth={3} /> : null}</View>
                   <Text style={{ flex: 1, fontSize: 12, lineHeight: 17.4, fontWeight: "500", color: t.ink2 }}>Send me order updates and fresh-catch alerts on WhatsApp. Reply STOP anytime.</Text>
                 </Pressable>
               ) : null}

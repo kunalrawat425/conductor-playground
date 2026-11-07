@@ -1,5 +1,6 @@
 import { Linking, NativeModules, Platform } from "react-native";
 import { API, api, getSession } from "./api";
+import { pal } from "./theme/palette";
 
 /**
  * Native Razorpay checkout (UPI apps open directly), then the same server checks the website uses:
@@ -18,7 +19,7 @@ export async function payOrder(orderId: string): Promise<"paid" | "cancelled" | 
   }
   const opts = {
     key: created.key_id, order_id: created.razorpay_order_id, amount: created.amount, currency: created.currency || "INR",
-    name: "Relifish", description: `Order #${orderId.slice(0, 8).toUpperCase()}`, theme: { color: "#0066FF" },
+    name: "Relifish", description: `Order #${orderId.slice(0, 8).toUpperCase()}`, theme: { color: pal.h0066FF },
     prefill: { contact: me.phone },
   };
   const verify = (r: any) => api("/api/payments/razorpay-verify", {

@@ -11,6 +11,7 @@ import { stopRings } from "./ring";
 import { useTheme } from "./theme";
 import { Text } from "./ui/base";
 import { Icon } from "./ui/icons";
+import { pal } from "./theme/palette";
 
 const POLL_MS = 20_000;
 const RING_CAP_MS = 60_000;
@@ -105,7 +106,7 @@ export function NewOrderAlarm() {
     ["clock", `${pre ? "Pre-order" : "Same day"}${order.delivery_slot_start ? ` · ${slotTimeLabel(order.delivery_slot_start, order.delivery_slot_end)}, ${slotDayLabel(order.delivery_slot_start)}` : ""}`],
     ["user", `Buyer ••${String(order.buyer_phone || "").slice(-4)}`],
   ];
-  const W = "#FFFFFF";
+  const W = pal.white;
   // Rapido-style alarm (preview "Seller ring"): green full screen, countdown ring, slide to confirm.
   return (
     <Modal visible animationType="slide" onRequestClose={close} statusBarTranslucent>
@@ -118,7 +119,7 @@ export function NewOrderAlarm() {
               <Text style={{ fontSize: 15, fontWeight: "600", color: W, opacity: 0.9 }}>{order.pay_on_delivery && !order.razorpay_payment_id ? "Pay on delivery" : "Paid online"} · {order.order_type === "delivery" ? "Delivery" : "Pickup"}</Text>
             </View>
           </View>
-          <View style={{ marginTop: 18, backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 12, padding: 14, gap: 6 }}>
+          <View style={{ marginTop: 18, backgroundColor: pal.a255_255_255_016, borderRadius: 12, padding: 14, gap: 6 }}>
             {(order.cart_items || [order]).map((r: any) => {
               const off = CLOSED.includes(r.status);
               return <View key={r.id} style={{ flexDirection: "row", justifyContent: "space-between" }}><Text style={{ fontSize: 17, fontWeight: "800", color: W, opacity: off ? 0.6 : 1, textDecorationLine: off ? "line-through" : "none", textTransform: "capitalize", flex: 1 }}>{r.listing?.species || r.species} · {qtyLabel(r)}</Text><Text style={{ fontSize: 17, fontWeight: "800", color: W, opacity: off ? 0.6 : 1, textDecorationLine: off ? "line-through" : "none" }}>₹{(Number(r.total_price || r.final_price) || 0).toLocaleString("en-IN")}</Text></View>;
@@ -155,10 +156,10 @@ function SlideToConfirm({ onConfirm, busy, color }: { onConfirm: () => void; bus
   })).current;
   return (
     <View onLayout={(e) => { width.current = e.nativeEvent.layout.width; }} accessibilityRole="button" accessibilityLabel="Slide to confirm" accessibilityActions={[{ name: "activate" }]} onAccessibilityAction={() => onConfirm()}
-      style={{ height: 64, borderRadius: 32, backgroundColor: "#FFFFFF", justifyContent: "center" }}>
+      style={{ height: 64, borderRadius: 32, backgroundColor: pal.white, justifyContent: "center" }}>
       <Text style={{ position: "absolute", alignSelf: "center", fontSize: 17, fontWeight: "800", color }}>{busy ? "Confirming…" : "Slide to confirm"}</Text>
       <Animated.View {...pan.panHandlers} style={{ marginLeft: 6, width: KNOB, height: KNOB, borderRadius: KNOB / 2, backgroundColor: color, alignItems: "center", justifyContent: "center", transform: [{ translateX: x }] }}>
-        <Icon name="arrowRight" size={22} color="#FFFFFF" />
+        <Icon name="arrowRight" size={22} color={pal.white} />
       </Animated.View>
     </View>
   );
