@@ -13,11 +13,11 @@ afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 describe("AiSensy provider (WA_PROVIDER=aisensy)", () => {
   it("payload: campaign = template name, photo as media, text-only copy without, URL suffix as button", () => {
     const p = aisensyPayload({ ...conf, headerImage: "https://x/p.jpg" }, "k");
-    expect(p).toMatchObject({ apiKey: "k", campaignName: "rfw2_confirmed", destination: "919870619974", templateParams: ["Fishtokri", "#AB12", "Fri 8–10 AM"], media: { url: "https://x/p.jpg" } });
+    expect(p).toMatchObject({ apiKey: "k", campaignName: "rs2_confirmed", destination: "919870619974", templateParams: ["Fishtokri", "#AB12", "Fri 8–10 AM"], media: { url: "https://x/p.jpg" } });
     expect(p.buttons?.[0].parameters[0].text).toBe("abc");
     const t = aisensyPayload({ ...conf, headerImage: null }, "k");
-    expect([t.campaignName, "media" in t]).toEqual(["rfwt_confirmed", false]);
-    expect(aisensyPayload({ to: "1", name: "rf2_cancelled", body: [] }, "k").campaignName).toBe("rfw_cancelled_u");
+    expect([t.campaignName, "media" in t]).toEqual(["rst_confirmed", false]);
+    expect(aisensyPayload({ to: "1", name: "rf2_cancelled", body: [] }, "k").campaignName).toBe("rs_cancelled_u");
   });
   it("live only with AISENSY_API_KEY; dry-run and test-only still apply", () => {
     vi.stubEnv("WA_PROVIDER", "aisensy"); vi.stubEnv("AISENSY_API_KEY", ""); vi.stubEnv("WA_PHONE_NUMBER_ID", "1"); vi.stubEnv("WA_TOKEN", "t");

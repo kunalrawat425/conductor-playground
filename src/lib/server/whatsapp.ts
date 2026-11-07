@@ -10,7 +10,7 @@
  * (https://live-mt-server.wati.io/<tenantId>) and WATI_API_KEY. Same dry-run / test-only gates.
  *
  * WA_PROVIDER=aisensy sends through AiSensy's campaign API with AISENSY_API_KEY. Each template needs a
- * Live "API campaign" in AiSensy named exactly like the template (watiTemplate names: rfw_/rfw2_/rfwt_).
+ * Live "API campaign" in AiSensy named exactly like its rs_/rs2_/rst_ template (metaTemplate). Created 7 Nov 2026 in project "relifish 6780".
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { istDate } from "../messaging/schedule";
