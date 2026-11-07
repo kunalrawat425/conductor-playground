@@ -44,16 +44,16 @@ export function fcmMessage(deviceToken: string, payload: string) {
   const order = /\/(?:track|orders?)\/([0-9a-f-]{36})/i.exec(p.url || "")?.[1];
   if (RING.test(p.tag || "")) {
     const d = { kind: "new_order", order_id: order, title: p.title, body: p.body, url: p.url, image: p.image };
-    // Only kind + dataString: a data message with title/body keys is shown by expo-notifications as a plain
-    // notification and the ring task (mobile/src/ring.ts) never runs.
-    return { token: deviceToken, data: { kind: "new_order", dataString: JSON.stringify(d) }, android: { priority: "HIGH", ttl: "86400s" } };
+    // The JSON goes in data.body: expo-notifications hands data.body to the background task as data.dataString
+    // (RemoteMessageSerializer) and shows nothing itself unless there is a title/message key.
+    return { token: deviceToken, data: { kind: "new_order", body: JSON.stringify(d) }, android: { priority: "HIGH", ttl: "86400s" } };
   }
   // Android: data-only, drawn by the app (mobile/src/ring.ts showRich) with the photo and Track order / Call us buttons.
   // iOS: a normal alert with the photo (APNs mutable-content + fcm_options.image).
   const d = { kind: "update", title: p.title, body: p.body, url: p.url, image: p.image, tag: p.tag, order_id: order };
   return {
     token: deviceToken,
-    data: { kind: "update", dataString: JSON.stringify(d) },
+    data: { kind: "update", body: JSON.stringify(d) },
     android: { priority: "HIGH", ttl: "86400s" },
     apns: { payload: { aps: { alert: { title: p.title, body: p.body }, sound: "default", "mutable-content": 1 } }, ...(p.image ? { fcm_options: { image: p.image } } : {}) },
   };
